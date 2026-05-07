@@ -103,13 +103,13 @@ export default function NotesPage() {
   const getCardStyle = (noteStatus: string) => {
     switch (noteStatus) {
       case "สำคัญ":
-        return "bg-red-50/80 border-red-200 hover:border-red-300 dark:bg-red-950/20 dark:border-red-900";
+        return "bg-red-50 border-red-200 hover:border-red-300";
       case "กำลังทำ":
-        return "bg-blue-50/80 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:border-blue-900";
+        return "bg-blue-50 border-blue-200 hover:border-blue-300";
       case "เสร็จสิ้น":
-        return "bg-green-50/80 border-green-200 hover:border-green-300 dark:bg-green-950/20 dark:border-green-900";
+        return "bg-green-50 border-green-200 hover:border-green-300";
       default:
-        return "bg-slate-50/80 border-slate-200 hover:border-slate-300 dark:bg-slate-900/50 dark:border-slate-800";
+        return "bg-slate-50 border-slate-200 hover:border-slate-300";
     }
   };
 
