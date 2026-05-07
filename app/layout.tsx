@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
-
+import { SpeedInsights } from "@vercel/speed-insights/next"
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
@@ -41,6 +41,7 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
       </body>
+      <SpeedInsights />
     </html>
   );
 }
