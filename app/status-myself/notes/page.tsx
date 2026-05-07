@@ -47,7 +47,9 @@ export default function NotesPage() {
 
   // State สำหรับจัดการฟอร์ม Category
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
+    null,
+  );
   const [editingCategoryName, setEditingCategoryName] = useState("");
 
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -85,31 +87,29 @@ export default function NotesPage() {
     return note.category_id === filterCategory;
   });
 
-  // แก้ไข: ใช้สีทึบ (Solid) ทั้งหมด ป้องกันการ์ดสีเพี้ยนทับกัน
   const getStatusBadgeColor = (noteStatus: string) => {
     switch (noteStatus) {
       case "สำคัญ":
-        return "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/80 dark:text-red-100 dark:border-red-700";
+        return "bg-red-200 text-red-800 border-red-300";
       case "กำลังทำ":
-        return "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/80 dark:text-blue-100 dark:border-blue-700";
+        return "bg-blue-200 text-blue-800 border-blue-300";
       case "เสร็จสิ้น":
-        return "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/80 dark:text-green-100 dark:border-green-700";
+        return "bg-green-200 text-green-800 border-green-300";
       default:
-        return "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600";
+        return "bg-gray-200 text-gray-800 border-gray-300";
     }
   };
 
-  // แก้ไข: เอา /80 หรือค่าความโปร่งใสออก เพื่อไม่ให้สีพื้นหลังขึ้นมาตีกับป้ายสถานะ
   const getCardStyle = (noteStatus: string) => {
     switch (noteStatus) {
       case "สำคัญ":
-        return "bg-red-50 border-red-200 hover:border-red-300 dark:bg-red-950/40 dark:border-red-900";
+        return "bg-red-50/80 border-red-200 hover:border-red-300 dark:bg-red-950/20 dark:border-red-900";
       case "กำลังทำ":
-        return "bg-blue-50 border-blue-200 hover:border-blue-300 dark:bg-blue-950/40 dark:border-blue-900";
+        return "bg-blue-50/80 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:border-blue-900";
       case "เสร็จสิ้น":
-        return "bg-green-50 border-green-200 hover:border-green-300 dark:bg-green-950/40 dark:border-green-900";
+        return "bg-green-50/80 border-green-200 hover:border-green-300 dark:bg-green-950/20 dark:border-green-900";
       default:
-        return "bg-white border-slate-200 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800";
+        return "bg-slate-50/80 border-slate-200 hover:border-slate-300 dark:bg-slate-900/50 dark:border-slate-800";
     }
   };
 
@@ -274,7 +274,6 @@ export default function NotesPage() {
 
   return (
     <div className="container mx-auto px-8 py-9 max-w-5xl flex flex-col gap-8 border-2 rounded-3xl relative">
-      
       {/* Header & Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -286,10 +285,19 @@ export default function NotesPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button onClick={() => setIsCategoryModalOpen(true)} variant="outline">
+          <Button
+            onClick={() => setIsCategoryModalOpen(true)}
+            variant="outline"
+          >
+            {/* <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 mr-2">
+              <path fillRule="evenodd" d="M4.5 2A2.5 2.5 0 0 0 2 4.5v2.879a2.5 2.5 0 0 0 .732 1.767l4.5 4.5a2.5 2.5 0 0 0 3.536 0l2.878-2.878a2.5 2.5 0 0 0 0-3.536l-4.5-4.5A2.5 2.5 0 0 0 7.38 2H4.5ZM5 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+            </svg> */}
             จัดการหมวดหมู่
           </Button>
           <Button onClick={openNewNoteModal} className=" text-white">
+            {/* <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 mr-2">
+              <path fillRule="evenodd" d="M8 1.5a.75.75 0 0 1 .75.75V7h4.75a.75.75 0 0 1 0 1.5H8.75v4.75a.75.75 0 0 1-1.5 0V8.5H2.5a.75.75 0 0 1 0-1.5h4.75V2.25A.75.75 0 0 1 8 1.5Z" clipRule="evenodd" />
+            </svg> */}
             + สร้าง Note ใหม่
           </Button>
         </div>
@@ -299,32 +307,24 @@ export default function NotesPage() {
       <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <h2 className="text-xl font-bold">รายการบันทึก</h2>
-          <div className="flex items-center gap-2 relative z-20">
+          <div className="flex items-center gap-2">
             <Label htmlFor="filter" className="whitespace-nowrap">
               หมวดหมู่
             </Label>
-            {/* ปรับปรุง: ใช้ HTML Wrapper เพื่อซ้อนไอคอนลูกศร แก้ปัญหาสีทับซ้อนและลูกศรหายบน Safari */}
-            <div className="relative inline-flex items-center">
-              <select
-                id="filter"
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="appearance-none flex h-9 w-full min-w-[140px] rounded-md border border-input bg-background px-3 py-1 pr-8 text-sm shadow-sm outline-none cursor-pointer"
-              >
-                <option value="all">ทั้งหมด (All)</option>
-                <option value="none">ไม่มีหมวดหมู่</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-2 pointer-events-none text-muted-foreground">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                  <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0l-4.25-4.25a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
+            <select
+              id="filter"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+            >
+              <option value="all">ทั้งหมด (All)</option>
+              <option value="none">ไม่มีหมวดหมู่</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -337,24 +337,29 @@ export default function NotesPage() {
             filteredNotes.map((note, index) => (
               <Card
                 key={note.id}
-                className={`flex flex-col h-full relative group transition-colors shadow-sm overflow-hidden z-0 ${getCardStyle(note.status)}`}
+                className={`flex flex-col h-full relative group transition-colors shadow-sm overflow-hidden ${getCardStyle(note.status)}`}
               >
-                <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10">
+                <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10 backdrop-blur-sm">
                   #{index + 1}
                 </div>
 
                 <CardHeader className="pb-2 pt-8">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl pr-12 relative z-10">
+                    <CardTitle className="text-xl pr-12">
                       {note.title}
                     </CardTitle>
-                    <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleEditNoteClick(note)}
                         className="p-1.5 text-blue-600 hover:bg-blue-100/50 rounded-md transition-colors"
                         title="แก้ไข"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
+                          className="w-4 h-4"
+                        >
                           <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z" />
                           <path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z" />
                         </svg>
@@ -364,48 +369,90 @@ export default function NotesPage() {
                         className="p-1.5 text-red-600 hover:bg-red-100/50 rounded-md transition-colors"
                         title="ลบ"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                          <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
+                          className="w-4 h-4"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       </button>
                     </div>
                   </div>
-                  <CardDescription className="flex gap-2 items-center mt-2 relative z-20">
-                    
-                    {/* ปรับปรุง: ใช้ HTML Wrapper เพื่อความชัวร์บน iOS ตัดปัญหาบั๊ก Style */}
-                    <div className="relative inline-flex items-center">
+                  <CardDescription className="flex gap-2 items-center mt-2">
+                    <div className="relative inline-block">
                       <select
                         value={note.status || "ทั่วไป"}
-                        onChange={(e) => handleInlineStatusChange(note, e.target.value)}
-                        className={`appearance-none pl-2 pr-6 py-0.5 rounded text-xs font-semibold cursor-pointer outline-none border transition-colors shadow-sm relative z-10 m-0 ${getStatusBadgeColor(note.status)}`}
+                        onChange={(e) =>
+                          handleInlineStatusChange(note, e.target.value)
+                        }
+                        className={`appearance-none px-2 pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer outline-none border border-transparent hover:border-current transition-colors ${getStatusBadgeColor(note.status)}`}
                       >
-                        <option value="ทั่วไป" className="bg-white text-black dark:bg-slate-800 dark:text-white">ทั่วไป</option>
-                        <option value="สำคัญ" className="bg-white text-black dark:bg-slate-800 dark:text-white">สำคัญ</option>
-                        <option value="กำลังทำ" className="bg-white text-black dark:bg-slate-800 dark:text-white">กำลังทำ</option>
-                        <option value="เสร็จสิ้น" className="bg-white text-black dark:bg-slate-800 dark:text-white">เสร็จสิ้น</option>
+                        <option
+                          value="ทั่วไป"
+                          className="bg-white text-slate-800"
+                        >
+                          ทั่วไป
+                        </option>
+                        <option
+                          value="สำคัญ"
+                          className="bg-white text-slate-800"
+                        >
+                          สำคัญ
+                        </option>
+                        <option
+                          value="กำลังทำ"
+                          className="bg-white text-slate-800"
+                        >
+                          กำลังทำ
+                        </option>
+                        <option
+                          value="เสร็จสิ้น"
+                          className="bg-white text-slate-800"
+                        >
+                          เสร็จสิ้น
+                        </option>
                       </select>
-                      <div className="absolute right-1.5 pointer-events-none z-20 opacity-70">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                          <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0l-4.25-4.25a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-                        </svg>
-                      </div>
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
                     </div>
 
                     {note.note_categories?.name && (
-                      <span className="inline-block bg-white dark:bg-slate-800 text-foreground px-2 py-0.5 rounded text-xs font-medium border shadow-sm relative z-10">
+                      <span className="inline-block bg-slate-800 text-white px-2 py-0.5 rounded text-xs shadow-sm">
                         {note.note_categories.name}
                       </span>
                     )}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="flex-1 flex flex-col justify-between relative z-10">
+                <CardContent className="flex-1 flex flex-col justify-between">
                   <p className="text-sm line-clamp-4 mb-4 text-foreground/80 whitespace-pre-wrap">
                     {note.content || "ไม่มีรายละเอียด"}
                   </p>
 
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-auto pt-4 border-t border-black/5 dark:border-white/5">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 16 16"
+                      fill="currentColor"
+                      className="w-3.5 h-3.5"
+                    >
                       <path d="M4.75 2.25a.75.75 0 0 0-1.5 0v1.41l-.146.126a1.5 1.5 0 0 0-.604 1.196v6.268a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5V4.982a1.5 1.5 0 0 0-.604-1.196l-.146-.126V2.25a.75.75 0 0 0-1.5 0v1h-5v-1ZM4 5.5h8v5.75a.25.25 0 0 1-.25.25h-7.5a.25.25 0 0 1-.25-.25V5.5Z" />
                     </svg>
                     <span>
@@ -434,7 +481,12 @@ export default function NotesPage() {
                 <CardTitle className="flex items-center gap-2 text-xl">
                   {editingNoteId ? (
                     <>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-5 h-5 text-blue-500">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        className="w-5 h-5 text-blue-500"
+                      >
                         <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z" />
                         <path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z" />
                       </svg>
@@ -442,15 +494,34 @@ export default function NotesPage() {
                     </>
                   ) : (
                     <>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-5 h-5">
-                        <path fillRule="evenodd" d="M8 1.5a.75.75 0 0 1 .75.75V7h4.75a.75.75 0 0 1 0 1.5H8.75v4.75a.75.75 0 0 1-1.5 0V8.5H2.5a.75.75 0 0 1 0-1.5h4.75V2.25A.75.75 0 0 1 8 1.5Z" clipRule="evenodd" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8 1.5a.75.75 0 0 1 .75.75V7h4.75a.75.75 0 0 1 0 1.5H8.75v4.75a.75.75 0 0 1-1.5 0V8.5H2.5a.75.75 0 0 1 0-1.5h4.75V2.25A.75.75 0 0 1 8 1.5Z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       สร้าง Note ใหม่
                     </>
                   )}
                 </CardTitle>
-                <Button variant="ghost" size="icon" onClick={closeNoteModal} className="h-8 w-8 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={closeNoteModal}
+                  className="h-8 w-8 rounded-full"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-5 h-5"
+                  >
                     <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
                   </svg>
                 </Button>
@@ -459,7 +530,12 @@ export default function NotesPage() {
                 <form onSubmit={handleSaveNote} className="flex flex-col gap-5">
                   <div className="grid gap-2">
                     <Label htmlFor="title">หัวข้อ (Title)</Label>
-                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="content">รายละเอียด (Content)</Label>
@@ -474,16 +550,17 @@ export default function NotesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="category">หมวดหมู่</Label>
-                      {/* ใน Form ทั่วไปใช้ Native Select ได้เลยเพื่อให้ตรงกับ Native UI */}
                       <select
                         id="category"
                         value={categoryId}
                         onChange={(e) => setCategoryId(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       >
                         <option value="">-- ไม่มีหมวดหมู่ --</option>
                         {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -493,7 +570,7 @@ export default function NotesPage() {
                         id="status"
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       >
                         <option value="ทั่วไป">ทั่วไป</option>
                         <option value="สำคัญ">สำคัญ</option>
@@ -504,11 +581,24 @@ export default function NotesPage() {
                   </div>
 
                   <div className="flex gap-2 mt-4 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={closeNoteModal} className="flex-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={closeNoteModal}
+                      className="flex-1"
+                    >
                       ยกเลิก
                     </Button>
-                    <Button type="submit" disabled={isSubmitting} className="flex-1">
-                      {isSubmitting ? "กำลังบันทึก..." : editingNoteId ? "อัปเดต Note" : "บันทึก Note"}
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex-1"
+                    >
+                      {isSubmitting
+                        ? "กำลังบันทึก..."
+                        : editingNoteId
+                          ? "อัปเดต Note"
+                          : "บันทึก Note"}
                     </Button>
                   </div>
                 </form>
@@ -525,50 +615,118 @@ export default function NotesPage() {
             <Card className="border-0 shadow-none">
               <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
                 <CardTitle className="flex items-center gap-2 text-xl">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-5 h-5">
-                    <path fillRule="evenodd" d="M4.5 2A2.5 2.5 0 0 0 2 4.5v2.879a2.5 2.5 0 0 0 .732 1.767l4.5 4.5a2.5 2.5 0 0 0 3.536 0l2.878-2.878a2.5 2.5 0 0 0 0-3.536l-4.5-4.5A2.5 2.5 0 0 0 7.38 2H4.5ZM5 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.5 2A2.5 2.5 0 0 0 2 4.5v2.879a2.5 2.5 0 0 0 .732 1.767l4.5 4.5a2.5 2.5 0 0 0 3.536 0l2.878-2.878a2.5 2.5 0 0 0 0-3.536l-4.5-4.5A2.5 2.5 0 0 0 7.38 2H4.5ZM5 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   จัดการหมวดหมู่
                 </CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setIsCategoryModalOpen(false)} className="h-8 w-8 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                  className="h-8 w-8 rounded-full"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-5 h-5"
+                  >
                     <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
                   </svg>
                 </Button>
               </CardHeader>
               <CardContent className="flex flex-col gap-4 pt-6">
                 <form onSubmit={handleAddCategory} className="flex gap-2">
-                  <Input placeholder="ชื่อหมวดหมู่ใหม่..." value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
+                  <Input
+                    placeholder="ชื่อหมวดหมู่ใหม่..."
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                  />
                   <Button type="submit" variant="secondary" size="icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                      <path fillRule="evenodd" d="M8 1.5a.75.75 0 0 1 .75.75V7h4.75a.75.75 0 0 1 0 1.5H8.75v4.75a.75.75 0 0 1-1.5 0V8.5H2.5a.75.75 0 0 1 0-1.5h4.75V2.25A.75.75 0 0 1 8 1.5Z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 16 16"
+                      fill="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8 1.5a.75.75 0 0 1 .75.75V7h4.75a.75.75 0 0 1 0 1.5H8.75v4.75a.75.75 0 0 1-1.5 0V8.5H2.5a.75.75 0 0 1 0-1.5h4.75V2.25A.75.75 0 0 1 8 1.5Z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </Button>
                 </form>
-                
+
                 <div className="flex flex-col gap-2 mt-2 max-h-[300px] overflow-y-auto pr-2">
                   {categories.length === 0 && (
-                     <p className="text-center text-muted-foreground text-sm py-4">ยังไม่มีหมวดหมู่</p>
+                    <p className="text-center text-muted-foreground text-sm py-4">
+                      ยังไม่มีหมวดหมู่
+                    </p>
                   )}
                   {categories.map((cat) => (
-                    <div key={cat.id} className="flex items-center justify-between bg-muted/50 p-2.5 rounded-md group">
+                    <div
+                      key={cat.id}
+                      className="flex items-center justify-between bg-muted/50 p-2.5 rounded-md group"
+                    >
                       {editingCategoryId === cat.id ? (
                         <div className="flex w-full gap-2">
-                          <Input value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="h-8" />
-                          <Button size="sm" onClick={() => handleUpdateCategory(cat.id)} className="px-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                              <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
+                          <Input
+                            value={editingCategoryName}
+                            onChange={(e) =>
+                              setEditingCategoryName(e.target.value)
+                            }
+                            className="h-8"
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => handleUpdateCategory(cat.id)}
+                            className="px-2"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 16 16"
+                              fill="currentColor"
+                              className="w-4 h-4"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z"
+                                clipRule="evenodd"
+                              />
                             </svg>
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => setEditingCategoryId(null)} className="px-2 text-muted-foreground">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingCategoryId(null)}
+                            className="px-2 text-muted-foreground"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 16 16"
+                              fill="currentColor"
+                              className="w-4 h-4"
+                            >
                               <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
                             </svg>
                           </Button>
                         </div>
                       ) : (
                         <>
-                          <span className="text-sm font-medium">{cat.name}</span>
+                          <span className="text-sm font-medium">
+                            {cat.name}
+                          </span>
                           <div className="flex gap-1">
                             <Button
                               size="icon"
@@ -579,7 +737,12 @@ export default function NotesPage() {
                                 setEditingCategoryName(cat.name);
                               }}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 16 16"
+                                fill="currentColor"
+                                className="w-3.5 h-3.5"
+                              >
                                 <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z" />
                                 <path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z" />
                               </svg>
@@ -590,8 +753,17 @@ export default function NotesPage() {
                               className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
                               onClick={() => handleDeleteCategory(cat.id)}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                                <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 16 16"
+                                fill="currentColor"
+                                className="w-3.5 h-3.5"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
                             </Button>
                           </div>
@@ -605,7 +777,6 @@ export default function NotesPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
