@@ -85,29 +85,31 @@ export default function NotesPage() {
     return note.category_id === filterCategory;
   });
 
+  // แก้ไข: ใช้สีทึบ (Solid) ทั้งหมด ป้องกันการ์ดสีเพี้ยนทับกัน
   const getStatusBadgeColor = (noteStatus: string) => {
     switch (noteStatus) {
       case "สำคัญ":
-        return "bg-red-200 text-red-800 border-red-300";
+        return "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/80 dark:text-red-100 dark:border-red-700";
       case "กำลังทำ":
-        return "bg-blue-200 text-blue-800 border-blue-300";
+        return "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/80 dark:text-blue-100 dark:border-blue-700";
       case "เสร็จสิ้น":
-        return "bg-green-200 text-green-800 border-green-300";
+        return "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/80 dark:text-green-100 dark:border-green-700";
       default:
-        return "bg-gray-200 text-gray-800 border-gray-300";
+        return "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600";
     }
   };
 
+  // แก้ไข: เอา /80 หรือค่าความโปร่งใสออก เพื่อไม่ให้สีพื้นหลังขึ้นมาตีกับป้ายสถานะ
   const getCardStyle = (noteStatus: string) => {
     switch (noteStatus) {
       case "สำคัญ":
-        return "bg-red-50/80 border-red-200 hover:border-red-300 dark:bg-red-950/20 dark:border-red-900";
+        return "bg-red-50 border-red-200 hover:border-red-300 dark:bg-red-950/40 dark:border-red-900";
       case "กำลังทำ":
-        return "bg-blue-50/80 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:border-blue-900";
+        return "bg-blue-50 border-blue-200 hover:border-blue-300 dark:bg-blue-950/40 dark:border-blue-900";
       case "เสร็จสิ้น":
-        return "bg-green-50/80 border-green-200 hover:border-green-300 dark:bg-green-950/20 dark:border-green-900";
+        return "bg-green-50 border-green-200 hover:border-green-300 dark:bg-green-950/40 dark:border-green-900";
       default:
-        return "bg-slate-50/80 border-slate-200 hover:border-slate-300 dark:bg-slate-900/50 dark:border-slate-800";
+        return "bg-white border-slate-200 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800";
     }
   };
 
@@ -297,31 +299,32 @@ export default function NotesPage() {
       <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <h2 className="text-xl font-bold">รายการบันทึก</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative z-20">
             <Label htmlFor="filter" className="whitespace-nowrap">
               หมวดหมู่
             </Label>
-            {/* แก้ไข: เพิ่ม appearance-none และใส่ลูกศรจำลองผ่าน style */}
-            <select
-              id="filter"
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="appearance-none flex h-9 rounded-md border border-input bg-background px-3 py-1 pr-8 text-sm shadow-sm outline-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='gray'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                backgroundPosition: 'right 0.5rem center',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: '1.2em 1.2em'
-              }}
-            >
-              <option value="all">ทั้งหมด (All)</option>
-              <option value="none">ไม่มีหมวดหมู่</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            {/* ปรับปรุง: ใช้ HTML Wrapper เพื่อซ้อนไอคอนลูกศร แก้ปัญหาสีทับซ้อนและลูกศรหายบน Safari */}
+            <div className="relative inline-flex items-center">
+              <select
+                id="filter"
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="appearance-none flex h-9 w-full min-w-[140px] rounded-md border border-input bg-background px-3 py-1 pr-8 text-sm shadow-sm outline-none cursor-pointer"
+              >
+                <option value="all">ทั้งหมด (All)</option>
+                <option value="none">ไม่มีหมวดหมู่</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-2 pointer-events-none text-muted-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0l-4.25-4.25a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -334,18 +337,18 @@ export default function NotesPage() {
             filteredNotes.map((note, index) => (
               <Card
                 key={note.id}
-                className={`flex flex-col h-full relative group transition-colors shadow-sm overflow-hidden ${getCardStyle(note.status)}`}
+                className={`flex flex-col h-full relative group transition-colors shadow-sm overflow-hidden z-0 ${getCardStyle(note.status)}`}
               >
-                <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10 backdrop-blur-sm">
+                <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10">
                   #{index + 1}
                 </div>
 
                 <CardHeader className="pb-2 pt-8">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl pr-12">
+                    <CardTitle className="text-xl pr-12 relative z-10">
                       {note.title}
                     </CardTitle>
-                    <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                       <button
                         onClick={() => handleEditNoteClick(note)}
                         className="p-1.5 text-blue-600 hover:bg-blue-100/50 rounded-md transition-colors"
@@ -367,35 +370,36 @@ export default function NotesPage() {
                       </button>
                     </div>
                   </div>
-                  <CardDescription className="flex gap-2 items-center mt-2">
-                    {/* แก้ไข: เพิ่ม appearance-none และบังคับ style ของ option */}
-                    <select
-                      value={note.status || "ทั่วไป"}
-                      onChange={(e) => handleInlineStatusChange(note, e.target.value)}
-                      className={`appearance-none pl-2 pr-5 py-0.5 rounded text-xs font-medium cursor-pointer outline-none border border-transparent hover:border-current transition-colors ${getStatusBadgeColor(note.status)}`}
-                      style={{
-                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e")`,
-                        backgroundPosition: 'right 2px center',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundSize: '12px'
-                      }}
-                    >
-                      {/* บังคับสีพื้นหลังแข็งให้ option เพื่อไม่ให้ลอยไปตาม OS Mode */}
-                      <option value="ทั่วไป" className="bg-white text-black dark:bg-slate-800 dark:text-white">ทั่วไป</option>
-                      <option value="สำคัญ" className="bg-white text-black dark:bg-slate-800 dark:text-white">สำคัญ</option>
-                      <option value="กำลังทำ" className="bg-white text-black dark:bg-slate-800 dark:text-white">กำลังทำ</option>
-                      <option value="เสร็จสิ้น" className="bg-white text-black dark:bg-slate-800 dark:text-white">เสร็จสิ้น</option>
-                    </select>
+                  <CardDescription className="flex gap-2 items-center mt-2 relative z-20">
+                    
+                    {/* ปรับปรุง: ใช้ HTML Wrapper เพื่อความชัวร์บน iOS ตัดปัญหาบั๊ก Style */}
+                    <div className="relative inline-flex items-center">
+                      <select
+                        value={note.status || "ทั่วไป"}
+                        onChange={(e) => handleInlineStatusChange(note, e.target.value)}
+                        className={`appearance-none pl-2 pr-6 py-0.5 rounded text-xs font-semibold cursor-pointer outline-none border transition-colors shadow-sm relative z-10 m-0 ${getStatusBadgeColor(note.status)}`}
+                      >
+                        <option value="ทั่วไป" className="bg-white text-black dark:bg-slate-800 dark:text-white">ทั่วไป</option>
+                        <option value="สำคัญ" className="bg-white text-black dark:bg-slate-800 dark:text-white">สำคัญ</option>
+                        <option value="กำลังทำ" className="bg-white text-black dark:bg-slate-800 dark:text-white">กำลังทำ</option>
+                        <option value="เสร็จสิ้น" className="bg-white text-black dark:bg-slate-800 dark:text-white">เสร็จสิ้น</option>
+                      </select>
+                      <div className="absolute right-1.5 pointer-events-none z-20 opacity-70">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                          <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0l-4.25-4.25a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
 
                     {note.note_categories?.name && (
-                      <span className="inline-block bg-background/50 backdrop-blur-sm text-foreground px-2 py-0.5 rounded text-xs ring-1 ring-black/5 dark:ring-white/10">
+                      <span className="inline-block bg-white dark:bg-slate-800 text-foreground px-2 py-0.5 rounded text-xs font-medium border shadow-sm relative z-10">
                         {note.note_categories.name}
                       </span>
                     )}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="flex-1 flex flex-col justify-between">
+                <CardContent className="flex-1 flex flex-col justify-between relative z-10">
                   <p className="text-sm line-clamp-4 mb-4 text-foreground/80 whitespace-pre-wrap">
                     {note.content || "ไม่มีรายละเอียด"}
                   </p>
@@ -470,18 +474,12 @@ export default function NotesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="category">หมวดหมู่</Label>
-                      {/* เพิ่ม appearance-none ใน Modal Form ด้วยเพื่อความชัวร์ */}
+                      {/* ใน Form ทั่วไปใช้ Native Select ได้เลยเพื่อให้ตรงกับ Native UI */}
                       <select
                         id="category"
                         value={categoryId}
                         onChange={(e) => setCategoryId(e.target.value)}
-                        className="appearance-none flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm outline-none"
-                        style={{
-                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='gray'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                          backgroundPosition: 'right 0.5rem center',
-                          backgroundRepeat: 'no-repeat',
-                          backgroundSize: '1.2em 1.2em'
-                        }}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none"
                       >
                         <option value="">-- ไม่มีหมวดหมู่ --</option>
                         {categories.map((cat) => (
@@ -495,13 +493,7 @@ export default function NotesPage() {
                         id="status"
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
-                        className="appearance-none flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm outline-none"
-                        style={{
-                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='gray'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                          backgroundPosition: 'right 0.5rem center',
-                          backgroundRepeat: 'no-repeat',
-                          backgroundSize: '1.2em 1.2em'
-                        }}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none"
                       >
                         <option value="ทั่วไป">ทั่วไป</option>
                         <option value="สำคัญ">สำคัญ</option>
