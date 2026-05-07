@@ -20,9 +20,16 @@ export function SignUpForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  // 1. เพิ่ม State สำหรับเก็บข้อมูล Profile ทั้งหมด
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [fname, setFname] = useState("");
+  const [lname, setLname] = useState("");
+  const [tel, setTel] = useState("");
+  const [address, setAddress] = useState("");
+  
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -45,6 +52,14 @@ export function SignUpForm({
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/protected`,
+          data: {
+            // 2. ส่งข้อมูล tel และ address เข้าไปใน Supabase Metadata
+            username: username,
+            fname: fname,
+            lname: lname,
+            tel: tel,
+            address: address,
+          },
         },
       });
       if (error) throw error;
@@ -66,17 +81,80 @@ export function SignUpForm({
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
+              
+              {/* --- 3. ช่อง Input สำหรับ Username --- */}
+              <div className="grid gap-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Nadtawat"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+
+              {/* --- 4. ช่อง Input สำหรับ First Name และ Last Name --- */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="fname">First Name</Label>
+                  <Input
+                    id="fname"
+                    type="text"
+                    placeholder="Nadtawat"
+                    value={fname}
+                    onChange={(e) => setFname(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="lname">Last Name</Label>
+                  <Input
+                    id="lname"
+                    type="text"
+                    placeholder="Jitaree"
+                    value={lname}
+                    onChange={(e) => setLname(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* --- 5. ช่อง Input สำหรับ Phone และ Address --- */}
+              <div className="grid gap-2">
+                <Label htmlFor="tel">Phone Number</Label>
+                <Input
+                  id="tel"
+                  type="tel"
+                  placeholder=""
+                  value={tel}
+                  onChange={(e) => setTel(e.target.value)}
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  type="text"
+                  placeholder=""
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </div>
+              {/* -------------------------------------------------- */}
+
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="name@puanj.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
@@ -91,7 +169,7 @@ export function SignUpForm({
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
+                  <Label htmlFor="repeat-password">Confirm Password</Label>
                 </div>
                 <Input
                   id="repeat-password"
@@ -101,6 +179,8 @@ export function SignUpForm({
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
               </div>
+              </div>
+
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating an account..." : "Sign up"}

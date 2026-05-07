@@ -1,6 +1,6 @@
-import { DeployButton } from "@/components/deploy-button";
+import { NavbarLeft } from "@/components/navbar-left";
 import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
+import { NavbarRight } from "@/components/navbar-right";
 import { Hero } from "@/components/hero";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { ConnectSupabaseSteps } from "@/components/tutorial/connect-supabase-steps";
@@ -18,14 +18,14 @@ export default function Home() {
             <div className="flex gap-5 items-center font-semibold">
               <Link href={"/"}>Next.js Supabase Starter</Link>
               <div className="flex items-center gap-2">
-                <DeployButton />
+                <NavbarLeft />
               </div>
             </div>
             {!hasEnvVars ? (
               <EnvVarWarning />
             ) : (
               <Suspense>
-                <AuthButton />
+                <NavbarRight />
               </Suspense>
             )}
           </div>
