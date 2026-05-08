@@ -54,6 +54,9 @@ export default function NotesPage() {
 
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
+  // 1. เพิ่ม State สำหรับจัดการการแสดงผลสถานะ "เสร็จสิ้น" (ค่าเริ่มต้นคือ false = ซ่อน)
+  const [showCompleted, setShowCompleted] = useState<boolean>(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -81,7 +84,12 @@ export default function NotesPage() {
     }
   };
 
+  // 2. ปรับปรุงเงื่อนไขการ Filter
   const filteredNotes = notes.filter((note) => {
+    // ตรวจสอบสถานะ: ถ้าไม่ได้ติ๊ก (showCompleted เป็น false) และสถานะคือ "เสร็จสิ้น" จะถูกกรองทิ้ง (ไม่แสดง)
+    if (!showCompleted && note.status === "เสร็จสิ้น") return false;
+
+    // ตรวจสอบหมวดหมู่ (คงเดิม)
     if (filterCategory === "all") return true;
     if (filterCategory === "none") return note.category_id === null;
     return note.category_id === filterCategory;
@@ -289,15 +297,9 @@ export default function NotesPage() {
             onClick={() => setIsCategoryModalOpen(true)}
             variant="outline"
           >
-            {/* <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 mr-2">
-              <path fillRule="evenodd" d="M4.5 2A2.5 2.5 0 0 0 2 4.5v2.879a2.5 2.5 0 0 0 .732 1.767l4.5 4.5a2.5 2.5 0 0 0 3.536 0l2.878-2.878a2.5 2.5 0 0 0 0-3.536l-4.5-4.5A2.5 2.5 0 0 0 7.38 2H4.5ZM5 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-            </svg> */}
             จัดการหมวดหมู่
           </Button>
           <Button onClick={openNewNoteModal} className=" text-white">
-            {/* <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 mr-2">
-              <path fillRule="evenodd" d="M8 1.5a.75.75 0 0 1 .75.75V7h4.75a.75.75 0 0 1 0 1.5H8.75v4.75a.75.75 0 0 1-1.5 0V8.5H2.5a.75.75 0 0 1 0-1.5h4.75V2.25A.75.75 0 0 1 8 1.5Z" clipRule="evenodd" />
-            </svg> */}
             + สร้าง Note ใหม่
           </Button>
         </div>
@@ -307,24 +309,46 @@ export default function NotesPage() {
       <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <h2 className="text-xl font-bold">รายการบันทึก</h2>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="filter" className="whitespace-nowrap">
-              หมวดหมู่
-            </Label>
-            <select
-              id="filter"
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-            >
-              <option value="all">ทั้งหมด (All)</option>
-              <option value="none">ไม่มีหมวดหมู่</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+
+          {/* 3. เพิ่มส่วนควบคุม Filters ตรงนี้ */}
+          <div className="flex flex-wrap items-center gap-6">
+            {/* Checkbox แสดง/ซ่อน โน้ตที่เสร็จสิ้น */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="showCompleted"
+                checked={showCompleted}
+                onChange={(e) => setShowCompleted(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-slate-800 cursor-pointer"
+              />
+              <Label
+                htmlFor="showCompleted"
+                className="whitespace-nowrap cursor-pointer select-none"
+              >
+                แสดงรายการที่เสร็จสิ้น
+              </Label>
+            </div>
+
+            {/* หมวดหมู่ (ของเดิม) */}
+            <div className="flex items-center gap-2">
+              <Label htmlFor="filter" className="whitespace-nowrap">
+                หมวดหมู่
+              </Label>
+              <select
+                id="filter"
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+              >
+                <option value="all">ทั้งหมด (All)</option>
+                <option value="none">ไม่มีหมวดหมู่</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
