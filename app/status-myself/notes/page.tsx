@@ -235,6 +235,41 @@ export default function NotesPage() {
     }
   };
 
+  const handleCopyContent = async (content: string) => {
+    if (!content) {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "info",
+        title: "ไม่มีข้อความให้คัดลอก",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(content);
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "คัดลอกข้อความแล้ว",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch (error) {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "error",
+        title: "คัดลอกไม่สำเร็จ",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    }
+  };
+
   // ---- Category Handlers ----
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -373,6 +408,30 @@ export default function NotesPage() {
                       {note.title}
                     </CardTitle>
                     <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleCopyContent(note.content)}
+                        className="p-1.5 text-slate-600 hover:bg-slate-200/50 rounded-md transition-colors"
+                        title="คัดลอกเนื้อหา"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
+                          className="w-4 h-4"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10.986 3H12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.063A2 2 0 0 1 5.5 14h6a2.5 2.5 0 0 0 2.5-2.5V5.5A2 2 0 0 1 10.986 3ZM10.5 4v-.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V4h3Z"
+                            clipRule="evenodd"
+                          />
+                          <path
+                            fillRule="evenodd"
+                            d="M3 1a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H3Zm5.5 2v-.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V3h3Z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+
                       <button
                         onClick={() => handleEditNoteClick(note)}
                         className="p-1.5 text-blue-600 hover:bg-blue-100/50 rounded-md transition-colors"
