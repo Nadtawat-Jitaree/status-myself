@@ -4,7 +4,8 @@ import { Button } from "./ui/button";
 export function NavbarLeft() {
   return (
     <>
-    <Link href={"/status-myself/notes"}>Notes</Link>
+    <Link href={"/"} className="mr-4">Home</Link>
+    <Link href={"/status-myself/notes"} className="mr-4">Notes</Link>
     </>
   );
 }
