@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   getNotes,
   createNote,
@@ -38,14 +38,12 @@ export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  // State สำหรับจัดการฟอร์ม Note
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [status, setStatus] = useState("ทั่วไป");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
-  // State สำหรับจัดการฟอร์ม Category
   const [newCategoryName, setNewCategoryName] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
     null,
@@ -53,22 +51,20 @@ export default function NotesPage() {
   const [editingCategoryName, setEditingCategoryName] = useState("");
 
   const [filterCategory, setFilterCategory] = useState<string>("all");
-
-  // 1. เพิ่ม State สำหรับจัดการการแสดงผลสถานะ "เสร็จสิ้น" (ค่าเริ่มต้นคือ false = ซ่อน)
   const [showCompleted, setShowCompleted] = useState<boolean>(false);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
 
-  // State สำหรับเปิด/ปิด Modals
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    initData();
   }, []);
 
-  const fetchData = async () => {
+  const initData = async () => {
     setIsLoading(true);
     try {
       const [catData, noteData] = await Promise.all([
@@ -78,22 +74,38 @@ export default function NotesPage() {
       setCategories(catData || []);
       setNotes(noteData || []);
     } catch (error) {
-      console.error("Failed to fetch data:", error);
+      console.error("Failed to fetch initial data:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 2. ปรับปรุงเงื่อนไขการ Filter
-  const filteredNotes = notes.filter((note) => {
-    // ตรวจสอบสถานะ: ถ้าไม่ได้ติ๊ก (showCompleted เป็น false) และสถานะคือ "เสร็จสิ้น" จะถูกกรองทิ้ง (ไม่แสดง)
-    if (!showCompleted && note.status === "เสร็จสิ้น") return false;
+  const loadNotes = async () => {
+    try {
+      const noteData = await getNotes();
+      setNotes(noteData || []);
+    } catch (error) {
+      console.error("Failed to fetch notes:", error);
+    }
+  };
 
-    // ตรวจสอบหมวดหมู่ (คงเดิม)
-    if (filterCategory === "all") return true;
-    if (filterCategory === "none") return note.category_id === null;
-    return note.category_id === filterCategory;
-  });
+  const loadCategories = async () => {
+    try {
+      const catData = await getCategories();
+      setCategories(catData || []);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    }
+  };
+
+  const filteredNotes = useMemo(() => {
+    return notes.filter((note) => {
+      if (!showCompleted && note.status === "เสร็จสิ้น") return false;
+      if (filterCategory === "all") return true;
+      if (filterCategory === "none") return note.category_id === null;
+      return note.category_id === filterCategory;
+    });
+  }, [notes, showCompleted, filterCategory]);
 
   const getStatusBadgeColor = (noteStatus: string) => {
     switch (noteStatus) {
@@ -121,11 +133,10 @@ export default function NotesPage() {
     }
   };
 
-  // ---- Note Handlers ----
   const handleSaveNote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title) return;
-    setIsSubmitting(true);
+    if (!title.trim()) return;
+    setIsSubmittingNote(true);
 
     const notePayload = {
       title,
@@ -153,15 +164,16 @@ export default function NotesPage() {
         });
       }
       closeNoteModal();
-      fetchData();
+      await loadNotes();
     } catch (error) {
       Swal.fire({
         icon: "error",
         title: "เกิดข้อผิดพลาด",
         text: "ไม่สามารถบันทึกข้อมูลได้",
       });
+    } finally {
+      setIsSubmittingNote(false);
     }
-    setIsSubmitting(false);
   };
 
   const openNewNoteModal = () => {
@@ -192,6 +204,13 @@ export default function NotesPage() {
   };
 
   const handleInlineStatusChange = async (note: Note, newStatus: string) => {
+    const originalStatus = note.status;
+    setNotes((prevNotes) =>
+      prevNotes.map((n) =>
+        n.id === note.id ? { ...n, status: newStatus } : n,
+      ),
+    );
+
     try {
       await updateNote(note.id, {
         title: note.title,
@@ -208,9 +227,12 @@ export default function NotesPage() {
         showConfirmButton: false,
         timer: 1500,
       });
-
-      fetchData();
     } catch (error) {
+      setNotes((prevNotes) =>
+        prevNotes.map((n) =>
+          n.id === note.id ? { ...n, status: originalStatus } : n,
+        ),
+      );
       Swal.fire("ข้อผิดพลาด", "ไม่สามารถอัปเดตสถานะได้", "error");
     }
   };
@@ -225,10 +247,11 @@ export default function NotesPage() {
       cancelButtonColor: "#6b7280",
       confirmButtonText: "ใช่, ลบเลย!",
     });
+
     if (result.isConfirmed) {
       try {
         await deleteNote(id);
-        fetchData();
+        setNotes((prev) => prev.filter((note) => note.id !== id));
       } catch (error) {
         Swal.fire("ข้อผิดพลาด!", "ไม่สามารถลบโน้ตได้", "error");
       }
@@ -270,16 +293,18 @@ export default function NotesPage() {
     }
   };
 
-  // ---- Category Handlers ----
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCategoryName.trim()) return;
+    setIsSubmittingCategory(true);
     try {
       await createCategory(newCategoryName);
       setNewCategoryName("");
-      fetchData();
+      await loadCategories();
     } catch (error) {
       Swal.fire("ข้อผิดพลาด", "ไม่สามารถสร้างหมวดหมู่ได้", "error");
+    } finally {
+      setIsSubmittingCategory(false);
     }
   };
 
@@ -288,7 +313,8 @@ export default function NotesPage() {
     try {
       await updateCategory(id, editingCategoryName);
       setEditingCategoryId(null);
-      fetchData();
+      await loadCategories();
+      await loadNotes();
     } catch (error) {
       Swal.fire("ข้อผิดพลาด", "ไม่สามารถแก้ไขหมวดหมู่ได้", "error");
     }
@@ -302,10 +328,12 @@ export default function NotesPage() {
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
     });
+
     if (result.isConfirmed) {
       try {
         await deleteCategory(id);
-        fetchData();
+        await loadCategories();
+        await loadNotes();
       } catch (error) {
         Swal.fire("ข้อผิดพลาด", "ไม่สามารถลบหมวดหมู่ได้", "error");
       }
@@ -313,11 +341,33 @@ export default function NotesPage() {
   };
 
   if (isLoading)
-    return <div className="p-8 text-center">กำลังโหลดข้อมูล...</div>;
+    return (
+      <div className="flex justify-center items-center h-64 p-8">
+        <svg
+          className="animate-spin h-8 w-8 text-slate-800"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+      </div>
+    );
 
   return (
     <div className="container mx-auto px-8 py-9 max-w-5xl flex flex-col gap-8 border-2 rounded-3xl relative">
-      {/* Header & Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -334,20 +384,17 @@ export default function NotesPage() {
           >
             จัดการหมวดหมู่
           </Button>
-          <Button onClick={openNewNoteModal} className=" text-white">
+          <Button onClick={openNewNoteModal} className="text-white">
             + สร้าง Note ใหม่
           </Button>
         </div>
       </div>
 
-      {/* Main Content - List of Notes */}
       <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <h2 className="text-xl font-bold">รายการบันทึก</h2>
 
-          {/* 3. เพิ่มส่วนควบคุม Filters ตรงนี้ */}
           <div className="flex flex-wrap items-center gap-6">
-            {/* Checkbox แสดง/ซ่อน โน้ตที่เสร็จสิ้น */}
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -364,7 +411,6 @@ export default function NotesPage() {
               </Label>
             </div>
 
-            {/* หมวดหมู่ (ของเดิม) */}
             <div className="flex items-center gap-2">
               <Label htmlFor="filter" className="whitespace-nowrap">
                 หมวดหมู่
@@ -396,7 +442,9 @@ export default function NotesPage() {
             filteredNotes.map((note, index) => (
               <Card
                 key={note.id}
-                className={`flex flex-col h-full relative group transition-colors shadow-sm overflow-hidden ${getCardStyle(note.status)}`}
+                className={`flex flex-col h-full relative group transition-colors shadow-sm overflow-hidden ${getCardStyle(
+                  note.status,
+                )}`}
               >
                 <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10 backdrop-blur-sm">
                   #{index + 1}
@@ -474,7 +522,9 @@ export default function NotesPage() {
                         onChange={(e) =>
                           handleInlineStatusChange(note, e.target.value)
                         }
-                        className={`appearance-none px-2 pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer outline-none border border-transparent hover:border-current transition-colors ${getStatusBadgeColor(note.status)}`}
+                        className={`appearance-none px-2 pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer outline-none border border-transparent hover:border-current transition-colors ${getStatusBadgeColor(
+                          note.status,
+                        )}`}
                       >
                         <option
                           value="ทั่วไป"
@@ -555,7 +605,6 @@ export default function NotesPage() {
         </div>
       </div>
 
-      {/* --- MODAL: จัดการ Note --- */}
       {isNoteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-lg bg-background rounded-xl shadow-xl overflow-hidden">
@@ -618,6 +667,7 @@ export default function NotesPage() {
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       required
+                      disabled={isSubmittingNote}
                     />
                   </div>
                   <div className="grid gap-2">
@@ -626,6 +676,7 @@ export default function NotesPage() {
                       id="content"
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
+                      disabled={isSubmittingNote}
                       className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
@@ -637,7 +688,8 @@ export default function NotesPage() {
                         id="category"
                         value={categoryId}
                         onChange={(e) => setCategoryId(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        disabled={isSubmittingNote}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50"
                       >
                         <option value="">-- ไม่มีหมวดหมู่ --</option>
                         {categories.map((cat) => (
@@ -653,7 +705,8 @@ export default function NotesPage() {
                         id="status"
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        disabled={isSubmittingNote}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50"
                       >
                         <option value="ทั่วไป">ทั่วไป</option>
                         <option value="สำคัญ">สำคัญ</option>
@@ -669,15 +722,38 @@ export default function NotesPage() {
                       variant="outline"
                       onClick={closeNoteModal}
                       className="flex-1"
+                      disabled={isSubmittingNote}
                     >
                       ยกเลิก
                     </Button>
                     <Button
                       type="submit"
-                      disabled={isSubmitting}
-                      className="flex-1"
+                      disabled={isSubmittingNote}
+                      className="flex-1 flex items-center justify-center gap-2"
                     >
-                      {isSubmitting
+                      {isSubmittingNote && (
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                      )}
+                      {isSubmittingNote
                         ? "กำลังบันทึก..."
                         : editingNoteId
                           ? "อัปเดต Note"
@@ -691,7 +767,6 @@ export default function NotesPage() {
         </div>
       )}
 
-      {/* --- MODAL: จัดการ Category --- */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-background rounded-xl shadow-xl overflow-hidden">
@@ -734,20 +809,49 @@ export default function NotesPage() {
                     placeholder="ชื่อหมวดหมู่ใหม่..."
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
+                    disabled={isSubmittingCategory}
                   />
-                  <Button type="submit" variant="secondary" size="icon">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 16 16"
-                      fill="currentColor"
-                      className="w-4 h-4"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M8 1.5a.75.75 0 0 1 .75.75V7h4.75a.75.75 0 0 1 0 1.5H8.75v4.75a.75.75 0 0 1-1.5 0V8.5H2.5a.75.75 0 0 1 0-1.5h4.75V2.25A.75.75 0 0 1 8 1.5Z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    size="icon"
+                    disabled={isSubmittingCategory}
+                  >
+                    {isSubmittingCategory ? (
+                      <svg
+                        className="animate-spin h-4 w-4 text-slate-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        className="w-4 h-4"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8 1.5a.75.75 0 0 1 .75.75V7h4.75a.75.75 0 0 1 0 1.5H8.75v4.75a.75.75 0 0 1-1.5 0V8.5H2.5a.75.75 0 0 1 0-1.5h4.75V2.25A.75.75 0 0 1 8 1.5Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
                   </Button>
                 </form>
 
