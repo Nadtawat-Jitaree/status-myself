@@ -59,6 +59,9 @@ export default function NotesPage() {
 
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  
+  // เพิ่ม State สำหรับจัดการ Modal อ่านเต็มจอ
+  const [readingNote, setReadingNote] = useState<Note | null>(null);
 
   useEffect(() => {
     initData();
@@ -456,6 +459,23 @@ export default function NotesPage() {
                       {note.title}
                     </CardTitle>
                     <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      
+                      {/* เพิ่มปุ่ม Read Icon ตรงนี้ */}
+                      <button
+                        onClick={() => setReadingNote(note)}
+                        className="p-1.5 text-emerald-600 hover:bg-emerald-100/50 rounded-md transition-colors"
+                        title="อ่านแบบเต็มจอ"
+                      >
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          viewBox="0 0 16 16" 
+                          fill="currentColor" 
+                          className="w-4 h-4"
+                        >
+                          <path d="M2.5 3.5A1.5 1.5 0 0 1 4 2h3.5v9H4a1.5 1.5 0 0 0-1.5 1.5v.385A1.5 1.5 0 0 1 2 11.385V3.5ZM13.5 3.5A1.5 1.5 0 0 0 12 2H8.5v9H12a1.5 1.5 0 0 1 1.5 1.5v.385a1.5 1.5 0 0 0 .5-1.5V3.5Z" />
+                        </svg>
+                      </button>
+
                       <button
                         onClick={() => handleCopyContent(note.content)}
                         className="p-1.5 text-slate-600 hover:bg-slate-200/50 rounded-md transition-colors"
@@ -604,6 +624,79 @@ export default function NotesPage() {
           )}
         </div>
       </div>
+
+      {/* Modal เต็มจอสำหรับการอ่าน Note */}
+      {readingNote && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-10 animate-in fade-in duration-200">
+          <div className="w-full h-full max-h-[90vh] bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col max-w-4xl relative">
+            <div className="flex items-start justify-between p-6 border-b">
+              <h2 className="text-2xl md:text-3xl font-bold pr-12 leading-tight">
+                {readingNote.title}
+              </h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setReadingNote(null)}
+                className="h-10 w-10 rounded-full absolute top-5 right-5 hover:bg-slate-100"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </Button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/50">
+              <div className="flex flex-wrap gap-2 mb-6 items-center text-sm">
+                {readingNote.note_categories?.name && (
+                  <span className="bg-slate-800 text-white px-3 py-1 rounded-md shadow-sm">
+                    {readingNote.note_categories.name}
+                  </span>
+                )}
+                <span className={`px-3 py-1 rounded-md border ${getStatusBadgeColor(readingNote.status)}`}>
+                  {readingNote.status}
+                </span>
+                <span className="text-muted-foreground ml-auto flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                    <path d="M4.75 2.25a.75.75 0 0 0-1.5 0v1.41l-.146.126a1.5 1.5 0 0 0-.604 1.196v6.268a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5V4.982a1.5 1.5 0 0 0-.604-1.196l-.146-.126V2.25a.75.75 0 0 0-1.5 0v1h-5v-1ZM4 5.5h8v5.75a.25.25 0 0 1-.25.25h-7.5a.25.25 0 0 1-.25-.25V5.5Z" />
+                  </svg>
+                  {new Date(readingNote.created_at).toLocaleDateString("th-TH", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })} น.
+                </span>
+              </div>
+              <div className="prose prose-slate max-w-none text-base md:text-lg leading-relaxed whitespace-pre-wrap text-slate-800">
+                {readingNote.content || "ไม่มีรายละเอียดเนื้อหา"}
+              </div>
+            </div>
+            
+            <div className="p-4 border-t flex justify-end gap-3 bg-white">
+              <Button 
+                variant="outline" 
+                onClick={() => handleCopyContent(readingNote.content)}
+                className="gap-2"
+              >
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                    <path fillRule="evenodd" d="M10.986 3H12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.063A2 2 0 0 1 5.5 14h6a2.5 2.5 0 0 0 2.5-2.5V5.5A2 2 0 0 1 10.986 3ZM10.5 4v-.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V4h3Z" clipRule="evenodd" />
+                    <path fillRule="evenodd" d="M3 1a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H3Zm5.5 2v-.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V3h3Z" clipRule="evenodd" />
+                  </svg>
+                คัดลอกข้อความ
+              </Button>
+              <Button onClick={() => setReadingNote(null)}>
+                ปิดหน้าต่าง
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isNoteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
