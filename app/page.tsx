@@ -6,7 +6,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
-// 1. Component สำหรับแสดง Loading (Skeleton) ขณะรอข้อมูลจาก DB
 function DashboardSkeleton() {
   return (
     <div className="w-full max-w-3xl grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -23,7 +22,6 @@ function DashboardSkeleton() {
   );
 }
 
-// 2. Component สำหรับดึงข้อมูลและแสดงผล (ย้าย Logic DB มาไว้ในนี้)
 async function DashboardSummary() {
   let statusCounts = {
     ทั่วไป: 0,
@@ -55,22 +53,18 @@ async function DashboardSummary() {
 
   return (
     <div className="w-full max-w-3xl grid grid-cols-2 md:grid-cols-4 gap-4">
-      {/* ทั่วไป */}
       <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-200 shadow-sm">
         <span className="text-gray-500 text-sm font-medium mb-1">ทั่วไป</span>
         <span className="text-3xl font-bold text-gray-700">{statusCounts["ทั่วไป"]}</span>
       </div>
-      {/* สำคัญ */}
       <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 border border-red-100 shadow-sm">
         <span className="text-red-500 text-sm font-medium mb-1">สำคัญ</span>
         <span className="text-3xl font-bold text-red-600">{statusCounts["สำคัญ"]}</span>
       </div>
-      {/* งานค้าง */}
       <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-blue-50 border border-blue-100 shadow-sm">
         <span className="text-blue-500 text-sm font-medium mb-1">งานค้าง</span>
         <span className="text-3xl font-bold text-blue-600">{statusCounts["งานค้าง"]}</span>
       </div>
-      {/* เสร็จสิ้น */}
       <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-emerald-50 border border-emerald-100 shadow-sm">
         <span className="text-emerald-500 text-sm font-medium mb-1">เสร็จสิ้น</span>
         <span className="text-3xl font-bold text-emerald-600">{statusCounts["เสร็จสิ้น"]}</span>
@@ -79,7 +73,6 @@ async function DashboardSummary() {
   );
 }
 
-// 3. หน้า Home หลักที่ใช้ Suspense ครอบ
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center w-full bg-slate-50/50">
@@ -116,14 +109,12 @@ export default function Home() {
             </p>
           </div>
 
-          {/* เรียกใช้ DashboardSummary โดยมี Suspense ครอบ */}
           {hasEnvVars && (
             <Suspense fallback={<DashboardSkeleton />}>
               <DashboardSummary />
             </Suspense>
           )}
 
-          {/* ปุ่มเข้าสู่ระบบบันทึก */}
           <Link
             href={"/status-myself/notes"}
             className="group relative flex flex-col items-center justify-center gap-5 p-10 w-full max-w-sm rounded-3xl border border-border bg-white shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer"

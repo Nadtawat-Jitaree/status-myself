@@ -180,11 +180,14 @@ export function SignUpForm({
                 />
               </div>
               </div>
-
+              <p className="text-red-500 text-sm text-center">ปิดการเข้าถึง ใช้ส่วนตัวอิอิ</p>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={true}>
                 {isLoading ? "Creating an account..." : "Sign up"}
               </Button>
+              {/* <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Creating an account..." : "Sign up"}
+              </Button> */}
             </div>
             <div className="mt-4 text-center text-sm">
               Already have an account?{" "}
