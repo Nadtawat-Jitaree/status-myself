@@ -114,8 +114,8 @@ export default function NotesPage() {
     switch (noteStatus) {
       case "สำคัญ":
         return "bg-red-200 text-red-800 border-red-300";
-      case "กำลังทำ":
-        return "bg-blue-200 text-blue-800 border-blue-300";
+      case "งานค้าง":
+        return "bg-orange-200 text-orange-800 border-orange-300";
       case "เสร็จสิ้น":
         return "bg-green-200 text-green-800 border-green-300";
       default:
@@ -127,8 +127,8 @@ export default function NotesPage() {
     switch (noteStatus) {
       case "สำคัญ":
         return "bg-red-50 border-red-200 hover:border-red-300";
-      case "กำลังทำ":
-        return "bg-blue-50 border-blue-200 hover:border-blue-300";
+      case "งานค้าง":
+        return "bg-orange-50 border-orange-200 hover:border-orange-300";
       case "เสร็จสิ้น":
         return "bg-green-50 border-green-200 hover:border-green-300";
       default:
@@ -559,10 +559,10 @@ export default function NotesPage() {
                           สำคัญ
                         </option>
                         <option
-                          value="กำลังทำ"
+                          value="งานค้าง"
                           className="bg-white text-slate-800"
                         >
-                          กำลังทำ
+                          งานค้าง
                         </option>
                         <option
                           value="เสร็จสิ้น"
@@ -803,7 +803,7 @@ export default function NotesPage() {
                       >
                         <option value="ทั่วไป">ทั่วไป</option>
                         <option value="สำคัญ">สำคัญ</option>
-                        <option value="กำลังทำ">กำลังทำ</option>
+                        <option value="งานค้าง">งานค้าง</option>
                         <option value="เสร็จสิ้น">เสร็จสิ้น</option>
                       </select>
                     </div>
