@@ -53,14 +53,16 @@ export default function NotesPage() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [showCompleted, setShowCompleted] = useState<boolean>(false);
 
+  // 1. เพิ่ม State สำหรับจัดการการแสดงผลเฉพาะงานค้าง
+  const [showOnlyPending, setShowOnlyPending] = useState<boolean>(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
 
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  
-  // เพิ่ม State สำหรับจัดการ Modal อ่านเต็มจอ
+
   const [readingNote, setReadingNote] = useState<Note | null>(null);
 
   useEffect(() => {
@@ -103,12 +105,13 @@ export default function NotesPage() {
 
   const filteredNotes = useMemo(() => {
     return notes.filter((note) => {
-      if (!showCompleted && note.status === "เสร็จสิ้น") return false;
+      if (showOnlyPending && note.status !== "งานค้าง") return false;
+      if (showCompleted && note.status !== "เสร็จสิ้น") return false;
       if (filterCategory === "all") return true;
       if (filterCategory === "none") return note.category_id === null;
       return note.category_id === filterCategory;
     });
-  }, [notes, showCompleted, filterCategory]);
+  }, [notes, showCompleted, filterCategory, showOnlyPending]);
 
   const getStatusBadgeColor = (noteStatus: string) => {
     switch (noteStatus) {
@@ -398,6 +401,51 @@ export default function NotesPage() {
           <h2 className="text-xl font-bold">รายการบันทึก</h2>
 
           <div className="flex flex-wrap items-center gap-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowOnlyPending(!showOnlyPending)}
+              className={`h-9 gap-2 transition-colors ${
+                showOnlyPending
+                  ? "bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200"
+                  : "text-slate-600 hover:text-orange-600"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                className="w-4 h-4"
+              >
+                <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm0 12.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11ZM8 4a.75.75 0 0 0-.75.75v3.5c0 .2.08.39.22.53l2.5 2.5a.75.75 0 0 0 1.06-1.06l-2.23-2.23V4.75A.75.75 0 0 0 8 4Z" />
+              </svg>
+              แสดงเฉพาะงานค้าง
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCompleted(!showCompleted)}
+              className={`h-9 gap-2 transition-colors ${
+                showCompleted
+                  ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                  : "text-slate-600 hover:text-green-600"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm3.844-8.791a.75.75 0 0 0-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 1 0-1.114 1.004l2.25 2.5a.75.75 0 0 0 1.15-.043l4.25-5.5Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              รายการที่เสร็จสิ้น
+            </Button>
+            {/* 
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -412,7 +460,7 @@ export default function NotesPage() {
               >
                 แสดงรายการที่เสร็จสิ้น
               </Label>
-            </div>
+            </div> */}
 
             <div className="flex items-center gap-2">
               <Label htmlFor="filter" className="whitespace-nowrap">
@@ -459,17 +507,15 @@ export default function NotesPage() {
                       {note.title}
                     </CardTitle>
                     <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      
-                      {/* เพิ่มปุ่ม Read Icon ตรงนี้ */}
                       <button
                         onClick={() => setReadingNote(note)}
                         className="p-1.5 text-emerald-600 hover:bg-emerald-100/50 rounded-md transition-colors"
                         title="อ่านแบบเต็มจอ"
                       >
-                        <svg 
-                          xmlns="http://www.w3.org/2000/svg" 
-                          viewBox="0 0 16 16" 
-                          fill="currentColor" 
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
                           className="w-4 h-4"
                         >
                           <path d="M2.5 3.5A1.5 1.5 0 0 1 4 2h3.5v9H4a1.5 1.5 0 0 0-1.5 1.5v.385A1.5 1.5 0 0 1 2 11.385V3.5ZM13.5 3.5A1.5 1.5 0 0 0 12 2H8.5v9H12a1.5 1.5 0 0 1 1.5 1.5v.385a1.5 1.5 0 0 0 .5-1.5V3.5Z" />
@@ -649,7 +695,7 @@ export default function NotesPage() {
                 </svg>
               </Button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/50">
               <div className="flex flex-wrap gap-2 mb-6 items-center text-sm">
                 {readingNote.note_categories?.name && (
@@ -657,42 +703,64 @@ export default function NotesPage() {
                     {readingNote.note_categories.name}
                   </span>
                 )}
-                <span className={`px-3 py-1 rounded-md border ${getStatusBadgeColor(readingNote.status)}`}>
+                <span
+                  className={`px-3 py-1 rounded-md border ${getStatusBadgeColor(readingNote.status)}`}
+                >
                   {readingNote.status}
                 </span>
                 <span className="text-muted-foreground ml-auto flex items-center gap-1.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    className="w-4 h-4"
+                  >
                     <path d="M4.75 2.25a.75.75 0 0 0-1.5 0v1.41l-.146.126a1.5 1.5 0 0 0-.604 1.196v6.268a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5V4.982a1.5 1.5 0 0 0-.604-1.196l-.146-.126V2.25a.75.75 0 0 0-1.5 0v1h-5v-1ZM4 5.5h8v5.75a.25.25 0 0 1-.25.25h-7.5a.25.25 0 0 1-.25-.25V5.5Z" />
                   </svg>
-                  {new Date(readingNote.created_at).toLocaleDateString("th-TH", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })} น.
+                  {new Date(readingNote.created_at).toLocaleDateString(
+                    "th-TH",
+                    {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    },
+                  )}{" "}
+                  น.
                 </span>
               </div>
               <div className="prose prose-slate max-w-none text-base md:text-lg leading-relaxed whitespace-pre-wrap text-slate-800">
                 {readingNote.content || "ไม่มีรายละเอียดเนื้อหา"}
               </div>
             </div>
-            
+
             <div className="p-4 border-t flex justify-end gap-3 bg-white">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => handleCopyContent(readingNote.content)}
                 className="gap-2"
               >
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                    <path fillRule="evenodd" d="M10.986 3H12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.063A2 2 0 0 1 5.5 14h6a2.5 2.5 0 0 0 2.5-2.5V5.5A2 2 0 0 1 10.986 3ZM10.5 4v-.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V4h3Z" clipRule="evenodd" />
-                    <path fillRule="evenodd" d="M3 1a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H3Zm5.5 2v-.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V3h3Z" clipRule="evenodd" />
-                  </svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 16 16"
+                  fill="currentColor"
+                  className="w-4 h-4"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10.986 3H12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.063A2 2 0 0 1 5.5 14h6a2.5 2.5 0 0 0 2.5-2.5V5.5A2 2 0 0 1 10.986 3ZM10.5 4v-.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V4h3Z"
+                    clipRule="evenodd"
+                  />
+                  <path
+                    fillRule="evenodd"
+                    d="M3 1a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H3Zm5.5 2v-.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V3h3Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
                 คัดลอกข้อความ
               </Button>
-              <Button onClick={() => setReadingNote(null)}>
-                ปิดหน้าต่าง
-              </Button>
+              <Button onClick={() => setReadingNote(null)}>ปิดหน้าต่าง</Button>
             </div>
           </div>
         </div>
