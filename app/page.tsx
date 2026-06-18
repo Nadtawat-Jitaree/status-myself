@@ -61,7 +61,7 @@ async function DashboardSummary() {
         <span className="text-red-500 text-sm font-medium mb-1">สำคัญ</span>
         <span className="text-3xl font-bold text-red-600">{statusCounts["สำคัญ"]}</span>
       </div>
-      <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-blue-50 border border-blue-100 shadow-sm">
+      <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-orange-50 border border-orange-100 shadow-sm">
         <span className="text-orange-500 text-sm font-medium mb-1">งานค้าง</span>
         <span className="text-3xl font-bold text-orange-600">{statusCounts["งานค้าง"]}</span>
       </div>
