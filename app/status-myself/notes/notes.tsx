@@ -470,7 +470,7 @@ export default function NotesPage() {
                 id="filter"
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                className="flex h-9 rounded-md border w-3/4 border-input bg-background px-3 py-1 text-sm shadow-sm"
               >
                 <option value="all">ทั้งหมด (All)</option>
                 <option value="none">ไม่มีหมวดหมู่</option>
