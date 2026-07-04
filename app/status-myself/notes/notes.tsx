@@ -55,6 +55,12 @@ export default function NotesPage() {
 
   // 1. เพิ่ม State สำหรับจัดการการแสดงผลเฉพาะงานค้าง
   const [showOnlyPending, setShowOnlyPending] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterCategory, showCompleted, showOnlyPending]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
@@ -112,6 +118,12 @@ export default function NotesPage() {
       return note.category_id === filterCategory;
     });
   }, [notes, showCompleted, filterCategory, showOnlyPending]);
+
+  const totalPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE);
+  const paginatedNotes = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredNotes.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredNotes, currentPage]);
 
   const getStatusBadgeColor = (noteStatus: string) => {
     switch (noteStatus) {
@@ -485,12 +497,12 @@ export default function NotesPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-          {filteredNotes.length === 0 ? (
+          {paginatedNotes.length === 0 ? (
             <p className="text-muted-foreground col-span-full text-center py-12 border-2 border-dashed rounded-xl">
               ไม่พบโน้ตในหมวดหมู่นี้ หรือยังไม่มีโน้ตเลย
             </p>
           ) : (
-            filteredNotes.map((note, index) => (
+            paginatedNotes.map((note, index) => (
               <Card
                 key={note.id}
                 className={`flex flex-col h-full relative group transition-colors shadow-sm overflow-hidden ${getCardStyle(
@@ -498,7 +510,7 @@ export default function NotesPage() {
                 )}`}
               >
                 <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10 backdrop-blur-sm">
-                  #{index + 1}
+                  #{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                 </div>
 
                 <CardHeader className="pb-2 pt-8">
@@ -669,6 +681,29 @@ export default function NotesPage() {
             ))
           )}
         </div>
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              ก่อนหน้า
+            </Button>
+            <span className="text-sm font-medium text-slate-600">
+              หน้า {currentPage} จาก {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+            >
+              ถัดไป
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Modal เต็มจอสำหรับการอ่าน Note */}
