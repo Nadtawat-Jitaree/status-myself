@@ -61,8 +61,8 @@ export default function NotesPage() {
     if (result.isConfirmed) {
       setIsDeletingFile(true);
       try {
-        await removeNoteAttachment(editingNoteId, existingFilePath); 
-        setExistingFilePath(null); 
+        await removeNoteAttachment(editingNoteId, existingFilePath);
+        setExistingFilePath(null);
         Swal.fire({
           icon: "success",
           title: "ลบไฟล์สำเร็จ!",
@@ -793,8 +793,8 @@ export default function NotesPage() {
 
       {/* Modal เต็มจอสำหรับการอ่าน Note */}
       {readingNote && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-10 animate-in fade-in duration-200">
-          <div className="w-full h-full max-h-[90vh] bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col max-w-4xl relative">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-10 animate-in fade-in duration-200 ">
+          <div className={`w-full h-full max-h-[90vh] bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col relative ${!readingNote.file_path ? 'max-w-4xl' : ''}`}>
             <div className="flex items-start justify-between p-6 border-b">
               <h2 className="text-2xl md:text-3xl font-bold pr-12 leading-tight">
                 {readingNote.title}
@@ -815,46 +815,48 @@ export default function NotesPage() {
                 </svg>
               </Button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/50">
-              <div className="flex flex-wrap gap-2 mb-6 items-center text-sm">
-                {readingNote.note_categories?.name && (
-                  <span className="bg-slate-800 text-white px-3 py-1 rounded-md shadow-sm">
-                    {readingNote.note_categories.name}
-                  </span>
-                )}
-                <span
-                  className={`px-3 py-1 rounded-md border ${getStatusBadgeColor(readingNote.status)}`}
-                >
-                  {readingNote.status}
-                </span>
-                <span className="text-muted-foreground ml-auto flex items-center gap-1.5">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 16 16"
-                    fill="currentColor"
-                    className="w-4 h-4"
+            <div className={`flex-1 overflow-y-auto lg:overflow-auto p-6 md:p-8  bg-slate-50/50 ${readingNote.file_path ? 'lg:grid lg:grid-cols-12' : ''}`}>
+              <div className={`${readingNote.file_path ? 'lg:col-span-6' : ''}`}>
+                <div className="flex flex-wrap gap-2 mb-6 items-center text-sm">
+                  {readingNote.note_categories?.name && (
+                    <span className="bg-slate-800 text-white px-3 py-1 rounded-md shadow-sm">
+                      {readingNote.note_categories.name}
+                    </span>
+                  )}
+                  <span
+                    className={`px-3 py-1 rounded-md border ${getStatusBadgeColor(readingNote.status)}`}
                   >
-                    <path d="M4.75 2.25a.75.75 0 0 0-1.5 0v1.41l-.146.126a1.5 1.5 0 0 0-.604 1.196v6.268a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5V4.982a1.5 1.5 0 0 0-.604-1.196l-.146-.126V2.25a.75.75 0 0 0-1.5 0v1h-5v-1ZM4 5.5h8v5.75a.25.25 0 0 1-.25.25h-7.5a.25.25 0 0 1-.25-.25V5.5Z" />
-                  </svg>
-                  {new Date(readingNote.created_at).toLocaleDateString(
-                    "th-TH",
-                    {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    },
-                  )}{" "}
-                  น.
-                </span>
-              </div>
-              <div className="prose prose-slate max-w-none text-base md:text-lg leading-relaxed whitespace-pre-wrap text-slate-800">
-                {readingNote.content || "ไม่มีรายละเอียดเนื้อหา"}
+                    {readingNote.status}
+                  </span>
+                  <span className="text-muted-foreground ml-auto flex items-center gap-1.5">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 16 16"
+                      fill="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path d="M4.75 2.25a.75.75 0 0 0-1.5 0v1.41l-.146.126a1.5 1.5 0 0 0-.604 1.196v6.268a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5V4.982a1.5 1.5 0 0 0-.604-1.196l-.146-.126V2.25a.75.75 0 0 0-1.5 0v1h-5v-1ZM4 5.5h8v5.75a.25.25 0 0 1-.25.25h-7.5a.25.25 0 0 1-.25-.25V5.5Z" />
+                    </svg>
+                    {new Date(readingNote.created_at).toLocaleDateString(
+                      "th-TH",
+                      {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    )}{" "}
+                    น.
+                  </span>
+                </div>
+                <div className="prose prose-slate max-w-none text-base md:text-lg leading-relaxed whitespace-pre-wrap text-slate-800 lg:h-[500px] overflow-y-auto">
+                  {readingNote.content || "ไม่มีรายละเอียดเนื้อหา"}
+                </div>
               </div>
 
               {readingNote.file_path && (
-                <div className="mt-10 pt-8 border-t border-slate-200/60">
+                <div className="mt-10 lg:ml-2 lg:mt-0 pt-8 border-t border-slate-200/60 lg:border-none  lg:col-span-6">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-800">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -871,7 +873,7 @@ export default function NotesPage() {
                   {pdfUrl ? (
                     <iframe
                       src={pdfUrl}
-                      className="w-full h-[600px] rounded-xl border border-slate-200 shadow-sm"
+                      className="w-full lg:h-[500px] rounded-xl border border-slate-200 shadow-sm"
                       title="PDF Viewer"
                     />
                   ) : (
