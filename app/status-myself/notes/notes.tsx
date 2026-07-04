@@ -10,6 +10,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  removeNoteAttachment,
 } from "@/app/actions/notes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import Swal from "sweetalert2";
-
+import { createClient } from "@/lib/supabase/client";
 type Category = { id: string; name: string };
 type Note = {
   id: string;
@@ -31,12 +32,55 @@ type Note = {
   created_at: string;
   category_id?: string | null;
   status: string;
+  file_path?: string | null;
   note_categories?: { name: string };
+  noteToEdit?: boolean;
 };
 
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
+
+  const [isDeletingFile, setIsDeletingFile] = useState(false);
+
+  const handleRemoveExistingPdf = async () => {
+    if (!editingNoteId || !existingFilePath) return;
+
+    const result = await Swal.fire({
+      title: "ยืนยันการลบไฟล์?",
+      text: "ไฟล์ PDF นี้จะถูกลบออกอย่างถาวร!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#94a3b8",
+      confirmButtonText: "ใช่, ลบเลย",
+      cancelButtonText: "ยกเลิก",
+    });
+
+    if (result.isConfirmed) {
+      setIsDeletingFile(true);
+      try {
+        await removeNoteAttachment(editingNoteId, existingFilePath); 
+        setExistingFilePath(null); 
+        Swal.fire({
+          icon: "success",
+          title: "ลบไฟล์สำเร็จ!",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        await loadNotes();
+      } catch (error: any) {
+        Swal.fire({
+          icon: "error",
+          title: "เกิดข้อผิดพลาด",
+          text: error.message,
+        });
+      } finally {
+        setIsDeletingFile(false);
+      }
+    }
+  };
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -53,7 +97,6 @@ export default function NotesPage() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [showCompleted, setShowCompleted] = useState<boolean>(false);
 
-  // 1. เพิ่ม State สำหรับจัดการการแสดงผลเฉพาะงานค้าง
   const [showOnlyPending, setShowOnlyPending] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 6;
@@ -70,7 +113,27 @@ export default function NotesPage() {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   const [readingNote, setReadingNote] = useState<Note | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
+  useEffect(() => {
+    const loadPdfUrl = async () => {
+      if (readingNote && readingNote.file_path) {
+        const supabase = createClient();
+
+        const { data, error } = await supabase.storage
+          .from("note_attachments")
+          .createSignedUrl(readingNote.file_path, 3600);
+
+        if (data?.signedUrl) {
+          setPdfUrl(data.signedUrl);
+        }
+      } else {
+        setPdfUrl(null);
+      }
+    };
+
+    loadPdfUrl();
+  }, [readingNote]);
   useEffect(() => {
     initData();
   }, []);
@@ -150,20 +213,39 @@ export default function NotesPage() {
         return "bg-slate-50 border-slate-200 hover:border-slate-300";
     }
   };
+  const [file, setFile] = useState<File | null>(null);
 
   const handleSaveNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
     setIsSubmittingNote(true);
 
-    const notePayload = {
-      title,
-      content,
-      category_id: categoryId || null,
-      status: status,
-    };
-
     try {
+      let uploadedFilePath = null;
+
+      if (file) {
+        const supabase = createClient();
+
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("note_attachments")
+          .upload(fileName, file);
+
+        if (uploadError)
+          throw new Error("อัปโหลดไฟล์ไม่สำเร็จ: " + uploadError.message);
+
+        uploadedFilePath = uploadData.path;
+      }
+
+      const notePayload = {
+        title,
+        content,
+        category_id: categoryId || null,
+        status: status,
+        ...(uploadedFilePath && { file_path: uploadedFilePath }),
+      };
+
       if (editingNoteId) {
         await updateNote(editingNoteId, notePayload);
         Swal.fire({
@@ -181,13 +263,15 @@ export default function NotesPage() {
           showConfirmButton: false,
         });
       }
+
       closeNoteModal();
+      setFile(null);
       await loadNotes();
-    } catch (error) {
+    } catch (error: any) {
       Swal.fire({
         icon: "error",
         title: "เกิดข้อผิดพลาด",
-        text: "ไม่สามารถบันทึกข้อมูลได้",
+        text: error.message || "ไม่สามารถบันทึกข้อมูลได้",
       });
     } finally {
       setIsSubmittingNote(false);
@@ -204,6 +288,7 @@ export default function NotesPage() {
   };
 
   const handleEditNoteClick = (note: Note) => {
+    setExistingFilePath(note.file_path || null);
     setEditingNoteId(note.id);
     setTitle(note.title);
     setContent(note.content || "");
@@ -730,7 +815,6 @@ export default function NotesPage() {
                 </svg>
               </Button>
             </div>
-
             <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/50">
               <div className="flex flex-wrap gap-2 mb-6 items-center text-sm">
                 {readingNote.note_categories?.name && (
@@ -768,6 +852,58 @@ export default function NotesPage() {
               <div className="prose prose-slate max-w-none text-base md:text-lg leading-relaxed whitespace-pre-wrap text-slate-800">
                 {readingNote.content || "ไม่มีรายละเอียดเนื้อหา"}
               </div>
+
+              {readingNote.file_path && (
+                <div className="mt-10 pt-8 border-t border-slate-200/60">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-800">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="w-5 h-5 text-red-500"
+                    >
+                      <path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625Z" />
+                      <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+                    </svg>
+                    เอกสารแนบ (PDF)
+                  </h3>
+
+                  {pdfUrl ? (
+                    <iframe
+                      src={pdfUrl}
+                      className="w-full h-[600px] rounded-xl border border-slate-200 shadow-sm"
+                      title="PDF Viewer"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center w-full h-[300px] bg-slate-100/50 rounded-xl border border-slate-200 border-dashed animate-pulse">
+                      <svg
+                        className="animate-spin h-8 w-8 text-slate-400 mb-3"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <span className="text-slate-500 font-medium">
+                        กำลังโหลดเอกสาร...
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* --- จบส่วนแสดงผล PDF --- */}
             </div>
 
             <div className="p-4 border-t flex justify-end gap-3 bg-white">
@@ -875,6 +1011,53 @@ export default function NotesPage() {
                       disabled={isSubmittingNote}
                       className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="file">แนบไฟล์ (PDF - ทางเลือก)</Label>
+                    {editingNoteId && existingFilePath && (
+                      <div className="flex items-center justify-between p-3 border border-slate-200 bg-slate-50 rounded-md mb-2">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="w-5 h-5 text-red-500 shrink-0"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span className="text-sm text-slate-600 truncate">
+                            มีไฟล์แนบอยู่แล้ว
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive" // ปุ่มสีแดงจาก shadcn/ui
+                          size="sm"
+                          onClick={handleRemoveExistingPdf}
+                          disabled={isDeletingFile || isSubmittingNote}
+                          className="h-8 text-xs shrink-0"
+                        >
+                          {isDeletingFile ? "กำลังลบ..." : "ลบไฟล์นี้"}
+                        </Button>
+                      </div>
+                    )}
+                    <Input
+                      id="file"
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      disabled={isSubmittingNote || isDeletingFile}
+                      className="cursor-pointer file:cursor-pointer file:text-sm file:font-medium"
+                    />
+                    <span className="text-[0.8rem] text-muted-foreground">
+                      * รองรับเฉพาะไฟล์ .pdf เท่านั้น
+                      (เลือกไฟล์ใหม่เพื่ออัปเดตทับไฟล์เดิม)
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
