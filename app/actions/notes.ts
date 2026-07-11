@@ -24,14 +24,25 @@ export async function removeNoteAttachment(id: string, filePath: string) {
   return { success: true };
 }
 
-export async function getNotes() {
-  const supabase = createClient(); 
-  const { data, error } = await (await supabase)
+export async function getNotes(noteType: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
     .from("notes")
-    .select("*, note_categories(name)")
+    .select(
+      `
+      *,
+      note_categories!inner(
+        name,
+        note_type
+      )
+    `,
+    )
+    .eq("note_categories.note_type", noteType)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
+
   return data;
 }
 
@@ -117,18 +128,19 @@ export async function deleteNote(id: string) {
   return { success: true };
 }
 
-export async function getCategories() {
+export async function getCategories(noteType: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("note_categories")
     .select("*")
+    .eq("note_type", noteType)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
   return data;
 }
 
-export async function createCategory(name: string) {
+export async function createCategory(name: string, noteType: string) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -137,7 +149,7 @@ export async function createCategory(name: string) {
 
   const { error } = await supabase
     .from("note_categories")
-    .insert([{ user_id: user.id, name }]);
+    .insert([{ user_id: user.id, name, note_type: noteType }]);
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");

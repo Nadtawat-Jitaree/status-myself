@@ -55,19 +55,31 @@ async function DashboardSummary() {
     <div className="w-full max-w-3xl grid grid-cols-2 md:grid-cols-4 gap-4">
       <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-200 shadow-sm">
         <span className="text-gray-500 text-sm font-medium mb-1">ทั่วไป</span>
-        <span className="text-3xl font-bold text-gray-700">{statusCounts["ทั่วไป"]}</span>
+        <span className="text-3xl font-bold text-gray-700">
+          {statusCounts["ทั่วไป"]}
+        </span>
       </div>
       <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 border border-red-100 shadow-sm">
         <span className="text-red-500 text-sm font-medium mb-1">สำคัญ</span>
-        <span className="text-3xl font-bold text-red-600">{statusCounts["สำคัญ"]}</span>
+        <span className="text-3xl font-bold text-red-600">
+          {statusCounts["สำคัญ"]}
+        </span>
       </div>
       <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-orange-50 border border-orange-100 shadow-sm">
-        <span className="text-orange-500 text-sm font-medium mb-1">งานค้าง</span>
-        <span className="text-3xl font-bold text-orange-600">{statusCounts["งานค้าง"]}</span>
+        <span className="text-orange-500 text-sm font-medium mb-1">
+          งานค้าง
+        </span>
+        <span className="text-3xl font-bold text-orange-600">
+          {statusCounts["งานค้าง"]}
+        </span>
       </div>
       <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-emerald-50 border border-emerald-100 shadow-sm">
-        <span className="text-emerald-500 text-sm font-medium mb-1">เสร็จสิ้น</span>
-        <span className="text-3xl font-bold text-emerald-600">{statusCounts["เสร็จสิ้น"]}</span>
+        <span className="text-emerald-500 text-sm font-medium mb-1">
+          เสร็จสิ้น
+        </span>
+        <span className="text-3xl font-bold text-emerald-600">
+          {statusCounts["เสร็จสิ้น"]}
+        </span>
       </div>
     </div>
   );
@@ -81,7 +93,9 @@ export default function Home() {
           <div className="w-full max-w-7xl flex justify-between items-center p-2 sm:p-3 sm:px-5 text-sm">
             <div className="flex gap-2 sm:gap-5 items-center font-semibold">
               <Suspense
-                fallback={<div className="w-10 h-10 animate-pulse bg-gray-200 rounded-xl"></div>}
+                fallback={
+                  <div className="w-10 h-10 animate-pulse bg-gray-200 rounded-xl"></div>
+                }
               >
                 <NavbarLeft />
               </Suspense>
@@ -91,7 +105,9 @@ export default function Home() {
               <EnvVarWarning />
             ) : (
               <Suspense
-                fallback={<div className="w-20 h-8 animate-pulse bg-gray-200 rounded-md"></div>}
+                fallback={
+                  <div className="w-20 h-8 animate-pulse bg-gray-200 rounded-md"></div>
+                }
               >
                 <NavbarRight />
               </Suspense>

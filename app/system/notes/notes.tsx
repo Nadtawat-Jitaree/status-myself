@@ -36,8 +36,11 @@ type Note = {
   note_categories?: { name: string };
   noteToEdit?: boolean;
 };
+type Props = {
+  noteType: "normal" | "school";
+};
 
-export default function NotesPage() {
+export default function NotesPage({ noteType }: Props) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
@@ -142,8 +145,8 @@ export default function NotesPage() {
     setIsLoading(true);
     try {
       const [catData, noteData] = await Promise.all([
-        getCategories(),
-        getNotes(),
+        getCategories(noteType),
+        getNotes(noteType),
       ]);
       setCategories(catData || []);
       setNotes(noteData || []);
@@ -156,7 +159,7 @@ export default function NotesPage() {
 
   const loadNotes = async () => {
     try {
-      const noteData = await getNotes();
+      const noteData = await getNotes(noteType);
       setNotes(noteData || []);
     } catch (error) {
       console.error("Failed to fetch notes:", error);
@@ -165,7 +168,7 @@ export default function NotesPage() {
 
   const loadCategories = async () => {
     try {
-      const catData = await getCategories();
+      const catData = await getCategories(noteType);
       setCategories(catData || []);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
@@ -401,7 +404,7 @@ export default function NotesPage() {
     if (!newCategoryName.trim()) return;
     setIsSubmittingCategory(true);
     try {
-      await createCategory(newCategoryName);
+      await createCategory(newCategoryName,noteType);
       setNewCategoryName("");
       await loadCategories();
     } catch (error) {
@@ -570,7 +573,6 @@ export default function NotesPage() {
                 className="flex h-9 rounded-md border w-3/4 border-input bg-background px-3 py-1 text-sm shadow-sm"
               >
                 <option value="all">ทั้งหมด (All)</option>
-                <option value="none">ไม่มีหมวดหมู่</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
@@ -1072,7 +1074,6 @@ export default function NotesPage() {
                         disabled={isSubmittingNote}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50"
                       >
-                        <option value="">-- ไม่มีหมวดหมู่ --</option>
                         {categories.map((cat) => (
                           <option key={cat.id} value={cat.id}>
                             {cat.name}
