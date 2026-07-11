@@ -4,17 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 
 export function NavbarLeft() {
-  const [openModal, setOpenModal] = useState(false);
+  const [openModalNavbar, setOpenModalNavbar] = useState(false);
 
   return (
     <>
       <Link href={"/"} className="mr-4">
         Home
       </Link>
-      <button onClick={() => setOpenModal(true)} className="mr-4">
+      <button onClick={() => setOpenModalNavbar(true)} className="mr-4">
         Notes
       </button>
-      {openModal && (
+      {openModalNavbar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
           <div className="relative w-full max-w-md rounded-3xl bg-white shadow-2xl p-7 animate-in zoom-in-95 duration-200 mx-5">
             <button
