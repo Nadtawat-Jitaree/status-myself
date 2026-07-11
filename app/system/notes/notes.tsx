@@ -596,7 +596,7 @@ export default function NotesPage({ noteType }: Props) {
                   note.status,
                 )}`}
               >
-                <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10 backdrop-blur-sm">
+                <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10 ">
                   #{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                 </div>
 
@@ -795,7 +795,7 @@ export default function NotesPage({ noteType }: Props) {
 
       {/* Modal เต็มจอสำหรับการอ่าน Note */}
       {readingNote && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-10 animate-in fade-in duration-200 ">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80  p-4 md:p-10 animate-in fade-in duration-200 ">
           <div className={`w-full h-full max-h-[90vh] bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col relative ${!readingNote.file_path ? 'max-w-4xl' : ''}`}>
             <div className="flex items-start justify-between p-6 border-b">
               <h2 className="text-2xl md:text-3xl font-bold pr-12 leading-tight">
@@ -942,7 +942,7 @@ export default function NotesPage({ noteType }: Props) {
       )}
 
       {isNoteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60  p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-lg bg-background rounded-xl shadow-xl overflow-hidden">
             <Card className="border-0 shadow-none">
               <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
@@ -1150,7 +1150,7 @@ export default function NotesPage({ noteType }: Props) {
       )}
 
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60  p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-background rounded-xl shadow-xl overflow-hidden">
             <Card className="border-0 shadow-none">
               <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
