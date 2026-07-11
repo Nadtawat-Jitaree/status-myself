@@ -5,7 +5,7 @@ export function NavbarLeft() {
   return (
     <>
     <Link href={"/"} className="mr-4">Home</Link>
-    <Link href={"/status-myself/notes"} className="mr-4">Notes</Link>
+    <Link href={"/system/notes"} className="mr-4">Notes</Link>
     </>
   );
 }

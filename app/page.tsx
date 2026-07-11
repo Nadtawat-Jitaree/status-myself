@@ -116,7 +116,7 @@ export default function Home() {
           )}
 
           <Link
-            href={"/status-myself/notes"}
+            href={"/system/notes"}
             className="group relative flex flex-col items-center justify-center gap-5 p-10 w-full max-w-sm rounded-3xl border border-border bg-white shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer"
           >
             <div className="absolute" />
