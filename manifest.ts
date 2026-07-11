@@ -2,10 +2,10 @@ import { MetadataRoute } from 'next'
  
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Status Myself',
-    short_name: 'Status Myself',
-    description: 'ระบบ Status Myself',
-    start_url: '/status-myself/notes', 
+    name: 'NJ System',
+    short_name: 'NJ System',
+    description: 'ระบบ NJ System',
+    start_url: '/system/notes', 
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#000000',
