@@ -39,8 +39,12 @@ type Note = {
 type Props = {
   noteType: "normal" | "school";
 };
-
+import { redirect } from "next/navigation";
 export default function NotesPage({ noteType }: Props) {
+  if (!noteType || (noteType !== "normal" && noteType !== "school")) {
+    redirect("/");
+  }
+
   const [notes, setNotes] = useState<Note[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
