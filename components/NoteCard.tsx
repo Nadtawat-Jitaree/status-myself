@@ -92,6 +92,7 @@ export default function NoteCard() {
             <div className="space-y-4">
               <Link
                 href="/system/notes/normal"
+                onClick={() => setOpenModal(false)}
                 className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 hover:border-black hover:bg-gray-50 transition"
               >
                 <div className="rounded-xl bg-gray-100 p-3 group-hover:bg-black transition">
@@ -118,6 +119,7 @@ export default function NoteCard() {
 
               <Link
                 href="/system/notes/school"
+                onClick={() => setOpenModal(false)}
                 className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 hover:border-black hover:bg-gray-50 transition"
               >
                 <div className="rounded-xl bg-gray-100 p-3 group-hover:bg-black transition">
