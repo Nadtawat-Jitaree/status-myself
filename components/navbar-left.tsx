@@ -18,7 +18,7 @@ export function NavbarLeft() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
           <div className="relative w-full max-w-md rounded-3xl bg-white shadow-2xl p-7 animate-in zoom-in-95 duration-200 mx-5">
             <button
-              onClick={() => setOpenModal(false)}
+              onClick={() => setOpenModalNavbar(false)}
               className="absolute right-4 top-4 rounded-full p-2 hover:bg-gray-100 transition"
             >
               <svg
@@ -57,7 +57,7 @@ export function NavbarLeft() {
             <div className="space-y-4">
               <Link
                 href="/system/notes/normal"
-                onClick={() => setOpenModal(false)}
+                onClick={() => setOpenModalNavbar(false)}
                 className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 hover:border-black hover:bg-gray-50 transition"
               >
                 <div className="rounded-xl bg-gray-100 p-3 group-hover:bg-black transition">
@@ -84,7 +84,7 @@ export function NavbarLeft() {
 
               <Link
                 href="/system/notes/school"
-                onClick={() => setOpenModal(false)}
+                onClick={() => setOpenModalNavbar(false)}
                 className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 hover:border-black hover:bg-gray-50 transition"
               >
                 <div className="rounded-xl bg-gray-100 p-3 group-hover:bg-black transition">
@@ -111,7 +111,7 @@ export function NavbarLeft() {
             </div>
 
             <button
-              onClick={() => setOpenModal(false)}
+              onClick={() => setOpenModalNavbar(false)}
               className="mt-7 w-full rounded-xl border py-3 text-sm font-medium hover:bg-gray-50 transition"
             >
               ยกเลิก
