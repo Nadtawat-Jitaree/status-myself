@@ -32,12 +32,12 @@ export function NavbarLeft() {
             </button>
 
             <div className="text-center mb-8">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-black">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 16 16"
                   fill="currentColor"
-                  className="size-5 text-blue-600 group-hover:text-white"
+                  className="size-6 text-white group-hover:text-white"
                 >
                   <path
                     fillRule="evenodd"
@@ -58,14 +58,14 @@ export function NavbarLeft() {
               <Link
                 href="/system/notes/normal"
                 onClick={() => setOpenModal(false)}
-                className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 hover:border-blue-500 hover:bg-blue-50 transition"
+                className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 hover:border-black hover:bg-gray-50 transition"
               >
-                <div className="rounded-xl bg-blue-100 p-3 group-hover:bg-blue-500 transition">
+                <div className="rounded-xl bg-gray-100 p-3 group-hover:bg-black transition">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 16 16"
                     fill="currentColor"
-                    className="size-5 text-blue-600 group-hover:text-white"
+                    className="size-5 text-black group-hover:text-white"
                   >
                     <path
                       fillRule="evenodd"
@@ -85,14 +85,14 @@ export function NavbarLeft() {
               <Link
                 href="/system/notes/school"
                 onClick={() => setOpenModal(false)}
-                className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 hover:border-emerald-500 hover:bg-emerald-50 transition"
+                className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 hover:border-black hover:bg-gray-50 transition"
               >
-                <div className="rounded-xl bg-emerald-100 p-3 group-hover:bg-emerald-500 transition">
+                <div className="rounded-xl bg-gray-100 p-3 group-hover:bg-black transition">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 16 16"
                     fill="currentColor"
-                    className="size-5 text-emerald-600 group-hover:text-white"
+                    className="size-5 text-black group-hover:text-white"
                   >
                     <path d="M7.5 1.049a1 1 0 0 1 1 0l6.25 3.5a.5.5 0 0 1 0 .902l-6.25 3.5a1 1 0 0 1-1 0L1.25 5.45a.5.5 0 0 1 0-.902l6.25-3.5Z" />
                     <path d="M3.5 7.338v2.69c0 .58.316 1.115.825 1.397C5.19 11.92 6.515 12.5 8 12.5s2.81-.58 3.675-1.075a1.6 1.6 0 0 0 .825-1.398v-2.69L8.743 9.442a1.5 1.5 0 0 1-1.486 0L3.5 7.338Z" />
