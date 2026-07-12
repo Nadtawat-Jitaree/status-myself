@@ -531,7 +531,7 @@ export default function NotesPage({ noteType }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30">
+      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/note.webp')] bg-contain bg-center bg-no-repeat">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <h2 className="text-xl font-bold">รายการบันทึก</h2>
 
