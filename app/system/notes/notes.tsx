@@ -244,11 +244,13 @@ export default function NotesPage({ noteType }: Props) {
 
         uploadedFilePath = uploadData.path;
       }
-
+      if(!categoryId){
+          throw new Error("กรุณาเลือกหมวดหมู่");
+      }
       const notePayload = {
         title,
         content,
-        category_id: categoryId || null,
+        category_id: categoryId,
         status: status,
         ...(uploadedFilePath && { file_path: uploadedFilePath }),
       };
