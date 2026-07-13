@@ -1115,6 +1115,9 @@ export default function NotesPage({ noteType }: Props) {
                         disabled={isSubmittingNote}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50"
                       >
+                        <option key="" value="" disabled>
+                          -- เลือกหมวดหมู่ --
+                        </option>
                         {categories.map((cat) => (
                           <option key={cat.id} value={cat.id}>
                             {cat.name}
