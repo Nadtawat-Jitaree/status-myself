@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export function NavbarLeft() {
   const [openModalNavbar, setOpenModalNavbar] = useState(false);
@@ -11,8 +12,9 @@ export function NavbarLeft() {
       <Link href={"/"} className="mr-4">
         Home
       </Link>
-      <button onClick={() => setOpenModalNavbar(true)} className="mr-4">
-        Notes
+      <button onClick={() => setOpenModalNavbar(true)} className="mr-4 justify-center items-center">
+        <Image src="/note.webp" alt="บันทึก" width={30} height={30} />
+        {/* Notes */}
       </button>
       {openModalNavbar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
