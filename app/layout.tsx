@@ -11,9 +11,9 @@ export const metadata: Metadata = {
   title: "NJ System",
   description: "",
   icons: {
-    icon: "/all.webp",
-    shortcut: "/all.webp",
-    apple: "/all.webp",
+    icon: "/all.png",
+    shortcut: "/all.png",
+    apple: "/all.png",
   },
 };
 
