@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 import { useEffect, useState, useMemo } from "react";
 import {
@@ -244,8 +245,8 @@ export default function NotesPage({ noteType }: Props) {
 
         uploadedFilePath = uploadData.path;
       }
-      if(!categoryId){
-          throw new Error("กรุณาเลือกหมวดหมู่");
+      if (!categoryId) {
+        throw new Error("กรุณาเลือกหมวดหมู่");
       }
       const notePayload = {
         title,
@@ -485,33 +486,25 @@ export default function NotesPage({ noteType }: Props) {
           <h1 className="text-3xl font-bold tracking-tight flex items-center">
             {noteType == "normal" && (
               <>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                  className="size-6 mr-2"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3.75 1A1.75 1.75 0 0 0 2 2.75v10.5C2 14.216 2.784 15 3.75 15h8.5A1.75 1.75 0 0 0 14 13.25V5.56a1.75 1.75 0 0 0-.513-1.237L10.677 1.51A1.75 1.75 0 0 0 9.44 1H3.75Zm5 1.5v2.75c0 .414.336.75.75.75H12.25L8.75 2.5ZM5 7.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5A.75.75 0 0 1 5 7.25Zm0 2.5a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5A.75.75 0 0 1 5 9.75Zm0 2.5a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5A.75.75 0 0 1 5 12.25Z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <Image
+                  src="/note.webp"
+                  alt="มหาลัย"
+                  width={30}
+                  height={100}
+                  className="mr-2"
+                ></Image>
                 โน๊ตทั่วไป
               </>
             )}
             {noteType == "school" && (
               <>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                  className="size-6 mr-2 group-hover:text-white"
-                >
-                  <path d="M7.5 1.049a1 1 0 0 1 1 0l6.25 3.5a.5.5 0 0 1 0 .902l-6.25 3.5a1 1 0 0 1-1 0L1.25 5.45a.5.5 0 0 1 0-.902l6.25-3.5Z" />
-                  <path d="M3.5 7.338v2.69c0 .58.316 1.115.825 1.397C5.19 11.92 6.515 12.5 8 12.5s2.81-.58 3.675-1.075a1.6 1.6 0 0 0 .825-1.398v-2.69L8.743 9.442a1.5 1.5 0 0 1-1.486 0L3.5 7.338Z" />
-                  <path d="M14 6.245v3.255a.75.75 0 0 1-1.5 0V7.084L14 6.245Z" />
-                </svg>
+                <Image
+                  src="/school.webp"
+                  alt="มหาลัย"
+                  width={30}
+                  height={100}
+                  className="mr-2"
+                ></Image>
                 โน๊ตมหาวิทยาลัย
               </>
             )}
