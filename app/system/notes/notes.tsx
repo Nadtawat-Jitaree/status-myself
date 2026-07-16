@@ -487,7 +487,7 @@ export default function NotesPage({ noteType }: Props) {
             {noteType == "normal" && (
               <>
                 <Image
-                  src="/note.webp"
+                  src="/normal.webp"
                   alt="มหาลัย"
                   width={30}
                   height={100}
@@ -526,7 +526,7 @@ export default function NotesPage({ noteType }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/note.webp')] bg-contain bg-center bg-no-repeat">
+      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <h2 className="text-xl font-bold">รายการบันทึก</h2>
 

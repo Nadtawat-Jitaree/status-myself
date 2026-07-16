@@ -61,7 +61,7 @@ export function NavbarLeft() {
               >
                 <div className="rounded-xl bg-gray-100 p-3 transition">
                   <Image
-                    src="/note.webp"
+                    src="/normal.webp"
                     alt="โน๊ตทั่วไป"
                     width={30}
                     height={100}
