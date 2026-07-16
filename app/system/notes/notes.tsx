@@ -492,6 +492,7 @@ export default function NotesPage({ noteType }: Props) {
                   width={45}
                   height={45}
                   className="mr-2"
+                  unoptimized
                 ></Image>
                 โน๊ตทั่วไป
               </>
@@ -503,6 +504,7 @@ export default function NotesPage({ noteType }: Props) {
                   alt="มหาลัย"
                   width={40}
                   height={40}
+                  unoptimized
                   className="mr-2"
                 ></Image>
                 โน๊ตมหาวิทยาลัย

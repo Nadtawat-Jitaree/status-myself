@@ -14,7 +14,7 @@ export default function NoteCard() {
       >
         <div className="absolute" />
 
-        <Image src="/note.webp" alt="บันทึก" width={100} height={150} />
+        <Image src="/note.webp" alt="บันทึก" width={100} height={150} unoptimized />
 
         <div className="flex flex-col items-center gap-1 relative z-10">
           <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
@@ -48,7 +48,7 @@ export default function NoteCard() {
                   src="/note.webp"
                   alt="มหาลัย"
                   width={40}
-                  height={40}
+                  height={40} unoptimized
                 ></Image>
               </div>
 
@@ -70,7 +70,7 @@ export default function NoteCard() {
                     src="/normal.webp"
                     alt="โน๊ตทั่วไป"
                     width={40}
-                    height={40}
+                    height={40} unoptimized
                   ></Image>
                 </div>
 
@@ -91,7 +91,7 @@ export default function NoteCard() {
                     src="/school.webp"
                     alt="มหาลัย"
                     width={40}
-                    height={40}
+                    height={40} unoptimized
                   ></Image>
                 </div>
 

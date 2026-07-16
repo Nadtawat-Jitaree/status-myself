@@ -10,13 +10,13 @@ export function NavbarLeft() {
   return (
     <>
       <Link href={"/"} className="mr-4">
-        <Image src="/all.webp" alt="home" width={40} height={40} />
+        <Image src="/all.webp" alt="home" width={40} height={40} unoptimized />
       </Link>
       <button
         onClick={() => setOpenModalNavbar(true)}
         className="mr-4 justify-center items-center"
       >
-        <Image src="/note.webp" alt="บันทึก" width={30} height={30} />
+        <Image src="/note.webp" alt="บันทึก" width={30} height={30} unoptimized />
         {/* Notes */}
       </button>
       {openModalNavbar && (
@@ -43,6 +43,7 @@ export function NavbarLeft() {
                   alt="มหาลัย"
                   width={40}
                   height={40}
+                  unoptimized
                 ></Image>
               </div>
 
@@ -65,6 +66,7 @@ export function NavbarLeft() {
                     alt="โน๊ตทั่วไป"
                     width={40}
                     height={40}
+                    unoptimized
                   ></Image>
                 </div>
 
@@ -86,6 +88,7 @@ export function NavbarLeft() {
                     alt="มหาลัย"
                     width={40}
                     height={40}
+                    unoptimized
                   ></Image>
                 </div>
 
