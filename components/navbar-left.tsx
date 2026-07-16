@@ -42,7 +42,7 @@ export function NavbarLeft() {
                   src="/note.webp"
                   alt="มหาลัย"
                   width={40}
-                  height={100}
+                  height={40}
                 ></Image>
               </div>
 
@@ -63,8 +63,8 @@ export function NavbarLeft() {
                   <Image
                     src="/normal.webp"
                     alt="โน๊ตทั่วไป"
-                    width={30}
-                    height={100}
+                    width={40}
+                    height={40}
                   ></Image>
                 </div>
 
@@ -84,8 +84,8 @@ export function NavbarLeft() {
                   <Image
                     src="/school.webp"
                     alt="มหาลัย"
-                    width={30}
-                    height={100}
+                    width={40}
+                    height={40}
                   ></Image>
                 </div>
 

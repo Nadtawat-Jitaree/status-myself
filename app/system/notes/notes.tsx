@@ -489,8 +489,8 @@ export default function NotesPage({ noteType }: Props) {
                 <Image
                   src="/normal.webp"
                   alt="มหาลัย"
-                  width={30}
-                  height={100}
+                  width={45}
+                  height={45}
                   className="mr-2"
                 ></Image>
                 โน๊ตทั่วไป
@@ -501,8 +501,8 @@ export default function NotesPage({ noteType }: Props) {
                 <Image
                   src="/school.webp"
                   alt="มหาลัย"
-                  width={30}
-                  height={100}
+                  width={40}
+                  height={40}
                   className="mr-2"
                 ></Image>
                 โน๊ตมหาวิทยาลัย

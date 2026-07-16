@@ -48,7 +48,7 @@ export default function NoteCard() {
                   src="/note.webp"
                   alt="มหาลัย"
                   width={40}
-                  height={100}
+                  height={40}
                 ></Image>
               </div>
 
@@ -69,8 +69,8 @@ export default function NoteCard() {
                   <Image
                     src="/normal.webp"
                     alt="โน๊ตทั่วไป"
-                    width={30}
-                    height={100}
+                    width={40}
+                    height={40}
                   ></Image>
                 </div>
 
@@ -90,8 +90,8 @@ export default function NoteCard() {
                   <Image
                     src="/school.webp"
                     alt="มหาลัย"
-                    width={30}
-                    height={100}
+                    width={40}
+                    height={40}
                   ></Image>
                 </div>
 
