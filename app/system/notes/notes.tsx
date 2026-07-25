@@ -142,9 +142,35 @@ export default function NotesPage({ noteType }: Props) {
 
     loadPdfUrl();
   }, [readingNote]);
+
   useEffect(() => {
     initData();
-  }, []);
+    const supabase = createClient();
+
+    const realtimeChannel = supabase
+      .channel("notes-realtime-channel")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notes" },
+        (payload) => {
+          console.log("Notes changed!", payload);
+          loadNotes();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "note_categories" },
+        (payload) => {
+          console.log("Categories changed!", payload);
+          loadCategories();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(realtimeChannel);
+    };
+  }, [noteType]);
 
   const initData = async () => {
     setIsLoading(true);
