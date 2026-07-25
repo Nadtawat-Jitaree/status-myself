@@ -153,7 +153,7 @@ export default function NotesPage({ noteType }: Props) {
         "postgres_changes",
         { event: "*", schema: "public", table: "notes" },
         (payload) => {
-          console.log("Notes changed!", payload);
+          // console.log("Notes changed!", payload);
           loadNotes();
         },
       )
@@ -161,7 +161,7 @@ export default function NotesPage({ noteType }: Props) {
         "postgres_changes",
         { event: "*", schema: "public", table: "note_categories" },
         (payload) => {
-          console.log("Categories changed!", payload);
+          // console.log("Categories changed!", payload);
           loadCategories();
         },
       )
