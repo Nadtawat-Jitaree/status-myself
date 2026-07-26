@@ -42,7 +42,7 @@ export function LoginForm({
 
       router.refresh();
 
-      router.push("/system/notes");
+      router.push("/");
 
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
