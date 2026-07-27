@@ -154,7 +154,7 @@ export default function NotesPage({ noteType }: Props) {
         { event: "*", schema: "public", table: "notes" },
         (payload) => {
           // console.log("Notes changed!", payload);
-          getNotes(noteType).then((data) => setNotes(data || []));
+          loadNotes();
         },
       )
       .on(
@@ -162,7 +162,7 @@ export default function NotesPage({ noteType }: Props) {
         { event: "*", schema: "public", table: "note_categories" },
         (payload) => {
           // console.log("Categories changed!", payload);
-          getCategories(noteType).then((data) => setCategories(data || []));
+          loadCategories();
         },
       )
       .subscribe();
