@@ -148,13 +148,13 @@ export default function NotesPage({ noteType }: Props) {
     const supabase = createClient();
 
     const realtimeChannel = supabase
-      .channel("notes-realtime-channel")
+      .channel(`notes-realtime-${noteType}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notes" },
         (payload) => {
           // console.log("Notes changed!", payload);
-          loadNotes();
+          getNotes(noteType).then((data) => setNotes(data || []));
         },
       )
       .on(
@@ -162,7 +162,7 @@ export default function NotesPage({ noteType }: Props) {
         { event: "*", schema: "public", table: "note_categories" },
         (payload) => {
           // console.log("Categories changed!", payload);
-          loadCategories();
+          getCategories(noteType).then((data) => setCategories(data || []));
         },
       )
       .subscribe();
