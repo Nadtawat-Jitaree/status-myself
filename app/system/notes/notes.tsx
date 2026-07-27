@@ -148,7 +148,7 @@ export default function NotesPage({ noteType }: Props) {
     const supabase = createClient();
 
     const realtimeChannel = supabase
-      .channel(`notes-realtime-${noteType}`)
+      .channel("notes-realtime-channel")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notes" },
