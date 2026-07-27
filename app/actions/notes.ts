@@ -20,7 +20,7 @@ export async function removeNoteAttachment(id: string, filePath: string) {
 
   if (dbError) throw new Error(dbError.message);
 
-  revalidatePath("/notes");
+  revalidatePath("/system/notes");
   return { success: true };
 }
 
@@ -64,7 +64,7 @@ export async function createNote(payload: {
     .insert([{ user_id: user.id, ...payload }]);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/notes");
+  revalidatePath("/system/notes");
   return { success: true };
 }
 
@@ -105,7 +105,7 @@ export async function updateNote(
   const { error } = await supabase.from("notes").update(payload).eq("id", id);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/notes");
+  revalidatePath("/system/notes");
   return { success: true };
 }
 export async function deleteNote(id: string) {
@@ -124,7 +124,7 @@ export async function deleteNote(id: string) {
   const { error } = await supabase.from("notes").delete().eq("id", id);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/notes");
+  revalidatePath("/system/notes");
   return { success: true };
 }
 
@@ -152,7 +152,7 @@ export async function createCategory(name: string, noteType: string) {
     .insert([{ user_id: user.id, name, note_type: noteType }]);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/notes");
+  revalidatePath("/system/notes");
   return { success: true };
 }
 
@@ -164,7 +164,7 @@ export async function updateCategory(id: string, name: string) {
     .eq("id", id);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/notes");
+  revalidatePath("/system/notes");
   return { success: true };
 }
 
@@ -176,6 +176,6 @@ export async function deleteCategory(id: string) {
     .eq("id", id);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/notes");
+  revalidatePath("/system/notes");
   return { success: true };
 }
