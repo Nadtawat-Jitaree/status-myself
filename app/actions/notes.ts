@@ -21,6 +21,10 @@ export async function removeNoteAttachment(id: string, filePath: string) {
   if (dbError) throw new Error(dbError.message);
 
   revalidatePath("/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes/normal");
+  revalidatePath("/system/notes/school");
   return { success: true };
 }
 
@@ -65,6 +69,10 @@ export async function createNote(payload: {
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes/normal");
+  revalidatePath("/system/notes/school");
   return { success: true };
 }
 
@@ -106,6 +114,10 @@ export async function updateNote(
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes/normal");
+  revalidatePath("/system/notes/school");
   return { success: true };
 }
 export async function deleteNote(id: string) {
@@ -125,6 +137,10 @@ export async function deleteNote(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes/normal");
+  revalidatePath("/system/notes/school");
   return { success: true };
 }
 
@@ -153,6 +169,10 @@ export async function createCategory(name: string, noteType: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes/normal");
+  revalidatePath("/system/notes/school");
   return { success: true };
 }
 
@@ -165,6 +185,10 @@ export async function updateCategory(id: string, name: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes/normal");
+  revalidatePath("/system/notes/school");
   return { success: true };
 }
 
@@ -177,5 +201,9 @@ export async function deleteCategory(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes/normal");
+  revalidatePath("/system/notes/school");
   return { success: true };
 }
