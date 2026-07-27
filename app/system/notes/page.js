@@ -34,6 +34,6 @@ export const metadata = {
 
 export default function NotesPage() {
   return (
-    <Notes noteType="normal" />
+    <Notes />
   );
 }
