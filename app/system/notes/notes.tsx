@@ -46,6 +46,8 @@ export default function NotesPage({ noteType }: Props) {
     redirect("/");
   }
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [notes, setNotes] = useState<Note[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
@@ -111,7 +113,7 @@ export default function NotesPage({ noteType }: Props) {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterCategory, showCompleted, showOnlyPending]);
+  }, [filterCategory, showCompleted, showOnlyPending, searchQuery]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
@@ -210,11 +212,26 @@ export default function NotesPage({ noteType }: Props) {
     return notes.filter((note) => {
       if (showOnlyPending && note.status !== "งานค้าง") return false;
       if (showCompleted && note.status !== "เสร็จสิ้น") return false;
-      if (filterCategory === "all") return true;
-      if (filterCategory === "none") return note.category_id === null;
-      return note.category_id === filterCategory;
+
+      if (filterCategory !== "all") {
+        if (filterCategory === "none" && note.category_id !== null)
+          return false;
+        if (filterCategory !== "none" && note.category_id !== filterCategory)
+          return false;
+      }
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchTitle = note.title?.toLowerCase().includes(query) || false;
+        const matchContent =
+          note.content?.toLowerCase().includes(query) || false;
+
+        if (!matchTitle && !matchContent) return false;
+      }
+
+      return true;
     });
-  }, [notes, showCompleted, filterCategory, showOnlyPending]);
+  }, [notes, showCompleted, filterCategory, showOnlyPending, searchQuery]);
 
   const totalPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE);
   const paginatedNotes = useMemo(() => {
@@ -640,7 +657,29 @@ export default function NotesPage({ noteType }: Props) {
             </div>
           </div>
         </div>
-
+        <div className="flex justify-end text-end w-full"> 
+          <div className="relative w-full">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <Input
+              type="text"
+              placeholder="ค้นหาชื่อหรือเนื้อหาโน้ต..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 bg-white/80"
+            />
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
           {paginatedNotes.length === 0 ? (
             <p className="text-muted-foreground col-span-full text-center py-12 border-2 border-dashed rounded-xl">
@@ -826,6 +865,7 @@ export default function NotesPage({ noteType }: Props) {
             ))
           )}
         </div>
+
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 mt-6">
             <Button
