@@ -366,7 +366,7 @@ export default function ProjectClient({ project }: { project: any }) {
 
               <div className="min-w-0">
                 <h2 className="truncate text-lg font-bold sm:text-xl">
-                  ลำดับขั้นตอน
+                  Tasks
                 </h2>
 
                 <p className="text-xs text-muted-foreground sm:text-sm">
