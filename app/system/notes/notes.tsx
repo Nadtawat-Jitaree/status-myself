@@ -530,10 +530,10 @@ export default function NotesPage({ noteType }: Props) {
             {noteType == "normal" && (
               <>
                 <Image
-                  src="/normal.webp"
+                  src="/note.webp"
                   alt="มหาลัย"
-                  width={45}
-                  height={45}
+                  width={40}
+                  height={40}
                   className="mr-2"
                   unoptimized
                 ></Image>
