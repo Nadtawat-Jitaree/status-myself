@@ -106,7 +106,7 @@ export default function ProjectsPage() {
             className="mr-2"
             unoptimized
           ></Image>
-          Projuect
+          Projects
         </h1>
         <p className="text-muted-foreground mt-2">
           จัดการและติดตามความคืบหน้าของโปรเจคทั้งหมด
