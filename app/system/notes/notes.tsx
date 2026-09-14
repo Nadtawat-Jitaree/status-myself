@@ -701,7 +701,7 @@ export default function NotesPage({ noteType }: Props) {
               <Button
                 type="button"
                 variant="outline"
-                className="flex h-9 w-[180px] justify-between px-3 text-sm bg-background font-normal"
+                className="flex h-9 w-[100px] md:w-[180px] justify-between px-3 text-sm bg-background font-normal"
                 onClick={() => setIsFilterModalOpen(true)}
               >
                 {filterCategory === "all"
