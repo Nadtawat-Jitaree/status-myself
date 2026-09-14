@@ -38,7 +38,8 @@ export async function getNotes(noteType: string) {
       *,
       note_categories!inner(
         name,
-        note_type
+        note_type,
+        pic
       )
     `,
     )
@@ -156,7 +157,7 @@ export async function getCategories(noteType: string) {
   return data;
 }
 
-export async function createCategory(name: string, noteType: string) {
+export async function createCategory(name: string, noteType: string, pic?: string | null) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -165,7 +166,7 @@ export async function createCategory(name: string, noteType: string) {
 
   const { error } = await supabase
     .from("note_categories")
-    .insert([{ user_id: user.id, name, note_type: noteType }]);
+    .insert([{ user_id: user.id, name, note_type: noteType, pic }]);
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
@@ -176,11 +177,22 @@ export async function createCategory(name: string, noteType: string) {
   return { success: true };
 }
 
-export async function updateCategory(id: string, name: string) {
+export async function updateCategory(id: string, name: string, pic?: string | null) {
   const supabase = await createClient();
+  
+  if (pic !== undefined) {
+     const { data: oldCat } = await supabase.from("note_categories").select("pic").eq("id", id).single();
+     if (oldCat && oldCat.pic && oldCat.pic !== pic) {
+         await supabase.storage.from("logo").remove([oldCat.pic]);
+     }
+  }
+
+  const updateData: any = { name };
+  if (pic !== undefined) updateData.pic = pic;
+
   const { error } = await supabase
     .from("note_categories")
-    .update({ name })
+    .update(updateData)
     .eq("id", id);
   if (error) throw new Error(error.message);
 
@@ -194,6 +206,12 @@ export async function updateCategory(id: string, name: string) {
 
 export async function deleteCategory(id: string) {
   const supabase = await createClient();
+  
+  const { data: oldCat } = await supabase.from("note_categories").select("pic").eq("id", id).single();
+  if (oldCat?.pic) {
+    await supabase.storage.from("logo").remove([oldCat.pic]);
+  }
+
   const { error } = await supabase
     .from("note_categories")
     .delete()

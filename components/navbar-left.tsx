@@ -15,6 +15,7 @@ export function NavbarLeft() {
           src="/all.webp"
           alt="home"
           width={40}
+          loading="eager"
           height={40}
           unoptimized
         />

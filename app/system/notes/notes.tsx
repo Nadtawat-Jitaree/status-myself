@@ -25,7 +25,8 @@ import {
 import { Label } from "@/components/ui/label";
 import Swal from "sweetalert2";
 import { createClient } from "@/lib/supabase/client";
-type Category = { id: string; name: string };
+
+type Category = { id: string; name: string; pic?: string | null };
 type Note = {
   id: string;
   title: string;
@@ -34,17 +35,24 @@ type Note = {
   category_id?: string | null;
   status: string;
   file_path?: string | null;
-  note_categories?: { name: string };
+  note_categories?: { name: string; pic?: string | null };
   noteToEdit?: boolean;
 };
 type Props = {
   noteType: "normal" | "school";
 };
 import { redirect } from "next/navigation";
+
 export default function NotesPage({ noteType }: Props) {
   if (!noteType || (noteType !== "normal" && noteType !== "school")) {
     redirect("/");
   }
+
+  const getPicUrl = (picPath?: string | null) => {
+    if (!picPath) return "";
+    return createClient().storage.from("logo").getPublicUrl(picPath).data
+      .publicUrl;
+  };
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -53,6 +61,20 @@ export default function NotesPage({ noteType }: Props) {
   const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
 
   const [isDeletingFile, setIsDeletingFile] = useState(false);
+
+  const [newCategoryPic, setNewCategoryPic] = useState<File | null>(null);
+  const [newCategoryPicPreview, setNewCategoryPicPreview] = useState<
+    string | null
+  >(null);
+
+  const [editingCategoryPic, setEditingCategoryPic] = useState<File | null>(
+    null,
+  );
+  const [editingCategoryPicPreview, setEditingCategoryPicPreview] = useState<
+    string | null
+  >(null);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isNoteCategoryModalOpen, setIsNoteCategoryModalOpen] = useState(false);
 
   const handleRemoveExistingPdf = async () => {
     if (!editingNoteId || !existingFilePath) return;
@@ -129,7 +151,6 @@ export default function NotesPage({ noteType }: Props) {
     const loadPdfUrl = async () => {
       if (readingNote && readingNote.file_path) {
         const supabase = createClient();
-
         const { data, error } = await supabase.storage
           .from("note_attachments")
           .createSignedUrl(readingNote.file_path, 3600);
@@ -141,7 +162,6 @@ export default function NotesPage({ noteType }: Props) {
         setPdfUrl(null);
       }
     };
-
     loadPdfUrl();
   }, [readingNote]);
 
@@ -154,18 +174,12 @@ export default function NotesPage({ noteType }: Props) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notes" },
-        (payload) => {
-          // console.log("Notes changed!", payload);
-          loadNotes();
-        },
+        () => loadNotes(),
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "note_categories" },
-        (payload) => {
-          // console.log("Categories changed!", payload);
-          loadCategories();
-        },
+        () => loadCategories(),
       )
       .subscribe();
 
@@ -264,6 +278,7 @@ export default function NotesPage({ noteType }: Props) {
         return "bg-slate-50 border-slate-200 hover:border-slate-300";
     }
   };
+
   const [file, setFile] = useState<File | null>(null);
 
   const handleSaveNote = async (e: React.FormEvent) => {
@@ -276,7 +291,6 @@ export default function NotesPage({ noteType }: Props) {
 
       if (file) {
         const supabase = createClient();
-
         const fileExt = file.name.split(".").pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -426,7 +440,6 @@ export default function NotesPage({ noteType }: Props) {
       });
       return;
     }
-
     try {
       await navigator.clipboard.writeText(content);
       Swal.fire({
@@ -449,16 +462,54 @@ export default function NotesPage({ noteType }: Props) {
     }
   };
 
+  const handleNewCategoryPicChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewCategoryPic(file);
+      setNewCategoryPicPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleEditingCategoryPicChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEditingCategoryPic(file);
+      setEditingCategoryPicPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCategoryName.trim()) return;
     setIsSubmittingCategory(true);
     try {
-      await createCategory(newCategoryName, noteType);
+      let picPath = null;
+      if (newCategoryPic) {
+        const supabase = createClient();
+        const fileExt = newCategoryPic.name.split(".").pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { data, error } = await supabase.storage
+          .from("logo")
+          .upload(fileName, newCategoryPic);
+        if (error) throw new Error("อัปโหลดโลโก้ไม่สำเร็จ: " + error.message);
+        picPath = data.path;
+      }
+
+      await createCategory(newCategoryName, noteType, picPath);
       setNewCategoryName("");
+      setNewCategoryPic(null);
+      setNewCategoryPicPreview(null);
       await loadCategories();
-    } catch (error) {
-      Swal.fire("ข้อผิดพลาด", "ไม่สามารถสร้างหมวดหมู่ได้", "error");
+    } catch (error: any) {
+      Swal.fire(
+        "ข้อผิดพลาด",
+        "ไม่สามารถสร้างหมวดหมู่ได้: " + error.message,
+        "error",
+      );
     } finally {
       setIsSubmittingCategory(false);
     }
@@ -466,13 +517,35 @@ export default function NotesPage({ noteType }: Props) {
 
   const handleUpdateCategory = async (id: string) => {
     if (!editingCategoryName.trim()) return;
+    setIsSubmittingCategory(true);
     try {
-      await updateCategory(id, editingCategoryName);
+      let picPath = undefined;
+      if (editingCategoryPic) {
+        const supabase = createClient();
+        const fileExt = editingCategoryPic.name.split(".").pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { data, error } = await supabase.storage
+          .from("logo")
+          .upload(fileName, editingCategoryPic);
+        if (error)
+          throw new Error("อัปโหลดโลโก้ใหม่ไม่สำเร็จ: " + error.message);
+        picPath = data.path;
+      }
+
+      await updateCategory(id, editingCategoryName, picPath);
       setEditingCategoryId(null);
+      setEditingCategoryPic(null);
+      setEditingCategoryPicPreview(null);
       await loadCategories();
       await loadNotes();
-    } catch (error) {
-      Swal.fire("ข้อผิดพลาด", "ไม่สามารถแก้ไขหมวดหมู่ได้", "error");
+    } catch (error: any) {
+      Swal.fire(
+        "ข้อผิดพลาด",
+        "ไม่สามารถแก้ไขหมวดหมู่ได้: " + error.message,
+        "error",
+      );
+    } finally {
+      setIsSubmittingCategory(false);
     }
   };
 
@@ -531,12 +604,12 @@ export default function NotesPage({ noteType }: Props) {
               <>
                 <Image
                   src="/note.webp"
-                  alt="มหาลัย"
+                  alt="ทั่วไป"
                   width={40}
                   height={40}
                   className="mr-2"
                   unoptimized
-                ></Image>
+                />
                 โน๊ตทั่วไป
               </>
             )}
@@ -549,7 +622,7 @@ export default function NotesPage({ noteType }: Props) {
                   height={40}
                   unoptimized
                   className="mr-2"
-                ></Image>
+                />
                 โน๊ตมหาวิทยาลัย
               </>
             )}
@@ -620,44 +693,47 @@ export default function NotesPage({ noteType }: Props) {
               </svg>
               รายการที่เสร็จสิ้น
             </Button>
-            {/* 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="showCompleted"
-                checked={showCompleted}
-                onChange={(e) => setShowCompleted(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-slate-800 cursor-pointer"
-              />
-              <Label
-                htmlFor="showCompleted"
-                className="whitespace-nowrap cursor-pointer select-none"
-              >
-                แสดงรายการที่เสร็จสิ้น
-              </Label>
-            </div> */}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 relative">
               <Label htmlFor="filter" className="whitespace-nowrap">
                 หมวดหมู่
               </Label>
-              <select
-                id="filter"
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="flex h-9 rounded-md border w-3/4 border-input bg-background px-3 py-1 text-sm shadow-sm"
+              <Button
+                type="button"
+                variant="outline"
+                className="flex h-9 w-[180px] justify-between px-3 text-sm bg-background font-normal"
+                onClick={() => setIsFilterModalOpen(true)}
               >
-                <option value="all">ทั้งหมด (All)</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+                {filterCategory === "all"
+                  ? "ทั้งหมด (All)"
+                  : (() => {
+                      const cat = categories.find(
+                        (c) => c.id === filterCategory,
+                      );
+                      return cat ? (
+                        <div className="flex items-center gap-2 truncate">
+                          {cat.pic ? (
+                            <img
+                              src={getPicUrl(cat.pic)}
+                              className="w-5 h-5 rounded object-cover shrink-0"
+                              alt="pic"
+                            />
+                          ) : (
+                            <div className="w-5 h-5 bg-slate-200 rounded shrink-0 flex items-center justify-center text-[10px] text-slate-500">
+                              -
+                            </div>
+                          )}
+                          <span className="truncate">{cat.name}</span>
+                        </div>
+                      ) : (
+                        "ทั้งหมด (All)"
+                      );
+                    })()}
+              </Button>
             </div>
           </div>
         </div>
-        <div className="flex justify-end text-end w-full"> 
+        <div className="flex justify-end text-end w-full">
           <div className="relative w-full">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -680,6 +756,7 @@ export default function NotesPage({ noteType }: Props) {
             />
           </div>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
           {paginatedNotes.length === 0 ? (
             <p className="text-muted-foreground col-span-full text-center py-12 border-2 border-dashed rounded-xl">
@@ -689,9 +766,7 @@ export default function NotesPage({ noteType }: Props) {
             paginatedNotes.map((note, index) => (
               <Card
                 key={note.id}
-                className={`flex flex-col h-full relative group transition-colors shadow-sm overflow-hidden ${getCardStyle(
-                  note.status,
-                )}`}
+                className={`flex flex-col h-full relative group transition-colors overflow-hidden ${getCardStyle(note.status)}`}
               >
                 <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10 ">
                   #{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
@@ -717,7 +792,6 @@ export default function NotesPage({ noteType }: Props) {
                           <path d="M2.5 3.5A1.5 1.5 0 0 1 4 2h3.5v9H4a1.5 1.5 0 0 0-1.5 1.5v.385A1.5 1.5 0 0 1 2 11.385V3.5ZM13.5 3.5A1.5 1.5 0 0 0 12 2H8.5v9H12a1.5 1.5 0 0 1 1.5 1.5v.385a1.5 1.5 0 0 0 .5-1.5V3.5Z" />
                         </svg>
                       </button>
-
                       <button
                         onClick={() => handleCopyContent(note.content)}
                         className="p-1.5 text-slate-600 hover:bg-slate-200/50 rounded-md transition-colors"
@@ -741,7 +815,6 @@ export default function NotesPage({ noteType }: Props) {
                           />
                         </svg>
                       </button>
-
                       <button
                         onClick={() => handleEditNoteClick(note)}
                         className="p-1.5 text-blue-600 hover:bg-blue-100/50 rounded-md transition-colors"
@@ -777,16 +850,14 @@ export default function NotesPage({ noteType }: Props) {
                       </button>
                     </div>
                   </div>
-                  <CardDescription className="flex gap-2 items-center mt-2">
+                  <CardDescription className="flex flex-wrap gap-2 items-center mt-2">
                     <div className="relative inline-block">
                       <select
                         value={note.status || "ทั่วไป"}
                         onChange={(e) =>
                           handleInlineStatusChange(note, e.target.value)
                         }
-                        className={`appearance-none px-2 pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer outline-none border border-transparent hover:border-current transition-colors ${getStatusBadgeColor(
-                          note.status,
-                        )}`}
+                        className={`appearance-none px-2 pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer outline-none border border-transparent hover:border-current transition-colors ${getStatusBadgeColor(note.status)}`}
                       >
                         <option
                           value="ทั่วไป"
@@ -813,7 +884,6 @@ export default function NotesPage({ noteType }: Props) {
                           เสร็จสิ้น
                         </option>
                       </select>
-
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 16 16"
@@ -829,18 +899,23 @@ export default function NotesPage({ noteType }: Props) {
                     </div>
 
                     {note.note_categories?.name && (
-                      <span className="inline-block bg-slate-800 text-white px-2 py-0.5 rounded text-xs shadow-sm">
+                      <span className="inline-flex items-center gap-1.5 bg-slate-800 text-white px-2 py-0.5 rounded text-xs">
+                        {note.note_categories.pic && (
+                          <img
+                            src={getPicUrl(note.note_categories.pic)}
+                            className="w-3.5 h-3.5 rounded object-cover"
+                            alt=""
+                          />
+                        )}
                         {note.note_categories.name}
                       </span>
                     )}
                   </CardDescription>
                 </CardHeader>
-
                 <CardContent className="flex-1 flex flex-col justify-between">
                   <p className="text-sm line-clamp-4 mb-4 text-foreground/80 whitespace-pre-wrap">
                     {note.content || "ไม่มีรายละเอียด"}
                   </p>
-
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-auto pt-4 border-t border-black/5 dark:border-white/5">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -891,11 +966,80 @@ export default function NotesPage({ noteType }: Props) {
         )}
       </div>
 
-      {/* Modal เต็มจอสำหรับการอ่าน Note */}
+      {isFilterModalOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-background rounded-xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-4 border-b flex justify-between items-center bg-slate-50/50">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                หมวดหมู่
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={() => setIsFilterModalOpen(false)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </Button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterCategory("all");
+                  setIsFilterModalOpen(false);
+                }}
+                className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${filterCategory === "all" ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" : "border-slate-200 hover:bg-slate-50 hover:border-slate-300"}`}
+              >
+                <div className="w-8 h-8 bg-slate-100 rounded-md flex items-center justify-center text-slate-500 font-bold text-xs">
+                  All
+                </div>
+                <span className="font-medium text-sm truncate flex-1">
+                  ทั้งหมด (All)
+                </span>
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setFilterCategory(cat.id);
+                    setIsFilterModalOpen(false);
+                  }}
+                  className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${filterCategory === cat.id ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" : "border-slate-200 hover:bg-slate-50 hover:border-slate-300"}`}
+                >
+                  {cat.pic ? (
+                    <img
+                      src={getPicUrl(cat.pic)}
+                      className="w-8 h-8 object-cover rounded-md"
+                      alt="pic"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 text-xs font-medium">
+                      ไม่มีรูป
+                    </div>
+                  )}
+                  <span className="font-medium text-sm truncate flex-1">
+                    {cat.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {readingNote && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80  p-4 md:p-10 animate-in fade-in duration-200 ">
           <div
-            className={`w-full h-full max-h-[90vh] bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col relative ${!readingNote.file_path ? "max-w-4xl" : ""}`}
+            className={`w-full h-full max-h-[90vh] bg-background rounded-2xl overflow-hidden flex flex-col relative ${!readingNote.file_path ? "max-w-4xl" : ""}`}
           >
             <div className="flex items-start justify-between p-6 border-b">
               <h2 className="text-2xl md:text-3xl font-bold pr-12 leading-tight">
@@ -918,14 +1062,21 @@ export default function NotesPage({ noteType }: Props) {
               </Button>
             </div>
             <div
-              className={`flex-1 overflow-y-auto lg:overflow-auto p-6 md:p-8  bg-slate-50/50 ${readingNote.file_path ? "lg:grid lg:grid-cols-12" : ""}`}
+              className={`flex-1 overflow-y-auto lg:overflow-auto p-6 md:p-8 bg-slate-50/50 ${readingNote.file_path ? "lg:grid lg:grid-cols-12" : ""}`}
             >
               <div
                 className={`${readingNote.file_path ? "lg:col-span-6" : ""}`}
               >
                 <div className="flex flex-wrap gap-2 mb-6 items-center text-sm">
                   {readingNote.note_categories?.name && (
-                    <span className="bg-slate-800 text-white px-3 py-1 rounded-md shadow-sm">
+                    <span className="flex items-center gap-1.5 bg-slate-800 text-white px-3 py-1 rounded-md">
+                      {readingNote.note_categories.pic && (
+                        <img
+                          src={getPicUrl(readingNote.note_categories.pic)}
+                          className="w-4 h-4 rounded object-cover"
+                          alt="pic"
+                        />
+                      )}
                       {readingNote.note_categories.name}
                     </span>
                   )}
@@ -934,7 +1085,7 @@ export default function NotesPage({ noteType }: Props) {
                   >
                     {readingNote.status}
                   </span>
-                  <span className="text-muted-foreground ml-auto flex items-center gap-1.5">
+                                    <span className="text-muted-foreground ml-auto flex items-center gap-1.5">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 16 16"
@@ -960,9 +1111,8 @@ export default function NotesPage({ noteType }: Props) {
                   {readingNote.content || "ไม่มีรายละเอียดเนื้อหา"}
                 </div>
               </div>
-
               {readingNote.file_path && (
-                <div className="mt-10 lg:ml-2 lg:mt-0 pt-8 border-t border-slate-200/60 lg:border-none  lg:col-span-6">
+                <div className="mt-10 lg:ml-2 lg:mt-0 pt-8 border-t border-slate-200/60 lg:border-none lg:col-span-6">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-800">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -975,11 +1125,10 @@ export default function NotesPage({ noteType }: Props) {
                     </svg>
                     เอกสารแนบ (PDF)
                   </h3>
-
                   {pdfUrl ? (
                     <iframe
                       src={pdfUrl}
-                      className="w-full lg:h-[500px] rounded-xl border border-slate-200 shadow-sm"
+                      className="w-full lg:h-[500px] rounded-xl border border-slate-200"
                       title="PDF Viewer"
                     />
                   ) : (
@@ -1011,9 +1160,7 @@ export default function NotesPage({ noteType }: Props) {
                   )}
                 </div>
               )}
-              {/* --- จบส่วนแสดงผล PDF --- */}
             </div>
-
             <div className="p-4 border-t flex justify-end gap-3 bg-white">
               <Button
                 variant="outline"
@@ -1046,8 +1193,8 @@ export default function NotesPage({ noteType }: Props) {
       )}
 
       {isNoteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60  p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-background rounded-xl shadow-xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
             <Card className="border-0 shadow-none">
               <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -1125,32 +1272,18 @@ export default function NotesPage({ noteType }: Props) {
                     <Label htmlFor="file">แนบไฟล์ (PDF - ทางเลือก)</Label>
                     {editingNoteId && existingFilePath && (
                       <div className="flex items-center justify-between p-3 border border-slate-200 bg-slate-50 rounded-md mb-2">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            className="w-5 h-5 text-red-500 shrink-0"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          <span className="text-sm text-slate-600 truncate">
-                            มีไฟล์แนบอยู่แล้ว
-                          </span>
-                        </div>
+                        <span className="text-sm text-slate-600 truncate">
+                          มีไฟล์แนบอยู่แล้ว
+                        </span>
                         <Button
                           type="button"
-                          variant="destructive" // ปุ่มสีแดงจาก shadcn/ui
+                          variant="destructive"
                           size="sm"
                           onClick={handleRemoveExistingPdf}
                           disabled={isDeletingFile || isSubmittingNote}
                           className="h-8 text-xs shrink-0"
                         >
-                          {isDeletingFile ? "กำลังลบ..." : "ลบไฟล์นี้"}
+                          ลบไฟล์นี้
                         </Button>
                       </div>
                     )}
@@ -1160,33 +1293,52 @@ export default function NotesPage({ noteType }: Props) {
                       accept=".pdf"
                       onChange={(e) => setFile(e.target.files?.[0] || null)}
                       disabled={isSubmittingNote || isDeletingFile}
-                      className="cursor-pointer file:cursor-pointer file:text-sm file:font-medium"
                     />
-                    <span className="text-[0.8rem] text-muted-foreground">
-                      * รองรับเฉพาะไฟล์ .pdf เท่านั้น
-                      (เลือกไฟล์ใหม่เพื่ออัปเดตทับไฟล์เดิม)
-                    </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="category">หมวดหมู่</Label>
-                      <select
-                        id="category"
-                        value={categoryId}
-                        onChange={(e) => setCategoryId(e.target.value)}
+                      <Label>หมวดหมู่</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-between h-10 px-3 bg-background font-normal"
+                        onClick={() => setIsNoteCategoryModalOpen(true)}
                         disabled={isSubmittingNote}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50"
                       >
-                        <option key="" value="" disabled>
-                          -- เลือกหมวดหมู่ --
-                        </option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
+                        {categoryId ? (
+                          (() => {
+                            const cat = categories.find(
+                              (c) => c.id === categoryId,
+                            );
+                            return cat ? (
+                              <div className="flex items-center gap-2 truncate">
+                                {cat.pic ? (
+                                  <img
+                                    src={getPicUrl(cat.pic)}
+                                    className="w-5 h-5 rounded object-cover shrink-0"
+                                    alt="pic"
+                                  />
+                                ) : (
+                                  <div className="w-5 h-5 bg-slate-200 rounded shrink-0 flex items-center justify-center text-[10px] text-slate-500">
+                                    -
+                                  </div>
+                                )}
+                                <span className="truncate">{cat.name}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                -- เลือกหมวดหมู่ --
+                              </span>
+                            );
+                          })()
+                        ) : (
+                          <span className="text-muted-foreground">
+                            -- เลือกหมวดหมู่ --
+                          </span>
+                        )}
+                        <span className="text-slate-400">▼</span>
+                      </Button>
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="status">สถานะ</Label>
@@ -1218,30 +1370,8 @@ export default function NotesPage({ noteType }: Props) {
                     <Button
                       type="submit"
                       disabled={isSubmittingNote}
-                      className="flex-1 flex items-center justify-center gap-2"
+                      className="flex-1"
                     >
-                      {isSubmittingNote && (
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                      )}
                       {isSubmittingNote
                         ? "กำลังบันทึก..."
                         : editingNoteId
@@ -1256,9 +1386,78 @@ export default function NotesPage({ noteType }: Props) {
         </div>
       )}
 
+      {isNoteCategoryModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-background rounded-xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-4 border-b flex justify-between items-center bg-slate-50/50">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path d="M4 4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-5L9 4H4Z" />
+                </svg>
+                เลือกหมวดหมู่
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={() => setIsNoteCategoryModalOpen(false)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </Button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setCategoryId(cat.id);
+                      setIsNoteCategoryModalOpen(false);
+                    }}
+                    className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                      categoryId === cat.id
+                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                        : "border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                    }`}
+                  >
+                    {cat.pic ? (
+                      <img
+                        src={getPicUrl(cat.pic)}
+                        className="w-8 h-8 object-cover rounded-md"
+                        alt="pic"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 text-xs font-medium">
+                        ไม่มีรูป
+                      </div>
+                    )}
+                    <span className="font-medium text-sm truncate flex-1">
+                      {cat.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60  p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-background rounded-xl shadow-xl overflow-hidden">
+          <div className="w-full max-w-md bg-background rounded-xl overflow-hidden">
             <Card className="border-0 shadow-none">
               <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -1293,7 +1492,42 @@ export default function NotesPage({ noteType }: Props) {
                 </Button>
               </CardHeader>
               <CardContent className="flex flex-col gap-4 pt-6">
-                <form onSubmit={handleAddCategory} className="flex gap-2">
+                <form
+                  onSubmit={handleAddCategory}
+                  className="flex gap-2 items-center"
+                >
+                  <label
+                    className="cursor-pointer border border-dashed border-slate-300 rounded-md flex items-center justify-center w-10 h-10 hover:bg-slate-50 shrink-0 relative overflow-hidden group"
+                    title="อัพโหลดรูป (1x1)"
+                  >
+                    {newCategoryPicPreview ? (
+                      <img
+                        src={newCategoryPicPreview}
+                        className="w-full h-full object-cover"
+                        alt="preview"
+                      />
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="w-5 h-5 text-slate-400 group-hover:text-slate-500"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-2.22-2.219a2.75 2.75 0 0 0-3.885 0l-1.9 1.9a2.75 2.75 0 0 1-3.886 0l-3.11-3.11a2.75 2.75 0 0 0-3.885 0l-.114.114ZM14 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleNewCategoryPicChange}
+                      disabled={isSubmittingCategory}
+                    />
+                  </label>
                   <Input
                     placeholder="ชื่อหมวดหมู่ใหม่..."
                     value={newCategoryName}
@@ -1306,41 +1540,7 @@ export default function NotesPage({ noteType }: Props) {
                     size="icon"
                     disabled={isSubmittingCategory}
                   >
-                    {isSubmittingCategory ? (
-                      <svg
-                        className="animate-spin h-4 w-4 text-slate-600"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                    ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 16 16"
-                        fill="currentColor"
-                        className="w-4 h-4"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M8 1.5a.75.75 0 0 1 .75.75V7h4.75a.75.75 0 0 1 0 1.5H8.75v4.75a.75.75 0 0 1-1.5 0V8.5H2.5a.75.75 0 0 1 0-1.5h4.75V2.25A.75.75 0 0 1 8 1.5Z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
+                    +
                   </Button>
                 </form>
 
@@ -1356,7 +1556,38 @@ export default function NotesPage({ noteType }: Props) {
                       className="flex items-center justify-between bg-muted/50 p-2.5 rounded-md group"
                     >
                       {editingCategoryId === cat.id ? (
-                        <div className="flex w-full gap-2">
+                        <div className="flex w-full gap-2 items-center">
+                          <label className="cursor-pointer border border-dashed border-slate-300 rounded-md flex items-center justify-center w-8 h-8 hover:bg-slate-50 shrink-0 relative overflow-hidden group">
+                            {editingCategoryPicPreview || cat.pic ? (
+                              <img
+                                src={
+                                  editingCategoryPicPreview ||
+                                  getPicUrl(cat.pic)
+                                }
+                                className="w-full h-full object-cover"
+                                alt="preview"
+                              />
+                            ) : (
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                className="w-4 h-4 text-slate-400 group-hover:text-slate-500"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-2.22-2.219a2.75 2.75 0 0 0-3.885 0l-1.9 1.9a2.75 2.75 0 0 1-3.886 0l-3.11-3.11a2.75 2.75 0 0 0-3.885 0l-.114.114ZM14 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleEditingCategoryPicChange}
+                            />
+                          </label>
                           <Input
                             value={editingCategoryName}
                             onChange={(e) =>
@@ -1368,6 +1599,7 @@ export default function NotesPage({ noteType }: Props) {
                             size="sm"
                             onClick={() => handleUpdateCategory(cat.id)}
                             className="px-2"
+                            disabled={isSubmittingCategory}
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -1385,8 +1617,13 @@ export default function NotesPage({ noteType }: Props) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => setEditingCategoryId(null)}
+                            onClick={() => {
+                              setEditingCategoryId(null);
+                              setEditingCategoryPic(null);
+                              setEditingCategoryPicPreview(null);
+                            }}
                             className="px-2 text-muted-foreground"
+                            disabled={isSubmittingCategory}
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -1400,9 +1637,22 @@ export default function NotesPage({ noteType }: Props) {
                         </div>
                       ) : (
                         <>
-                          <span className="text-sm font-medium">
-                            {cat.name}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {cat.pic ? (
+                              <img
+                                src={getPicUrl(cat.pic)}
+                                className="w-6 h-6 object-cover rounded-md"
+                                alt="pic"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 bg-slate-200 rounded-md flex items-center justify-center text-[10px] text-slate-500">
+                                -
+                              </div>
+                            )}
+                            <span className="text-sm font-medium">
+                              {cat.name}
+                            </span>
+                          </div>
                           <div className="flex gap-1">
                             <Button
                               size="icon"
@@ -1411,6 +1661,8 @@ export default function NotesPage({ noteType }: Props) {
                               onClick={() => {
                                 setEditingCategoryId(cat.id);
                                 setEditingCategoryName(cat.name);
+                                setEditingCategoryPic(null);
+                                setEditingCategoryPicPreview(null);
                               }}
                             >
                               <svg
