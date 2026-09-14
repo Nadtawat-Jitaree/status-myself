@@ -1,23 +1,26 @@
-import { Suspense } from 'react'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
-import { createClient } from "@/lib/supabase/server"
-import ProjectClient from './ProjectClient'
+import { Suspense } from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import ProjectClient from "./ProjectClient";
 
 async function getProjectDetails(id: string) {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   const { data: project, error } = await supabase
-    .from('projects')
-    .select('*, tasks(*)')
-    .eq('id', id)
-    .single()
+    .from("projects")
+    .select("*, tasks(*)")
+    .eq("id", id)
+    .single();
 
-  if (error) throw error
-  
-  project.tasks.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  if (error) throw error;
 
-  return project
+  project.tasks.sort(
+    (a: any, b: any) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+  );
+
+  return project;
 }
 
 function ProjectDetailSkeleton() {
@@ -46,26 +49,51 @@ function ProjectDetailSkeleton() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-async function ProjectDataWrapper({ params }: { params: Promise<{ id: string }> }) {
+async function ProjectDataWrapper({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
-  const project = await getProjectDetails(id)
-  return <ProjectClient project={project} />
+  const project = await getProjectDetails(id);
+  return <ProjectClient project={project} />;
 }
 
-export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ProjectDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   return (
     <div className="container mx-auto px-4 py-9 max-w-5xl flex flex-col gap-8 border-2 rounded-3xl relative">
-      {/* <Link href="/system/projects" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        กลับไปหน้าโปรเจค
-      </Link> */}
+      <div>
+        <Link
+          href="/system/projects"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors     
+                      h-10
+                      flex-1
+                      justify-center
+                      gap-2
+                      rounded-xl
+                      border
+                      bg-background
+                      px-3
+                      font-medium
+                      hover:border-primary/30
+                      hover:bg-primary/5
+                      sm:flex-none"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          back
+        </Link>
+      </div>
 
       <Suspense fallback={<ProjectDetailSkeleton />}>
         <ProjectDataWrapper params={params} />
       </Suspense>
     </div>
-  )
+  );
 }
