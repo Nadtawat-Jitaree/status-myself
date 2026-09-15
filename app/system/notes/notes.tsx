@@ -968,7 +968,7 @@ export default function NotesPage({ noteType }: Props) {
 
       {isFilterModalOpen && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-background rounded-xl overflow-hidden flex flex-col max-h-[80vh]">
+          <div className="w-full max-w-sm md:max-w-4xl bg-background rounded-xl overflow-hidden flex flex-col max-h-[80vh]">
             <div className="p-4 border-b flex justify-between items-center bg-slate-50/50">
               <h3 className="font-semibold text-lg flex items-center gap-2">
                 หมวดหมู่
@@ -989,7 +989,7 @@ export default function NotesPage({ noteType }: Props) {
                 </svg>
               </Button>
             </div>
-            <div className="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 gap-3">
+            <div className="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <button
                 type="button"
                 onClick={() => {
