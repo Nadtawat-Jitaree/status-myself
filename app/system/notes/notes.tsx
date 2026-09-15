@@ -989,22 +989,27 @@ export default function NotesPage({ noteType }: Props) {
                 </svg>
               </Button>
             </div>
-            <div className="p-4 overflow-y-auto flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => {
                   setFilterCategory("all");
                   setIsFilterModalOpen(false);
                 }}
-                className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${filterCategory === "all" ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" : "border-slate-200 hover:bg-slate-50 hover:border-slate-300"}`}
+                className={`flex flex-col items-center p-3 rounded-xl border text-center transition-all duration-200 hover:shadow-md ${
+                  filterCategory === "all"
+                    ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500 shadow-sm"
+                    : "border-slate-200 hover:bg-white hover:border-slate-300"
+                }`}
               >
-                <div className="w-8 h-8 bg-slate-100 rounded-md flex items-center justify-center text-slate-500 font-bold text-xs">
+                <div className="w-full aspect-square bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 font-bold text-lg shadow-sm">
                   All
                 </div>
-                <span className="font-medium text-sm truncate flex-1">
+                <span className="font-medium text-sm truncate w-full mt-3 text-slate-700">
                   ทั้งหมด (All)
                 </span>
               </button>
+
               {categories.map((cat) => (
                 <button
                   key={cat.id}
@@ -1013,20 +1018,24 @@ export default function NotesPage({ noteType }: Props) {
                     setFilterCategory(cat.id);
                     setIsFilterModalOpen(false);
                   }}
-                  className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${filterCategory === cat.id ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" : "border-slate-200 hover:bg-slate-50 hover:border-slate-300"}`}
+                  className={`flex flex-col items-center p-3 rounded-xl border text-center transition-all duration-200 hover:shadow-md ${
+                    filterCategory === cat.id
+                      ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500 shadow-sm"
+                      : "border-slate-200 hover:bg-white hover:border-slate-300"
+                  }`}
                 >
                   {cat.pic ? (
                     <img
                       src={getPicUrl(cat.pic)}
-                      className="w-8 h-8 object-cover rounded-md"
-                      alt="pic"
+                      className="w-full aspect-square object-cover rounded-lg shadow-sm"
+                      alt={cat.name}
                     />
                   ) : (
-                    <div className="w-8 h-8 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 text-xs font-medium">
+                    <div className="w-full aspect-square bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 text-sm font-medium shadow-sm">
                       ไม่มีรูป
                     </div>
                   )}
-                  <span className="font-medium text-sm truncate flex-1">
+                  <span className="font-medium text-sm truncate w-full mt-3 text-slate-700">
                     {cat.name}
                   </span>
                 </button>
@@ -1085,7 +1094,7 @@ export default function NotesPage({ noteType }: Props) {
                   >
                     {readingNote.status}
                   </span>
-                                    <span className="text-muted-foreground ml-auto flex items-center gap-1.5">
+                  <span className="text-muted-foreground ml-auto flex items-center gap-1.5">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 16 16"
@@ -1337,7 +1346,6 @@ export default function NotesPage({ noteType }: Props) {
                             -- เลือกหมวดหมู่ --
                           </span>
                         )}
-                        <span className="text-slate-400">▼</span>
                       </Button>
                     </div>
                     <div className="grid gap-2">
