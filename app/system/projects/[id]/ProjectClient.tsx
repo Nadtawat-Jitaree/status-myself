@@ -96,16 +96,12 @@ export default function ProjectClient({ project }: { project: any }) {
         return `
           bg-blue-50/70
           border-blue-200
-          dark:bg-blue-900/20
-          dark:border-blue-900/60
         `;
 
       case "done":
         return `
           bg-emerald-50/70
           border-emerald-200
-          dark:bg-emerald-900/20
-          dark:border-emerald-900/60
           opacity-90
         `;
 
@@ -241,7 +237,7 @@ export default function ProjectClient({ project }: { project: any }) {
                     </span>
 
                     {progress === 100 && (
-                      <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                      <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         เสร็จสมบูรณ์
                       </span>
@@ -306,9 +302,6 @@ export default function ProjectClient({ project }: { project: any }) {
                       text-red-600
                       transition
                       hover:bg-red-100
-                      dark:border-red-900/50
-                      dark:bg-red-950/30
-                      dark:text-red-400
                       sm:flex-none
                     "
                   >
@@ -481,9 +474,9 @@ export default function ProjectClient({ project }: { project: any }) {
                             sm:w-10
                             ${
                               task.status === "done"
-                                ? "bg-emerald-200 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
+                                ? "bg-emerald-200 text-emerald-800"
                                 : task.status === "in_progress"
-                                  ? "bg-blue-200 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
+                                  ? "bg-blue-200 text-blue-800"
                                   : "bg-primary/10 text-primary"
                             }
                           `}
@@ -583,7 +576,7 @@ export default function ProjectClient({ project }: { project: any }) {
                                 sm:text-base
                                 ${
                                   task.status === "done"
-                                    ? "text-emerald-700/70 line-through dark:text-emerald-300/60"
+                                    ? "text-emerald-700/70 line-through"
                                     : "text-foreground"
                                 }
                               `}
@@ -656,7 +649,7 @@ export default function ProjectClient({ project }: { project: any }) {
                                   sm:px-3
                                   ${
                                     task.status === "in_progress"
-                                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-100"
+                                      ? "bg-blue-100 text-blue-700"
                                       : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
                                   }
                                 `}
@@ -691,7 +684,7 @@ export default function ProjectClient({ project }: { project: any }) {
                                   sm:px-3
                                   ${
                                     task.status === "done"
-                                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-100"
+                                      ? "bg-emerald-100 text-emerald-700"
                                       : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
                                   }
                                 `}
@@ -752,9 +745,6 @@ export default function ProjectClient({ project }: { project: any }) {
                                 text-red-600
                                 transition
                                 hover:bg-red-100
-                                dark:border-red-900/50
-                                dark:bg-red-950/30
-                                dark:text-red-400
                                 lg:flex-none
                               "
                             >
