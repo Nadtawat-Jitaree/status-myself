@@ -8,8 +8,9 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "NJ System",
+  title: "NJ Notes",
   description: "",
+  manifest: "/manifest.json",
   icons: {
     icon: "/all.png",
     shortcut: "/all.png",

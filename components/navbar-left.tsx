@@ -12,7 +12,15 @@ export function NavbarLeft() {
     <>
       <Link href="/" className="mr-4">
         <Image
-          src="/all.webp"
+          src="/logo.png"
+          alt="home"
+          width={50}
+          height={50}
+        />
+      </Link>
+      <Link href="/system/dashboard" className="mr-4">
+        <Image
+          src="/dashboard.png"
           alt="home"
           width={40}
           loading="eager"
@@ -26,10 +34,10 @@ export function NavbarLeft() {
         className="mr-4 flex items-center justify-center"
       >
         <Image
-          src="/note.webp"
-          alt="บันทึก"
-          width={30}
-          height={30}
+          src="/menus.png"
+          alt="menus"
+          width={40}
+          height={40}
           unoptimized
         />
       </button>
