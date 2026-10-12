@@ -1,10 +1,7 @@
-import { NavbarLeft } from "@/components/navbar-left";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { NavbarRight } from "@/components/navbar-right";
-import { hasEnvVars } from "@/lib/utils";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import NoteCard from "@/components/NoteCard";
+import { hasEnvVars } from "@/lib/utils";
+
 function DashboardSkeleton() {
   return (
     <div className="w-full max-w-3xl grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -22,7 +19,7 @@ function DashboardSkeleton() {
 }
 
 async function DashboardSummary() {
-  let statusCounts = {
+  const statusCounts = {
     ทั่วไป: 0,
     สำคัญ: 0,
     งานค้าง: 0,

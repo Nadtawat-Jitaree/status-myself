@@ -73,6 +73,9 @@ export async function updateTaskStatus(taskId: string, newStatus: string, projec
 
 export async function updateProject(projectId: string, formData: FormData) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
   const name = formData.get('name') as string
   const description = formData.get('description') as string
 
@@ -80,6 +83,7 @@ export async function updateProject(projectId: string, formData: FormData) {
     .from('projects')
     .update({ name, description })
     .eq('id', projectId)
+    .eq('user_id', user.id)
 
   if (error) throw error
   revalidatePath(`/system/projects/${projectId}`)
@@ -87,7 +91,17 @@ export async function updateProject(projectId: string, formData: FormData) {
 
 export async function deleteProject(projectId: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from('projects').delete().eq('id', projectId)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // ลบงานย่อยก่อนเพื่อความปลอดภัยหากฐานข้อมูลไม่ได้ตั้ง ON DELETE CASCADE
+  await supabase.from('tasks').delete().eq('project_id', projectId)
+
+  const { error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', projectId)
+    .eq('user_id', user.id)
   
   if (error) throw error
   revalidatePath('/system/projects')

@@ -22,7 +22,6 @@ export async function removeNoteAttachment(id: string, filePath: string) {
 
   revalidatePath("/notes");
   revalidatePath("/system/notes");
-  revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");
   return { success: true };
@@ -71,7 +70,6 @@ export async function createNote(payload: {
 
   revalidatePath("/notes");
   revalidatePath("/system/notes");
-  revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");
   return { success: true };
@@ -116,7 +114,6 @@ export async function updateNote(
 
   revalidatePath("/notes");
   revalidatePath("/system/notes");
-  revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");
   return { success: true };
@@ -138,7 +135,6 @@ export async function deleteNote(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
-  revalidatePath("/system/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");
@@ -171,7 +167,6 @@ export async function createCategory(name: string, noteType: string, pic?: strin
 
   revalidatePath("/notes");
   revalidatePath("/system/notes");
-  revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");
   return { success: true };
@@ -198,7 +193,6 @@ export async function updateCategory(id: string, name: string, pic?: string | nu
 
   revalidatePath("/notes");
   revalidatePath("/system/notes");
-  revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");
   return { success: true };
@@ -219,7 +213,6 @@ export async function deleteCategory(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
-  revalidatePath("/system/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");

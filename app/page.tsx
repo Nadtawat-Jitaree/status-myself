@@ -63,7 +63,7 @@ const mockNotes = [
 ];
 
 const filterCategory = "all";
-const searchQuery = "";
+const searchQuery: string = "";
 
 const currentPage = 1;
 const ITEMS_PER_PAGE = 6;
