@@ -234,15 +234,14 @@ export default function NotesPage({ noteType }: Props) {
   const [editingCategoryName, setEditingCategoryName] = useState("");
 
   const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [showCompleted, setShowCompleted] = useState<boolean>(false);
-
-  const [showOnlyPending, setShowOnlyPending] = useState<boolean>(false);
+  type StatusFilter = "all" | "ทั่วไป" | "สำคัญ" | "งานค้าง" | "เสร็จสิ้น";
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 6;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterCategory, showCompleted, showOnlyPending, searchQuery]);
+  }, [filterCategory, statusFilter, searchQuery]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
@@ -329,10 +328,39 @@ export default function NotesPage({ noteType }: Props) {
     }
   };
 
+  const statusCounts = useMemo(() => {
+    const categoryNotes = notes.filter((note) => {
+      if (filterCategory !== "all") {
+        if (filterCategory === "none" && note.category_id !== null) return false;
+        if (filterCategory !== "none" && note.category_id !== filterCategory) return false;
+      }
+      return true;
+    });
+
+    const counts = {
+      all: categoryNotes.length,
+      ทั่วไป: 0,
+      สำคัญ: 0,
+      งานค้าง: 0,
+      เสร็จสิ้น: 0,
+    };
+
+    categoryNotes.forEach((n) => {
+      const st = (n.status || "ทั่วไป") as keyof typeof counts;
+      if (counts[st] !== undefined) {
+        counts[st]++;
+      } else {
+        counts["ทั่วไป"]++;
+      }
+    });
+
+    return counts;
+  }, [notes, filterCategory]);
+
   const filteredNotes = useMemo(() => {
     return notes.filter((note) => {
-      if (showOnlyPending && note.status !== "งานค้าง") return false;
-      if (showCompleted && note.status !== "เสร็จสิ้น") return false;
+      const noteStatus = note.status || "ทั่วไป";
+      if (statusFilter !== "all" && noteStatus !== statusFilter) return false;
 
       if (filterCategory !== "all") {
         if (filterCategory === "none" && note.category_id !== null)
@@ -352,7 +380,7 @@ export default function NotesPage({ noteType }: Props) {
 
       return true;
     });
-  }, [notes, showCompleted, filterCategory, showOnlyPending, searchQuery]);
+  }, [notes, statusFilter, filterCategory, searchQuery]);
 
   const totalPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE);
   const paginatedNotes = useMemo(() => {
@@ -751,66 +779,25 @@ export default function NotesPage({ noteType }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-          <h2 className="text-xl font-bold">รายการบันทึก</h2>
+      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 dark:bg-card/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat backdrop-blur-sm">
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold tracking-tight">รายการบันทึก</h2>
+            <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-background/90 dark:bg-muted text-muted-foreground border border-border shadow-sm">
+              {filteredNotes.length} รายการ
+            </span>
+          </div>
 
-          <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-2 relative self-start md:self-auto">
+            <Label htmlFor="filter" className="whitespace-nowrap text-sm text-muted-foreground">
+              หมวดหมู่:
+            </Label>
             <Button
+              type="button"
               variant="outline"
-              size="sm"
-              onClick={() => setShowOnlyPending(!showOnlyPending)}
-              className={`h-9 gap-2 transition-colors ${
-                showOnlyPending
-                  ? "bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200"
-                  : "text-slate-600 hover:text-orange-600"
-              }`}
+              className="flex h-9 w-[130px] md:w-[180px] justify-between px-3 text-sm bg-background font-normal border-border hover:bg-accent"
+              onClick={() => setIsFilterModalOpen(true)}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 16 16"
-                fill="currentColor"
-                className="w-4 h-4"
-              >
-                <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm0 12.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11ZM8 4a.75.75 0 0 0-.75.75v3.5c0 .2.08.39.22.53l2.5 2.5a.75.75 0 0 0 1.06-1.06l-2.23-2.23V4.75A.75.75 0 0 0 8 4Z" />
-              </svg>
-              แสดงเฉพาะงานค้าง
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCompleted(!showCompleted)}
-              className={`h-9 gap-2 transition-colors ${
-                showCompleted
-                  ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                  : "text-slate-600 hover:text-green-600"
-              }`}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 16 16"
-                fill="currentColor"
-                className="w-4 h-4"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm3.844-8.791a.75.75 0 0 0-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 1 0-1.114 1.004l2.25 2.5a.75.75 0 0 0 1.15-.043l4.25-5.5Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              รายการที่เสร็จสิ้น
-            </Button>
-
-            <div className="flex items-center gap-2 relative">
-              <Label htmlFor="filter" className="whitespace-nowrap">
-                หมวดหมู่
-              </Label>
-              <Button
-                type="button"
-                variant="outline"
-                className="flex h-9 w-[100px] md:w-[180px] justify-between px-3 text-sm bg-background font-normal"
-                onClick={() => setIsFilterModalOpen(true)}
-              >
                 {filterCategory === "all"
                   ? "ทั้งหมด (All)"
                   : (() => {
@@ -839,6 +826,97 @@ export default function NotesPage({ noteType }: Props) {
               </Button>
             </div>
           </div>
+
+        {/* Status Filter Chips */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+          {[
+            {
+              id: "all" as const,
+              label: "ทั้งหมด",
+              icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                </svg>
+              ),
+              count: statusCounts.all,
+              activeCls: "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-sm",
+              badgeActive: "bg-slate-700 text-white dark:bg-slate-300 dark:text-slate-900",
+            },
+            {
+              id: "ทั่วไป" as const,
+              label: "ทั่วไป",
+              icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              ),
+              count: statusCounts["ทั่วไป"],
+              activeCls: "bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800 shadow-sm",
+              badgeActive: "bg-sky-200/80 text-sky-800 dark:bg-sky-900 dark:text-sky-200",
+            },
+            {
+              id: "สำคัญ" as const,
+              label: "สำคัญ",
+              icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.527.82-1.124 1.905-1.554 3.033C7.545 8.653 7 11.115 7 13.5A5.5 5.5 0 0012.5 19c3.038 0 5.5-2.462 5.5-5.5 0-2.417-1.12-4.526-2.583-6.223-.591-.685-1.189-1.32-1.722-1.87-.66-.682-1.144-1.295-1.3-1.854z" clipRule="evenodd" />
+                </svg>
+              ),
+              count: statusCounts["สำคัญ"],
+              activeCls: "bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 shadow-sm",
+              badgeActive: "bg-rose-200/80 text-rose-800 dark:bg-rose-900 dark:text-rose-200",
+            },
+            {
+              id: "งานค้าง" as const,
+              label: "งานค้าง",
+              icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                </svg>
+              ),
+              count: statusCounts["งานค้าง"],
+              activeCls: "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 shadow-sm",
+              badgeActive: "bg-amber-200/80 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+            },
+            {
+              id: "เสร็จสิ้น" as const,
+              label: "เสร็จสิ้น",
+              icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              ),
+              count: statusCounts["เสร็จสิ้น"],
+              activeCls: "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 shadow-sm",
+              badgeActive: "bg-emerald-200/80 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+            },
+          ].map((tab) => {
+            const isActive = statusFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setStatusFilter(tab.id)}
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap border shrink-0 cursor-pointer ${
+                  isActive
+                    ? tab.activeCls
+                    : "bg-background/90 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+                <span
+                  className={`text-[11px] px-1.5 py-0.2 rounded-full font-semibold transition-colors ${
+                    isActive
+                      ? tab.badgeActive
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
         <div className="flex justify-end text-end w-full">
           <div className="relative w-full">
