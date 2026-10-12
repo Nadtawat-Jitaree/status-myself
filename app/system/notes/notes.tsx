@@ -38,6 +38,11 @@ import {
   ExternalLink,
   Download,
   X,
+  Check,
+  Search,
+  Layers,
+  FolderPlus,
+  Folder,
 } from "lucide-react";
 
 type Category = { id: string; name: string; pic?: string | null };
@@ -90,7 +95,19 @@ export default function NotesPage({ noteType }: Props) {
   >(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isNoteCategoryModalOpen, setIsNoteCategoryModalOpen] = useState(false);
+  const [categoryFilterSearch, setCategoryFilterSearch] = useState("");
+  const [categorySelectSearch, setCategorySelectSearch] = useState("");
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
+  const categoryNoteCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    notes.forEach((n) => {
+      if (n.category_id) {
+        counts[n.category_id] = (counts[n.category_id] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [notes]);
 
   const getAttachmentUrl = (filePath?: string | null) => {
     if (!filePath) return "";
@@ -1115,79 +1132,164 @@ export default function NotesPage({ noteType }: Props) {
       </div>
 
       {isFilterModalOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-sm md:max-w-4xl bg-background rounded-xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="p-4 border-b flex justify-between items-center bg-slate-50/50">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                หมวดหมู่
-              </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                onClick={() => setIsFilterModalOpen(false)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-5 h-5"
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          onClick={() => setIsFilterModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-3xl bg-background rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-5 md:p-6 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/20">
+              <div>
+                <h3 className="font-bold text-xl flex items-center gap-2 text-foreground">
+                  <Folder className="w-5 h-5 text-primary" />
+                  เลือกหมวดหมู่ที่ต้องการดู
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  เลือกหมวดหมู่เพื่อคัดกรองรายการบันทึก หรือค้นหาจากชื่อ
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Search Bar */}
+                <div className="relative flex-1 sm:w-56">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={categoryFilterSearch}
+                    onChange={(e) => setCategoryFilterSearch(e.target.value)}
+                    placeholder="ค้นหาหมวดหมู่..."
+                    className="w-full h-9 pl-9 pr-7 rounded-xl border bg-background text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                  {categoryFilterSearch && (
+                    <button
+                      onClick={() => setCategoryFilterSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-full shrink-0"
+                  onClick={() => setIsFilterModalOpen(false)}
                 >
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
-              </Button>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
-            <div className="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
+
+            {/* Card Grid */}
+            <div className="p-5 md:p-6 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {/* Option: ทั้งหมด (All) */}
+              {(!categoryFilterSearch ||
+                "ทั้งหมด all".includes(categoryFilterSearch.toLowerCase())) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterCategory("all");
+                    setIsFilterModalOpen(false);
+                  }}
+                  className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border text-center transition-all ${
+                    filterCategory === "all"
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm"
+                      : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
+                  }`}
+                >
+                  {filterCategory === "all" && (
+                    <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
+                      <Check className="w-3 h-3 stroke-[3]" />
+                    </span>
+                  )}
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary/20 to-primary/5 flex items-center justify-center text-primary shadow-sm mb-3">
+                    <Layers className="w-7 h-7" />
+                  </div>
+                  <span className="font-bold text-sm truncate w-full text-foreground">
+                    ทั้งหมด (All)
+                  </span>
+                  <span className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                    {notes.length} บันทึก
+                  </span>
+                </button>
+              )}
+
+              {/* Dynamic Categories */}
+              {categories
+                .filter((cat) =>
+                  cat.name
+                    .toLowerCase()
+                    .includes(categoryFilterSearch.toLowerCase()),
+                )
+                .map((cat) => {
+                  const isSelected = filterCategory === cat.id;
+                  const count = categoryNoteCounts[cat.id] || 0;
+
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        setFilterCategory(cat.id);
+                        setIsFilterModalOpen(false);
+                      }}
+                      className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border text-center ${
+                        isSelected
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm"
+                          : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </span>
+                      )}
+
+                      {cat.pic ? (
+                        <img
+                          src={getPicUrl(cat.pic)}
+                          className="w-14 h-14 rounded-2xl object-cover shadow-sm mb-3  transition-transform"
+                          alt={cat.name}
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shadow-sm mb-3  transition-transform">
+                          <Folder className="w-7 h-7" />
+                        </div>
+                      )}
+
+                      <span className="font-bold text-sm truncate w-full text-foreground">
+                        {cat.name}
+                      </span>
+                      <span className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                        {count} บันทึก
+                      </span>
+                    </button>
+                  );
+                })}
+
+              {/* Add New Category Card */}
               <button
                 type="button"
                 onClick={() => {
-                  setFilterCategory("all");
                   setIsFilterModalOpen(false);
+                  setIsCategoryModalOpen(true);
                 }}
-                className={`flex flex-col items-center p-3 rounded-xl border text-center transition-all duration-200 hover:shadow-md ${
-                  filterCategory === "all"
-                    ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500 shadow-sm"
-                    : "border-slate-200 hover:bg-white hover:border-slate-300"
-                }`}
+                className="group flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-muted hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-all duration-200"
               >
-                <div className="w-full aspect-square bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 font-bold text-lg shadow-sm">
-                  All
+                <div className="w-14 h-14 rounded-2xl bg-muted/60 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors mb-3">
+                  <FolderPlus className="w-6 h-6" />
                 </div>
-                <span className="font-medium text-sm truncate w-full mt-3 text-slate-700">
-                  ทั้งหมด (All)
+                <span className="font-semibold text-xs">
+                  + จัดการหมวดหมู่
+                </span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">
+                  เพิ่ม / แก้ไข
                 </span>
               </button>
-
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setFilterCategory(cat.id);
-                    setIsFilterModalOpen(false);
-                  }}
-                  className={`flex flex-col items-center p-3 rounded-xl border text-center transition-all duration-200 hover:shadow-md ${
-                    filterCategory === cat.id
-                      ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500 shadow-sm"
-                      : "border-slate-200 hover:bg-white hover:border-slate-300"
-                  }`}
-                >
-                  {cat.pic ? (
-                    <img
-                      src={getPicUrl(cat.pic)}
-                      className="w-full aspect-square object-cover rounded-lg shadow-sm"
-                      alt={cat.name}
-                    />
-                  ) : (
-                    <div className="w-full aspect-square bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 text-sm font-medium shadow-sm">
-                      ไม่มีรูป
-                    </div>
-                  )}
-                  <span className="font-medium text-sm truncate w-full mt-3 text-slate-700">
-                    {cat.name}
-                  </span>
-                </button>
-              ))}
             </div>
           </div>
         </div>
@@ -1591,69 +1693,131 @@ export default function NotesPage({ noteType }: Props) {
       )}
 
       {isNoteCategoryModalOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-background rounded-xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="p-4 border-b flex justify-between items-center bg-slate-50/50">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path d="M4 4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-5L9 4H4Z" />
-                </svg>
-                เลือกหมวดหมู่
-              </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                onClick={() => setIsNoteCategoryModalOpen(false)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
-              </Button>
-            </div>
-            <div className="p-4 overflow-y-auto flex-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      setCategoryId(cat.id);
-                      setIsNoteCategoryModalOpen(false);
-                    }}
-                    className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
-                      categoryId === cat.id
-                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
-                        : "border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                    }`}
-                  >
-                    {cat.pic ? (
-                      <img
-                        src={getPicUrl(cat.pic)}
-                        className="w-8 h-8 object-cover rounded-md"
-                        alt="pic"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 text-xs font-medium">
-                        ไม่มีรูป
-                      </div>
-                    )}
-                    <span className="font-medium text-sm truncate flex-1">
-                      {cat.name}
-                    </span>
-                  </button>
-                ))}
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          onClick={() => setIsNoteCategoryModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl bg-background rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-5 md:p-6 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/20">
+              <div>
+                <h3 className="font-bold text-xl flex items-center gap-2 text-foreground">
+                  <Folder className="w-5 h-5 text-primary" />
+                  เลือกหมวดหมู่สำหรับบันทึกนี้
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  เลือกหมวดหมู่ที่ตรงกับหัวข้อของคุณ
+                </p>
               </div>
+
+              <div className="flex items-center gap-3">
+                {/* Search Bar */}
+                <div className="relative flex-1 sm:w-52">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={categorySelectSearch}
+                    onChange={(e) => setCategorySelectSearch(e.target.value)}
+                    placeholder="ค้นหาหมวดหมู่..."
+                    className="w-full h-9 pl-9 pr-7 rounded-xl border bg-background text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                  {categorySelectSearch && (
+                    <button
+                      onClick={() => setCategorySelectSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-full shrink-0"
+                  onClick={() => setIsNoteCategoryModalOpen(false)}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Grid */}
+            <div className="p-5 md:p-6 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+              {categories
+                .filter((cat) =>
+                  cat.name
+                    .toLowerCase()
+                    .includes(categorySelectSearch.toLowerCase()),
+                )
+                .map((cat) => {
+                  const isSelected = categoryId === cat.id;
+                  const count = categoryNoteCounts[cat.id] || 0;
+
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        setCategoryId(cat.id);
+                        setIsNoteCategoryModalOpen(false);
+                      }}
+                      className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
+                        isSelected
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm"
+                          : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </span>
+                      )}
+
+                      {cat.pic ? (
+                        <img
+                          src={getPicUrl(cat.pic)}
+                          className="w-12 h-12 rounded-2xl object-cover shadow-sm mb-2.5 group-hover:scale-105 transition-transform"
+                          alt={cat.name}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shadow-sm mb-2.5 group-hover:scale-105 transition-transform">
+                          <Folder className="w-6 h-6" />
+                        </div>
+                      )}
+
+                      <span className="font-bold text-sm truncate w-full text-foreground">
+                        {cat.name}
+                      </span>
+                      <span className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                        {count} บันทึก
+                      </span>
+                    </button>
+                  );
+                })}
+
+              {/* Add New Category Card */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNoteCategoryModalOpen(false);
+                  setIsCategoryModalOpen(true);
+                }}
+                className="group flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-muted hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-all duration-200 hover:-translate-y-1"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-muted/60 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors mb-2.5">
+                  <FolderPlus className="w-6 h-6" />
+                </div>
+                <span className="font-semibold text-xs">
+                  + จัดการหมวดหมู่
+                </span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">
+                  เพิ่มหมวดหมู่ใหม่
+                </span>
+              </button>
             </div>
           </div>
         </div>

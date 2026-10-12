@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowRight, X, Sparkles, FileText, GraduationCap, FolderKanban } from "lucide-react";
 
 interface NoteTypeModalProps {
   open: boolean;
@@ -14,134 +15,134 @@ export default function NoteTypeModal({
 }: NoteTypeModalProps) {
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-      <div className="relative mx-5 w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl animate-in zoom-in-95 duration-200">
+  const menuItems = [
+    {
+      title: "โน้ตทั่วไป",
+      description: "บันทึกข้อความ ไอเดีย และงานทั่วไปในชีวิตประจำวัน",
+      href: "/system/notes/normal",
+      image: "/note.webp",
+      tag: "Personal & Work",
+      color: "blue",
+      borderHover: "hover:border-blue-500/50 hover:shadow-blue-500/5",
+      bgHover: "hover:bg-blue-50/50 dark:hover:bg-blue-950/20",
+      iconBg: "bg-blue-100/80 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400",
+      tagColor: "bg-blue-50 text-blue-700 border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900",
+    },
+    {
+      title: "โน้ตมหาวิทยาลัย",
+      description: "จัดการบันทึกวิชาเรียน การบ้าน รายงาน และตารางสอบ",
+      href: "/system/notes/school",
+      image: "/school.webp",
+      tag: "Education & Study",
+      color: "emerald",
+      borderHover: "hover:border-emerald-500/50 hover:shadow-emerald-500/5",
+      bgHover: "hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20",
+      iconBg: "bg-emerald-100/80 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400",
+      tagColor: "bg-emerald-50 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900",
+    },
+    {
+      title: "โปรเจกต์ & ภารกิจ",
+      description: "ติดตามความคืบหน้ารายงาน โปรเจกต์ และขั้นตอนการทำงาน",
+      href: "/system/projects",
+      image: "/normal.webp",
+      tag: "Task Tracking",
+      color: "purple",
+      borderHover: "hover:border-purple-500/50 hover:shadow-purple-500/5",
+      bgHover: "hover:bg-purple-50/50 dark:hover:bg-purple-950/20",
+      iconBg: "bg-purple-100/80 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400",
+      tagColor: "bg-purple-50 text-purple-700 border-purple-200/60 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900",
+    },
+  ];
 
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-lg rounded-3xl border bg-card p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-2 transition hover:bg-gray-100"
+          className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
           aria-label="ปิด"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 16 16"
-            fill="currentColor"
-            className="size-4 text-gray-500"
-          >
-            <path d="M3.22 3.22a.75.75 0 0 1 1.06 0L8 6.94l3.72-3.72a.75.75 0 1 1 1.06 1.06L9.06 8l3.72 3.72a.75.75 0 1 1-1.06 1.06L8 9.06l-3.72 3.72a.75.75 0 1 1-1.06-1.06L6.94 8 3.22 4.28a.75.75 0 0 1 0-1.06Z" />
-          </svg>
+          <X className="w-5 h-5" />
         </button>
 
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl">
-            <Image
-              src="/note.webp"
-              alt="บันทึก"
-              width={40}
-              height={40}
-              unoptimized
-            />
+        {/* Header */}
+        <div className="mb-7 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
+            <Sparkles className="w-6 h-6" />
           </div>
 
-          <h2 className="text-2xl font-bold">
-            เลือกประเภทโน้ต
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            เลือกพื้นที่ทำงาน
           </h2>
 
-          <p className="mt-2 text-sm text-gray-500">
-            เลือกหมวดหมู่ที่ต้องการเข้าใช้งาน
+          <p className="mt-1 text-sm text-muted-foreground">
+            เลือกประเภทบันทึกหรือโปรเจกต์ที่คุณต้องการเข้าใช้งาน
           </p>
         </div>
 
-        <div className="space-y-4">
-
-          <Link
-            href="/system/notes/normal"
-            onClick={onClose}
-            className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 transition hover:border-black hover:bg-gray-50"
-          >
-            <div className="rounded-xl bg-gray-100 p-3 transition">
-              <Image
-                src="/note.webp"
-                alt="โน้ตทั่วไป"
-                width={40}
-                height={40}
-                unoptimized
-              />
-            </div>
-
-            <div className="flex-1">
-              <div className="font-semibold text-gray-800">
-                โน้ตทั่วไป
+        {/* Menu Items */}
+        <div className="space-y-3.5">
+          {menuItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onClose}
+              className={`group relative flex items-center gap-4 rounded-2xl border bg-card/60 p-4  hover:shadow-md ${item.borderHover} ${item.bgHover}`}
+            >
+              {/* Icon Container */}
+              <div
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl p-2 ${item.iconBg}`}
+              >
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  width={36}
+                  height={36}
+                  style={{ width: "auto", height: "auto" }}
+                  unoptimized
+                />
               </div>
 
-              <div className="text-sm text-gray-500">
-                จัดการบันทึกทั่วไป
-              </div>
-            </div>
-          </Link>
+              {/* Text Info */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-base text-foreground group-hover:text-primary transition-colors">
+                    {item.title}
+                  </span>
+                  <span
+                    className={`hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full border ${item.tagColor}`}
+                  >
+                    {item.tag}
+                  </span>
+                </div>
 
-          <Link
-            href="/system/notes/school"
-            onClick={onClose}
-            className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 transition hover:border-black hover:bg-gray-50"
-          >
-            <div className="rounded-xl bg-gray-100 p-3 transition">
-              <Image
-                src="/school.webp"
-                alt="มหาวิทยาลัย"
-                width={40}
-                height={40}
-                unoptimized
-              />
-            </div>
-
-            <div className="flex-1">
-              <div className="font-semibold text-gray-800">
-                โน้ตมหาวิทยาลัย
+                <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
+                  {item.description}
+                </p>
               </div>
 
-              <div className="text-sm text-gray-500">
-                จัดการบันทึกเกี่ยวกับการเรียน
+              {/* Arrow Icon */}
+              <div className="shrink-0 text-muted-foreground/60 transition-all duration-200 group-hover:text-primary">
+                <ArrowRight className="w-5 h-5" />
               </div>
-            </div>
-          </Link>
-
-          <Link
-            href="/system/projects"
-            onClick={onClose}
-            className="group flex items-center gap-4 rounded-2xl border border-gray-200 p-5 transition hover:border-black hover:bg-gray-50"
-          >
-            <div className="rounded-xl bg-gray-100 p-3 transition">
-              <Image
-                src="/normal.webp"
-                alt="โปรเจค"
-                width={40}
-                height={40}
-                unoptimized
-              />
-            </div>
-
-            <div className="flex-1">
-              <div className="font-semibold text-gray-800">
-                โปรเจค
-              </div>
-
-              <div className="text-sm text-gray-500">
-                ดูและจัดการโปรเจค
-              </div>
-            </div>
-          </Link>
-
+            </Link>
+          ))}
         </div>
 
+        {/* Cancel Button */}
         <button
           onClick={onClose}
-          className="mt-7 w-full rounded-xl border py-3 text-sm font-medium transition hover:bg-gray-50"
+          className="mt-6 w-full rounded-xl border bg-background py-2.5 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground"
         >
           ยกเลิก
         </button>
-
       </div>
     </div>
   );
