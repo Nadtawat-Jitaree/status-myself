@@ -30,6 +30,7 @@ export async function removeNoteAttachment(id: string, filePath: string) {
 export async function getNotes(noteType: string) {
   const supabase = await createClient();
 
+  // ลอง query แบบเรียง is_pinned ก่อน
   const { data, error } = await supabase
     .from("notes")
     .select(
@@ -43,11 +44,63 @@ export async function getNotes(noteType: string) {
     `,
     )
     .eq("note_categories.note_type", noteType)
+    .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    // หากฐานข้อมูล Supabase ยังไม่ได้เพิ่มคอลัมน์ is_pinned ให้ fallback ไปเรียงตาม created_at ธรรมดา
+    if (error.message.includes("is_pinned")) {
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("notes")
+        .select(
+          `
+          *,
+          note_categories!inner(
+            name,
+            note_type,
+            pic
+          )
+        `,
+        )
+        .eq("note_categories.note_type", noteType)
+        .order("created_at", { ascending: false });
+
+      if (fallbackError) throw new Error(fallbackError.message);
+      return fallbackData;
+    }
+    throw new Error(error.message);
+  }
 
   return data;
+}
+
+export async function togglePinNote(id: string, isPinned: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { error } = await supabase
+    .from("notes")
+    .update({ is_pinned: isPinned })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    if (error.message.includes("is_pinned")) {
+      throw new Error(
+        "ยังไม่ได้สร้างคอลัมน์ is_pinned ในตาราง notes บน Supabase กรุณารัน SQL: ALTER TABLE public.notes ADD COLUMN is_pinned boolean DEFAULT false;",
+      );
+    }
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes/normal");
+  revalidatePath("/system/notes/school");
+  return { success: true };
 }
 
 export async function createNote(payload: {
@@ -56,6 +109,7 @@ export async function createNote(payload: {
   category_id: string | null;
   status: string;
   file_path?: string | null;
+  is_pinned?: boolean;
 }) {
   const supabase = await createClient();
   const {
@@ -83,6 +137,7 @@ export async function updateNote(
     category_id: string | null;
     status: string;
     file_path?: string | null;
+    is_pinned?: boolean;
   },
 ) {
   const supabase = await createClient();

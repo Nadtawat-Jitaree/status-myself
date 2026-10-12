@@ -15,10 +15,13 @@ async function getProjectDetails(id: string) {
 
   if (error) throw error;
 
-  project.tasks.sort(
-    (a: any, b: any) =>
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-  );
+  if (project?.tasks) {
+    project.tasks.sort(
+      (a: any, b: any) =>
+        (a.order_index ?? 0) - (b.order_index ?? 0) ||
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+  }
 
   return project;
 }

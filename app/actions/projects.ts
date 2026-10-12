@@ -49,11 +49,36 @@ export async function toggleTaskStatus(taskId: string, currentStatus: string, pr
 
 export async function createTask(projectId: string, formData: FormData) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
   const title = formData.get('title') as string
+  const priority = (formData.get('priority') as string) || 'medium'
+  const dueDateStr = formData.get('due_date') as string
+  const due_date = dueDateStr && dueDateStr.trim() !== '' ? new Date(dueDateStr).toISOString() : null
+
+  // หา order_index สูงสุด
+  const { data: lastTask } = await supabase
+    .from('tasks')
+    .select('order_index')
+    .eq('project_id', projectId)
+    .order('order_index', { ascending: false })
+    .limit(1)
+    .single()
+
+  const nextOrder = (lastTask?.order_index ?? 0) + 1
 
   const { error } = await supabase
     .from('tasks')
-    .insert([{ project_id: projectId, title }])
+    .insert([
+      {
+        project_id: projectId,
+        title,
+        priority,
+        due_date,
+        order_index: nextOrder,
+      },
+    ])
 
   if (error) throw error
   revalidatePath(`/system/projects/${projectId}`)
@@ -125,5 +150,41 @@ export async function updateTaskTitle(taskId: string, newTitle: string, projectI
     .eq('id', taskId)
 
   if (error) throw error
+  revalidatePath(`/system/projects/${projectId}`)
+}
+
+export async function updateTaskDetails(
+  taskId: string,
+  projectId: string,
+  payload: { title?: string; priority?: string; due_date?: string | null }
+) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('tasks')
+    .update(payload)
+    .eq('id', taskId)
+
+  if (error) throw error
+  revalidatePath(`/system/projects/${projectId}`)
+}
+
+export async function reorderTasks(
+  projectId: string,
+  taskOrders: { id: string; order_index: number }[]
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Update order_index
+  const promises = taskOrders.map((task) =>
+    supabase
+      .from('tasks')
+      .update({ order_index: task.order_index })
+      .eq('id', task.id)
+  )
+
+  await Promise.all(promises)
   revalidatePath(`/system/projects/${projectId}`)
 }

@@ -3,6 +3,7 @@ import { getProjects, createProject } from "@/app/actions/projects";
 import Link from "next/link";
 import { FolderKanban, Plus, Calendar } from "lucide-react";
 import Image from "next/image";
+import ProjectListClient from "@/components/ProjectListClient";
 
 function ProjectsSkeleton() {
   return (
@@ -43,54 +44,7 @@ async function ProjectList() {
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {projects.map((project) => {
-        const totalTasks = project.tasks?.length || 0;
-        const doneTasks =
-          project.tasks?.filter((t: any) => t.status === "done").length || 0;
-        const progress =
-          totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
-
-        return (
-          <Link href={`/system/projects/${project.id}`} key={project.id}>
-            <div className="group bg-card border rounded-xl p-6 hover:border-primary/50 transition-all cursor-pointer h-full flex flex-col">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="p-3 bg-primary/10 rounded-lg text-primary transition-transform">
-                  <FolderKanban className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg line-clamp-1">
-                    {project.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                    {project.description || "ไม่มีรายละเอียด"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-auto pt-4 border-t space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Progress</span>
-                  <span className="font-medium">{progress}%</span>
-                </div>
-                <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-primary h-full rounded-full transition-all duration-500"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {new Date(project.created_at).toLocaleDateString("th-TH")}
-                </div>
-              </div>
-            </div>
-          </Link>
-        );
-      })}
-    </div>
-  );
+  return <ProjectListClient initialProjects={projects} />;
 }
 
 export default function ProjectsPage() {

@@ -34,6 +34,7 @@ CREATE TABLE public.notes (
   updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   status text DEFAULT 'ทั่วไป'::text,
   file_path text,
+  is_pinned boolean DEFAULT false,
   CONSTRAINT notes_pkey PRIMARY KEY (id),
   CONSTRAINT notes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT notes_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.note_categories(id)

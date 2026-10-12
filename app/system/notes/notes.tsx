@@ -12,6 +12,7 @@ import {
   updateCategory,
   deleteCategory,
   removeNoteAttachment,
+  togglePinNote,
 } from "@/app/actions/notes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,19 @@ import {
 import { Label } from "@/components/ui/label";
 import Swal from "sweetalert2";
 import { createClient } from "@/lib/supabase/client";
+import {
+  Pin,
+  CheckSquare,
+  Bold,
+  List,
+  Heading,
+  Maximize2,
+  FileText,
+  Image as ImageIcon,
+  ExternalLink,
+  Download,
+  X,
+} from "lucide-react";
 
 type Category = { id: string; name: string; pic?: string | null };
 type Note = {
@@ -35,6 +49,7 @@ type Note = {
   category_id?: string | null;
   status: string;
   file_path?: string | null;
+  is_pinned?: boolean;
   note_categories?: { name: string; pic?: string | null };
   noteToEdit?: boolean;
 };
@@ -75,6 +90,81 @@ export default function NotesPage({ noteType }: Props) {
   >(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isNoteCategoryModalOpen, setIsNoteCategoryModalOpen] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
+  const getAttachmentUrl = (filePath?: string | null) => {
+    if (!filePath) return "";
+    return createClient().storage.from("note_attachments").getPublicUrl(filePath)
+      .data.publicUrl;
+  };
+
+  const isImageFile = (path?: string | null) => {
+    if (!path) return false;
+    const ext = path.split(".").pop()?.toLowerCase();
+    return ["jpg", "jpeg", "png", "webp", "gif", "svg"].includes(ext || "");
+  };
+
+  const handleTogglePin = async (noteId: string, nextPinned: boolean) => {
+    setNotes((prev) =>
+      prev
+        .map((n) => (n.id === noteId ? { ...n, is_pinned: nextPinned } : n))
+        .sort((a, b) => {
+          if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        }),
+    );
+    try {
+      await togglePinNote(noteId, nextPinned);
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: nextPinned ? "ปักหมุดแล้ว 📌" : "ยกเลิกการปักหมุดแล้ว",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch (err: any) {
+      console.error("Toggle pin failed:", err);
+      await loadNotes();
+    }
+  };
+
+  const insertFormat = (formatType: "checklist" | "bold" | "list" | "heading") => {
+    const textarea = document.getElementById("content") as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    let insertText = "";
+
+    switch (formatType) {
+      case "checklist":
+        insertText = "\n- [ ] ";
+        break;
+      case "bold":
+        insertText = "**ข้อความ**";
+        break;
+      case "list":
+        insertText = "\n• ";
+        break;
+      case "heading":
+        insertText = "\n### ";
+        break;
+    }
+
+    const newContent = text.substring(0, start) + insertText + text.substring(end);
+    setContent(newContent);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + insertText.length,
+        start + insertText.length,
+      );
+    }, 50);
+  };
 
   const handleRemoveExistingPdf = async () => {
     if (!editingNoteId || !existingFilePath) return;
@@ -772,12 +862,35 @@ export default function NotesPage({ noteType }: Props) {
                   #{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                 </div>
 
+                {note.is_pinned && (
+                  <div className="absolute top-0 left-12 bg-amber-500 text-white px-2 py-0.5 rounded-b-md text-[10px] font-bold flex items-center gap-1 shadow-sm z-10">
+                    <Pin className="w-3 h-3 fill-white" /> ปักหมุด
+                  </div>
+                )}
+
                 <CardHeader className="pb-2 pt-8">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl pr-12">
                       {note.title}
                     </CardTitle>
                     <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleTogglePin(note.id, !note.is_pinned)}
+                        className={`p-1.5 rounded-md transition-colors ${
+                          note.is_pinned
+                            ? "text-amber-500 hover:bg-amber-100/50 bg-amber-50 dark:bg-amber-950/40"
+                            : "text-slate-400 hover:bg-slate-200/50 hover:text-slate-700"
+                        }`}
+                        title={
+                          note.is_pinned
+                            ? "ยกเลิกการปักหมุด"
+                            : "ปักหมุดให้อยู่บนสุด"
+                        }
+                      >
+                        <Pin
+                          className={`w-4 h-4 ${note.is_pinned ? "fill-amber-500" : ""}`}
+                        />
+                      </button>
                       <button
                         onClick={() => setReadingNote(note)}
                         className="p-1.5 text-emerald-600 hover:bg-emerald-100/50 rounded-md transition-colors"
@@ -916,6 +1029,41 @@ export default function NotesPage({ noteType }: Props) {
                   <p className="text-sm line-clamp-4 mb-4 text-foreground/80 whitespace-pre-wrap">
                     {note.content || "ไม่มีรายละเอียด"}
                   </p>
+
+                  {note.file_path && (
+                    <div className="mb-4">
+                      {isImageFile(note.file_path) ? (
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewImageUrl(getAttachmentUrl(note.file_path));
+                          }}
+                          className="relative group/img cursor-pointer overflow-hidden rounded-xl border bg-black/5 aspect-video max-h-36 flex items-center justify-center"
+                        >
+                          <img
+                            src={getAttachmentUrl(note.file_path)}
+                            alt="แนบรูปภาพ"
+                            className="w-full h-full object-cover transition group-hover/img:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white text-xs gap-1.5 font-medium">
+                            <Maximize2 className="w-3.5 h-3.5" /> คลิกดูรูปเต็ม
+                          </div>
+                        </div>
+                      ) : (
+                        <a
+                          href={getAttachmentUrl(note.file_path)}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 text-xs text-red-600 bg-red-50 dark:bg-red-950/40 dark:text-red-400 px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-100 transition"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>เอกสารแนบ (PDF)</span>
+                          <ExternalLink className="w-3 h-3 ml-0.5" />
+                        </a>
+                      )}
+                    </div>
+                  )}
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-auto pt-4 border-t border-black/5 dark:border-white/5">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -1121,20 +1269,50 @@ export default function NotesPage({ noteType }: Props) {
                 </div>
               </div>
               {readingNote.file_path && (
-                <div className="mt-10 lg:ml-2 lg:mt-0 pt-8 border-t border-slate-200/60 lg:border-none lg:col-span-6">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-800">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="w-5 h-5 text-red-500"
+                <div className="mt-10 lg:ml-2 lg:mt-0 pt-8 border-t border-slate-200/60 lg:border-none lg:col-span-6 flex flex-col">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                      {isImageFile(readingNote.file_path) ? (
+                        <>
+                          <ImageIcon className="w-5 h-5 text-blue-500" />
+                          รูปภาพแนบ
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="w-5 h-5 text-red-500" />
+                          เอกสารแนบ (PDF)
+                        </>
+                      )}
+                    </h3>
+                    <a
+                      href={getAttachmentUrl(readingNote.file_path)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition font-medium"
                     >
-                      <path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625Z" />
-                      <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
-                    </svg>
-                    เอกสารแนบ (PDF)
-                  </h3>
-                  {pdfUrl ? (
+                      <Download className="w-3.5 h-3.5" /> ดาวน์โหลด / เปิดแท็บใหม่
+                    </a>
+                  </div>
+
+                  {isImageFile(readingNote.file_path) ? (
+                    <div
+                      onClick={() =>
+                        setPreviewImageUrl(
+                          getAttachmentUrl(readingNote.file_path),
+                        )
+                      }
+                      className="relative group cursor-pointer overflow-hidden rounded-xl border bg-black/5 flex items-center justify-center max-h-[500px]"
+                    >
+                      <img
+                        src={getAttachmentUrl(readingNote.file_path)}
+                        className="w-full h-auto max-h-[500px] object-contain rounded-xl"
+                        alt="ไฟล์แนบ"
+                      />
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm gap-2 font-medium">
+                        <Maximize2 className="w-4 h-4" /> คลิกเพื่อขยายเต็มจอ
+                      </div>
+                    </div>
+                  ) : pdfUrl ? (
                     <iframe
                       src={pdfUrl}
                       className="w-full lg:h-[500px] rounded-xl border border-slate-200"
@@ -1142,26 +1320,6 @@ export default function NotesPage({ noteType }: Props) {
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center w-full h-[300px] bg-slate-100/50 rounded-xl border border-slate-200 border-dashed animate-pulse">
-                      <svg
-                        className="animate-spin h-8 w-8 text-slate-400 mb-3"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
                       <span className="text-slate-500 font-medium">
                         กำลังโหลดเอกสาร...
                       </span>
@@ -1267,22 +1425,60 @@ export default function NotesPage({ noteType }: Props) {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="content">รายละเอียด (Content)</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="content">รายละเอียด (Content)</Label>
+                      <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border text-xs">
+                        <button
+                          type="button"
+                          onClick={() => insertFormat("checklist")}
+                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700 dark:text-slate-200"
+                          title="แทรก Checklist"
+                        >
+                          <CheckSquare className="w-3.5 h-3.5 text-primary" />
+                          <span className="hidden sm:inline">Checklist</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => insertFormat("bold")}
+                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700 dark:text-slate-200 font-bold"
+                          title="ตัวหนา"
+                        >
+                          <Bold className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => insertFormat("list")}
+                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700 dark:text-slate-200"
+                          title="รายการข้อย่อย"
+                        >
+                          <List className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => insertFormat("heading")}
+                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700 dark:text-slate-200"
+                          title="หัวข้อ"
+                        >
+                          <Heading className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
                     <textarea
                       id="content"
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
                       disabled={isSubmittingNote}
-                      className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      placeholder="เขียนบันทึกของคุณที่นี่... สามารถคลิกปุ่มด้านบนเพื่อแทรก Checklist หรือหัวข้อได้"
+                      className="flex min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
 
                   <div className="grid gap-2">
-                    <Label htmlFor="file">แนบไฟล์ (PDF - ทางเลือก)</Label>
+                    <Label htmlFor="file">แนบไฟล์ (PDF หรือ รูปภาพ - ทางเลือก)</Label>
                     {editingNoteId && existingFilePath && (
-                      <div className="flex items-center justify-between p-3 border border-slate-200 bg-slate-50 rounded-md mb-2">
-                        <span className="text-sm text-slate-600 truncate">
-                          มีไฟล์แนบอยู่แล้ว
+                      <div className="flex items-center justify-between p-3 border border-slate-200 bg-slate-50 dark:bg-slate-900 rounded-md mb-2">
+                        <span className="text-sm text-slate-600 dark:text-slate-300 truncate">
+                          มีไฟล์แนบอยู่แล้ว ({existingFilePath.split(".").pop()?.toUpperCase()})
                         </span>
                         <Button
                           type="button"
@@ -1299,7 +1495,7 @@ export default function NotesPage({ noteType }: Props) {
                     <Input
                       id="file"
                       type="file"
-                      accept=".pdf"
+                      accept=".pdf,image/*"
                       onChange={(e) => setFile(e.target.files?.[0] || null)}
                       disabled={isSubmittingNote || isDeletingFile}
                     />
@@ -1710,6 +1906,43 @@ export default function NotesPage({ noteType }: Props) {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      )}
+
+      {previewImageUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-200"
+          onClick={() => setPreviewImageUrl(null)}
+        >
+          <div
+            className="relative max-w-5xl max-h-[90vh] flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute -top-12 right-0 flex items-center gap-2">
+              <a
+                href={previewImageUrl}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition"
+                title="ดาวน์โหลดรูปภาพ"
+              >
+                <Download className="w-5 h-5" />
+              </a>
+              <button
+                onClick={() => setPreviewImageUrl(null)}
+                className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition"
+                title="ปิด"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <img
+              src={previewImageUrl}
+              alt="รูปภาพขนาดเต็ม"
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+            />
           </div>
         </div>
       )}
