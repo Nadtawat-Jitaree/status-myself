@@ -1843,7 +1843,7 @@ export default function NotesPage({ noteType }: Props) {
                         setCategoryId(cat.id);
                         setIsNoteCategoryModalOpen(false);
                       }}
-                      className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
+                      className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border text-center hover:shadow-md ${
                         isSelected
                           ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm"
                           : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
@@ -1858,11 +1858,11 @@ export default function NotesPage({ noteType }: Props) {
                       {cat.pic ? (
                         <img
                           src={getPicUrl(cat.pic)}
-                          className="w-12 h-12 rounded-2xl object-cover shadow-sm mb-2.5 group-hover:scale-105 transition-transform"
+                          className="w-12 h-12 rounded-2xl object-cover shadow-sm mb-2.5"
                           alt={cat.name}
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shadow-sm mb-2.5 group-hover:scale-105 transition-transform">
+                        <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shadow-sm mb-2.5">
                           <Folder className="w-6 h-6" />
                         </div>
                       )}
@@ -1884,9 +1884,9 @@ export default function NotesPage({ noteType }: Props) {
                   setIsNoteCategoryModalOpen(false);
                   setIsCategoryModalOpen(true);
                 }}
-                className="group flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-muted hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-all duration-200 hover:-translate-y-1"
+                className="group flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-muted hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-primary"
               >
-                <div className="w-12 h-12 rounded-2xl bg-muted/60 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors mb-2.5">
+                <div className="w-12 h-12 rounded-2xl bg-muted/60 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary mb-2.5">
                   <FolderPlus className="w-6 h-6" />
                 </div>
                 <span className="font-semibold text-xs">
