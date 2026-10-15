@@ -153,7 +153,7 @@ export default function ProjectListClient({
                     <div
                       className={`p-3 rounded-xl transition-transform group-hover:scale-105 ${
                         isCompleted
-                          ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400"
+                          ? "bg-emerald-100 text-emerald-600"
                           : "bg-primary/10 text-primary"
                       }`}
                     >
@@ -169,7 +169,7 @@ export default function ProjectListClient({
                           {project.name}
                         </h3>
                         {isCompleted && (
-                          <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-full shrink-0">
+                          <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded-full shrink-0">
                             เสร็จแล้ว
                           </span>
                         )}

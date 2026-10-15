@@ -24,9 +24,9 @@ export default function NoteTypeModal({
       tag: "Personal & Work",
       color: "blue",
       borderHover: "hover:border-blue-500/50 hover:shadow-blue-500/5",
-      bgHover: "hover:bg-blue-50/50 dark:hover:bg-blue-950/20",
-      iconBg: "bg-blue-100/80 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400",
-      tagColor: "bg-blue-50 text-blue-700 border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900",
+      bgHover: "hover:bg-blue-50/50",
+      iconBg: "bg-blue-100/80 text-blue-600",
+      tagColor: "bg-blue-50 text-blue-700 border-blue-200/60",
     },
     {
       title: "โน้ตมหาวิทยาลัย",
@@ -36,9 +36,9 @@ export default function NoteTypeModal({
       tag: "Education & Study",
       color: "emerald",
       borderHover: "hover:border-emerald-500/50 hover:shadow-emerald-500/5",
-      bgHover: "hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20",
-      iconBg: "bg-emerald-100/80 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400",
-      tagColor: "bg-emerald-50 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900",
+      bgHover: "hover:bg-emerald-50/50",
+      iconBg: "bg-emerald-100/80 text-emerald-600",
+      tagColor: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
     },
     {
       title: "โปรเจกต์ & ภารกิจ",
@@ -48,9 +48,9 @@ export default function NoteTypeModal({
       tag: "Task Tracking",
       color: "purple",
       borderHover: "hover:border-purple-500/50 hover:shadow-purple-500/5",
-      bgHover: "hover:bg-purple-50/50 dark:hover:bg-purple-950/20",
-      iconBg: "bg-purple-100/80 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400",
-      tagColor: "bg-purple-50 text-purple-700 border-purple-200/60 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900",
+      bgHover: "hover:bg-purple-50/50",
+      iconBg: "bg-purple-100/80 text-purple-600",
+      tagColor: "bg-purple-50 text-purple-700 border-purple-200/60",
     },
   ];
 

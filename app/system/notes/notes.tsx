@@ -779,11 +779,11 @@ export default function NotesPage({ noteType }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 dark:bg-card/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat backdrop-blur-sm">
+      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat backdrop-blur-sm">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold tracking-tight">รายการบันทึก</h2>
-            <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-background/90 dark:bg-muted text-muted-foreground border border-border shadow-sm">
+            <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-background/90 text-muted-foreground border border-border shadow-sm">
               {filteredNotes.length} รายการ
             </span>
           </div>
@@ -839,8 +839,8 @@ export default function NotesPage({ noteType }: Props) {
                 </svg>
               ),
               count: statusCounts.all,
-              activeCls: "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-sm",
-              badgeActive: "bg-slate-700 text-white dark:bg-slate-300 dark:text-slate-900",
+              activeCls: "bg-slate-900 text-white border-slate-900 shadow-sm",
+              badgeActive: "bg-slate-700 text-white",
             },
             {
               id: "ทั่วไป" as const,
@@ -851,8 +851,8 @@ export default function NotesPage({ noteType }: Props) {
                 </svg>
               ),
               count: statusCounts["ทั่วไป"],
-              activeCls: "bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800 shadow-sm",
-              badgeActive: "bg-sky-200/80 text-sky-800 dark:bg-sky-900 dark:text-sky-200",
+              activeCls: "bg-sky-50 text-sky-700 border-sky-300 shadow-sm",
+              badgeActive: "bg-sky-200/80 text-sky-800",
             },
             {
               id: "สำคัญ" as const,
@@ -863,8 +863,8 @@ export default function NotesPage({ noteType }: Props) {
                 </svg>
               ),
               count: statusCounts["สำคัญ"],
-              activeCls: "bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 shadow-sm",
-              badgeActive: "bg-rose-200/80 text-rose-800 dark:bg-rose-900 dark:text-rose-200",
+              activeCls: "bg-rose-50 text-rose-700 border-rose-300 shadow-sm",
+              badgeActive: "bg-rose-200/80 text-rose-800",
             },
             {
               id: "งานค้าง" as const,
@@ -875,8 +875,8 @@ export default function NotesPage({ noteType }: Props) {
                 </svg>
               ),
               count: statusCounts["งานค้าง"],
-              activeCls: "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 shadow-sm",
-              badgeActive: "bg-amber-200/80 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+              activeCls: "bg-amber-50 text-amber-700 border-amber-300 shadow-sm",
+              badgeActive: "bg-amber-200/80 text-amber-800",
             },
             {
               id: "เสร็จสิ้น" as const,
@@ -887,8 +887,8 @@ export default function NotesPage({ noteType }: Props) {
                 </svg>
               ),
               count: statusCounts["เสร็จสิ้น"],
-              activeCls: "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 shadow-sm",
-              badgeActive: "bg-emerald-200/80 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+              activeCls: "bg-emerald-50 text-emerald-700 border-emerald-300 shadow-sm",
+              badgeActive: "bg-emerald-200/80 text-emerald-800",
             },
           ].map((tab) => {
             const isActive = statusFilter === tab.id;
@@ -973,7 +973,7 @@ export default function NotesPage({ noteType }: Props) {
                         onClick={() => handleTogglePin(note.id, !note.is_pinned)}
                         className={`p-1.5 rounded-md transition-colors ${
                           note.is_pinned
-                            ? "text-amber-500 hover:bg-amber-100/50 bg-amber-50 dark:bg-amber-950/40"
+                            ? "text-amber-500 hover:bg-amber-100/50 bg-amber-50"
                             : "text-slate-400 hover:bg-slate-200/50 hover:text-slate-700"
                         }`}
                         title={
@@ -1150,7 +1150,7 @@ export default function NotesPage({ noteType }: Props) {
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 text-xs text-red-600 bg-red-50 dark:bg-red-950/40 dark:text-red-400 px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-100 transition"
+                          className="inline-flex items-center gap-1.5 text-xs text-red-600 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-100 transition"
                         >
                           <FileText className="w-3.5 h-3.5" />
                           <span>เอกสารแนบ (PDF)</span>
@@ -1159,7 +1159,7 @@ export default function NotesPage({ noteType }: Props) {
                       )}
                     </div>
                   )}
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-auto pt-4 border-t border-black/5 dark:border-white/5">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-auto pt-4 border-t border-black/5">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 16 16"
@@ -1451,7 +1451,7 @@ export default function NotesPage({ noteType }: Props) {
               {readingNote.file_path && (
                 <div className="mt-10 lg:ml-2 lg:mt-0 pt-8 border-t border-slate-200/60 lg:border-none lg:col-span-6 flex flex-col">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                    <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-800">
                       {isImageFile(readingNote.file_path) ? (
                         <>
                           <ImageIcon className="w-5 h-5 text-blue-500" />
@@ -1611,7 +1611,7 @@ export default function NotesPage({ noteType }: Props) {
                         <button
                           type="button"
                           onClick={() => insertFormat("checklist")}
-                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700 dark:text-slate-200"
+                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700"
                           title="แทรก Checklist"
                         >
                           <CheckSquare className="w-3.5 h-3.5 text-primary" />
@@ -1620,7 +1620,7 @@ export default function NotesPage({ noteType }: Props) {
                         <button
                           type="button"
                           onClick={() => insertFormat("bold")}
-                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700 dark:text-slate-200 font-bold"
+                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700 font-bold"
                           title="ตัวหนา"
                         >
                           <Bold className="w-3.5 h-3.5" />
@@ -1628,7 +1628,7 @@ export default function NotesPage({ noteType }: Props) {
                         <button
                           type="button"
                           onClick={() => insertFormat("list")}
-                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700 dark:text-slate-200"
+                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700"
                           title="รายการข้อย่อย"
                         >
                           <List className="w-3.5 h-3.5" />
@@ -1636,7 +1636,7 @@ export default function NotesPage({ noteType }: Props) {
                         <button
                           type="button"
                           onClick={() => insertFormat("heading")}
-                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700 dark:text-slate-200"
+                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700"
                           title="หัวข้อ"
                         >
                           <Heading className="w-3.5 h-3.5" />
@@ -1656,8 +1656,8 @@ export default function NotesPage({ noteType }: Props) {
                   <div className="grid gap-2">
                     <Label htmlFor="file">แนบไฟล์ (PDF หรือ รูปภาพ - ทางเลือก)</Label>
                     {editingNoteId && existingFilePath && (
-                      <div className="flex items-center justify-between p-3 border border-slate-200 bg-slate-50 dark:bg-slate-900 rounded-md mb-2">
-                        <span className="text-sm text-slate-600 dark:text-slate-300 truncate">
+                      <div className="flex items-center justify-between p-3 border border-slate-200 bg-slate-50 rounded-md mb-2">
+                        <span className="text-sm text-slate-600 truncate">
                           มีไฟล์แนบอยู่แล้ว ({existingFilePath.split(".").pop()?.toUpperCase()})
                         </span>
                         <Button

@@ -133,7 +133,7 @@ async function DashboardData() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* ทั่วไป */}
         <div className="flex items-center gap-4 p-5 rounded-2xl bg-card border shadow-sm transition hover:shadow-md">
-          <div className="p-3 rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <div className="p-3 rounded-xl bg-slate-100 text-slate-600">
             <FileText className="w-6 h-6" />
           </div>
           <div>
@@ -148,14 +148,14 @@ async function DashboardData() {
 
         {/* สำคัญ */}
         <div className="flex items-center gap-4 p-5 rounded-2xl bg-card border shadow-sm transition hover:shadow-md">
-          <div className="p-3 rounded-xl bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">
+          <div className="p-3 rounded-xl bg-red-50 text-red-600">
             <AlertTriangle className="w-6 h-6" />
           </div>
           <div>
             <span className="text-xs text-red-500 font-medium block">
               สำคัญ
             </span>
-            <span className="text-2xl md:text-3xl font-bold text-red-600 dark:text-red-400">
+            <span className="text-2xl md:text-3xl font-bold text-red-600">
               {statusCounts["สำคัญ"]}
             </span>
           </div>
@@ -163,14 +163,14 @@ async function DashboardData() {
 
         {/* งานค้าง */}
         <div className="flex items-center gap-4 p-5 rounded-2xl bg-card border shadow-sm transition hover:shadow-md">
-          <div className="p-3 rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
+          <div className="p-3 rounded-xl bg-orange-50 text-orange-600">
             <Clock className="w-6 h-6" />
           </div>
           <div>
             <span className="text-xs text-orange-500 font-medium block">
               งานค้าง
             </span>
-            <span className="text-2xl md:text-3xl font-bold text-orange-600 dark:text-orange-400">
+            <span className="text-2xl md:text-3xl font-bold text-orange-600">
               {statusCounts["งานค้าง"]}
             </span>
           </div>
@@ -178,14 +178,14 @@ async function DashboardData() {
 
         {/* เสร็จสิ้น */}
         <div className="flex items-center gap-4 p-5 rounded-2xl bg-card border shadow-sm transition hover:shadow-md">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
             <span className="text-xs text-emerald-500 font-medium block">
               เสร็จสิ้น
             </span>
-            <span className="text-2xl md:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+            <span className="text-2xl md:text-3xl font-bold text-emerald-600">
               {statusCounts["เสร็จสิ้น"]}
             </span>
           </div>
@@ -292,12 +292,12 @@ async function DashboardData() {
               recentNotes.map((note) => {
                 const statusBadgeColor =
                   note.status === "เสร็จสิ้น"
-                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
+                    ? "bg-emerald-100 text-emerald-700"
                     : note.status === "งานค้าง"
-                    ? "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400"
+                    ? "bg-orange-100 text-orange-700"
                     : note.status === "สำคัญ"
-                    ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400"
-                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+                    ? "bg-red-100 text-red-700"
+                    : "bg-slate-100 text-slate-700";
 
                 return (
                   <div
@@ -333,7 +333,7 @@ async function DashboardData() {
           className="flex items-center justify-between p-4 rounded-2xl border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all group"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -351,7 +351,7 @@ async function DashboardData() {
           className="flex items-center justify-between p-4 rounded-2xl border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all group"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
@@ -369,7 +369,7 @@ async function DashboardData() {
           className="flex items-center justify-between p-4 rounded-2xl border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all group"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400">
+            <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600">
               <FolderKanban className="w-5 h-5" />
             </div>
             <div>
