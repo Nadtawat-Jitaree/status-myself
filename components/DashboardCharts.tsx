@@ -29,7 +29,7 @@ export default function DashboardCharts({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
       {/* Chart 1: Donut Chart สถานะงานและโน้ต */}
-      <Card className="rounded-2xl border bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow">
+      <Card className="min-w-0 rounded-2xl border bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold flex items-center justify-between">
             <span>สัดส่วนสถานะงานและโน้ต</span>
@@ -41,14 +41,14 @@ export default function DashboardCharts({
             ภาพรวมการจัดการงานและบันทึกตามสถานะ
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-[280px] flex items-center justify-center pt-2">
+        <CardContent className="min-h-[320px] flex items-center justify-center pt-2">
           {!hasStatusData ? (
             <div className="text-sm text-muted-foreground text-center">
               ยังไม่มีข้อมูลบันทึกในระบบ
             </div>
           ) : (
-            <div className="w-full h-full flex flex-col md:flex-row items-center justify-center gap-4">
-              <div className="w-full md:w-3/5 h-[200px]">
+            <div className="w-full min-w-0 flex flex-col md:flex-row items-center justify-center gap-4">
+              <div className="w-full min-w-0 md:w-3/5 h-[200px] shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -78,7 +78,7 @@ export default function DashboardCharts({
               </div>
 
               {/* Legend List */}
-              <div className="flex flex-col gap-2 w-full md:w-2/5">
+              <div className="grid grid-cols-2 md:flex md:flex-col gap-2 w-full min-w-0 md:w-2/5">
                 {statusData.map((item) => (
                   <div
                     key={item.name}
@@ -105,7 +105,7 @@ export default function DashboardCharts({
       </Card>
 
       {/* Chart 2: Bar Chart แยกตามหมวดหมู่ */}
-      <Card className="rounded-2xl border bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow">
+      <Card className="min-w-0 rounded-2xl border bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold flex items-center justify-between">
             <span>บันทึกแยกตามหมวดหมู่</span>
@@ -117,7 +117,7 @@ export default function DashboardCharts({
             หมวดหมู่ที่มีการสร้างและจัดเก็บบันทึกสูงสุด
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-[280px] flex items-center justify-center pt-2">
+        <CardContent className="h-[320px] min-w-0 flex items-center justify-center pt-2">
           {!hasCategoryData ? (
             <div className="text-sm text-muted-foreground text-center">
               ยังไม่มีหมวดหมู่หรือบันทึกในระบบ
@@ -126,7 +126,7 @@ export default function DashboardCharts({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={categoryData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
+                margin={{ top: 10, right: 10, left: -20, bottom: 45 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis
@@ -135,6 +135,10 @@ export default function DashboardCharts({
                   tickLine={false}
                   axisLine={false}
                   interval={0}
+                  angle={-35}
+                  textAnchor="end"
+                  height={60}
+                  tickMargin={8}
                   tick={{ fill: "#64748b" }}
                 />
                 <YAxis

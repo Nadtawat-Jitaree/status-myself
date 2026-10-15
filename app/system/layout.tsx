@@ -37,7 +37,7 @@ export default function ProtectedLayout({
             )}
           </div>
         </nav>
-        <div className="w-full px-10">{children}</div>
+        <div className="w-full px-4 sm:px-6 lg:px-10">{children}</div>
       </div>
     </main>
   );

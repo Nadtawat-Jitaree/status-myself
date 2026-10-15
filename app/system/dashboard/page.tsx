@@ -128,64 +128,64 @@ async function DashboardData() {
     }) || [];
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full min-w-0 space-y-6 sm:space-y-8">
       {/* 1. สรุปตัวเลข 4 การ์ด (Stat Cards) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         {/* ทั่วไป */}
-        <div className="flex items-center gap-4 p-5 rounded-2xl bg-card border shadow-sm transition hover:shadow-md">
-          <div className="p-3 rounded-xl bg-slate-100 text-slate-600">
-            <FileText className="w-6 h-6" />
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm transition hover:shadow-md sm:gap-4 sm:p-5">
+          <div className="shrink-0 rounded-xl bg-slate-100 p-2 text-slate-600 sm:p-3">
+            <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="text-xs text-muted-foreground font-medium block">
               ทั่วไป
             </span>
-            <span className="text-2xl md:text-3xl font-bold text-foreground">
+            <span className="text-2xl font-bold text-foreground sm:text-3xl">
               {statusCounts["ทั่วไป"]}
             </span>
           </div>
         </div>
 
         {/* สำคัญ */}
-        <div className="flex items-center gap-4 p-5 rounded-2xl bg-card border shadow-sm transition hover:shadow-md">
-          <div className="p-3 rounded-xl bg-red-50 text-red-600">
-            <AlertTriangle className="w-6 h-6" />
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm transition hover:shadow-md sm:gap-4 sm:p-5">
+          <div className="shrink-0 rounded-xl bg-red-50 p-2 text-red-600 sm:p-3">
+            <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="text-xs text-red-500 font-medium block">
               สำคัญ
             </span>
-            <span className="text-2xl md:text-3xl font-bold text-red-600">
+            <span className="text-2xl font-bold text-red-600 sm:text-3xl">
               {statusCounts["สำคัญ"]}
             </span>
           </div>
         </div>
 
         {/* งานค้าง */}
-        <div className="flex items-center gap-4 p-5 rounded-2xl bg-card border shadow-sm transition hover:shadow-md">
-          <div className="p-3 rounded-xl bg-orange-50 text-orange-600">
-            <Clock className="w-6 h-6" />
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm transition hover:shadow-md sm:gap-4 sm:p-5">
+          <div className="shrink-0 rounded-xl bg-orange-50 p-2 text-orange-600 sm:p-3">
+            <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="text-xs text-orange-500 font-medium block">
               งานค้าง
             </span>
-            <span className="text-2xl md:text-3xl font-bold text-orange-600">
+            <span className="text-2xl font-bold text-orange-600 sm:text-3xl">
               {statusCounts["งานค้าง"]}
             </span>
           </div>
         </div>
 
         {/* เสร็จสิ้น */}
-        <div className="flex items-center gap-4 p-5 rounded-2xl bg-card border shadow-sm transition hover:shadow-md">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
-            <CheckCircle2 className="w-6 h-6" />
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm transition hover:shadow-md sm:gap-4 sm:p-5">
+          <div className="shrink-0 rounded-xl bg-emerald-50 p-2 text-emerald-600 sm:p-3">
+            <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="text-xs text-emerald-500 font-medium block">
               เสร็จสิ้น
             </span>
-            <span className="text-2xl md:text-3xl font-bold text-emerald-600">
+            <span className="text-2xl font-bold text-emerald-600 sm:text-3xl">
               {statusCounts["เสร็จสิ้น"]}
             </span>
           </div>
@@ -199,13 +199,13 @@ async function DashboardData() {
       />
 
       {/* 3. เซกชันความคืบหน้าโปรเจกต์ & บันทึกล่าสุด */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Project Progress */}
-        <Card className="rounded-2xl border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <FolderKanban className="w-5 h-5 text-primary" />
+        <Card className="min-w-0 rounded-2xl border shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
+            <div className="min-w-0">
+              <CardTitle className="flex items-center gap-2 text-base font-semibold sm:text-lg">
+                <FolderKanban className="h-5 w-5 shrink-0 text-primary" />
                 ความคืบหน้าโปรเจกต์
               </CardTitle>
               <CardDescription>
@@ -214,7 +214,7 @@ async function DashboardData() {
             </div>
             <Link
               href="/system/projects"
-              className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
+              className="flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
             >
               ดูทั้งหมด <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -236,11 +236,11 @@ async function DashboardData() {
                   key={p.id}
                   className="p-3.5 rounded-xl border bg-card hover:bg-muted/30 transition-colors space-y-2"
                 >
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-semibold text-foreground truncate max-w-[200px]">
+                  <div className="flex min-w-0 items-center justify-between gap-2 text-sm">
+                    <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
                       {p.name}
                     </span>
-                    <span className="text-xs text-muted-foreground font-medium">
+                    <span className="shrink-0 text-xs text-muted-foreground font-medium">
                       {p.doneTasks}/{p.totalTasks} งาน ({p.progress}%)
                     </span>
                   </div>
@@ -259,11 +259,11 @@ async function DashboardData() {
         </Card>
 
         {/* Recent Notes */}
-        <Card className="rounded-2xl border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
+        <Card className="min-w-0 rounded-2xl border shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
+            <div className="min-w-0">
+              <CardTitle className="flex items-center gap-2 text-base font-semibold sm:text-lg">
+                <FileText className="h-5 w-5 shrink-0 text-primary" />
                 บันทึกล่าสุด
               </CardTitle>
               <CardDescription>
@@ -272,7 +272,7 @@ async function DashboardData() {
             </div>
             <Link
               href="/system/notes/normal"
-              className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
+              className="flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
             >
               ดูทั้งหมด <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -302,7 +302,7 @@ async function DashboardData() {
                 return (
                   <div
                     key={note.id}
-                    className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-muted/30 transition-colors text-sm"
+                    className="flex min-w-0 items-center justify-between gap-2 rounded-xl border bg-card p-3 text-sm transition-colors hover:bg-muted/30"
                   >
                     <div className="min-w-0 flex-1 pr-3">
                       <p className="font-semibold text-foreground truncate">
@@ -327,59 +327,59 @@ async function DashboardData() {
       </div>
 
       {/* 4. ทางลัดด่วน (Quick Navigation) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+      <div className="grid grid-cols-1 gap-3 pt-2 sm:gap-4 md:grid-cols-3">
         <Link
           href="/system/notes/normal"
-          className="flex items-center justify-between p-4 rounded-2xl border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all group"
+          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border bg-card p-4 transition-all hover:border-primary/40 hover:bg-primary/5"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
-              <FileText className="w-5 h-5" />
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="shrink-0 rounded-xl bg-blue-50 p-2.5 text-blue-600">
+              <FileText className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="font-semibold text-sm group-hover:text-primary transition-colors">
                 โน้ตทั่วไป
               </p>
               <p className="text-xs text-muted-foreground">บันทึกงานและเรื่องส่วนตัว</p>
             </div>
           </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 group-hover:text-primary transition-transform" />
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
         </Link>
 
         <Link
           href="/system/notes/school"
-          className="flex items-center justify-between p-4 rounded-2xl border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all group"
+          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border bg-card p-4 transition-all hover:border-primary/40 hover:bg-primary/5"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600">
-              <BookOpen className="w-5 h-5" />
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="shrink-0 rounded-xl bg-emerald-50 p-2.5 text-emerald-600">
+              <BookOpen className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="font-semibold text-sm group-hover:text-primary transition-colors">
                 โน้ตการเรียน
               </p>
               <p className="text-xs text-muted-foreground">บันทึกวิชาและการบ้าน</p>
             </div>
           </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 group-hover:text-primary transition-transform" />
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
         </Link>
 
         <Link
           href="/system/projects"
-          className="flex items-center justify-between p-4 rounded-2xl border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all group"
+          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border bg-card p-4 transition-all hover:border-primary/40 hover:bg-primary/5"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600">
-              <FolderKanban className="w-5 h-5" />
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="shrink-0 rounded-xl bg-purple-50 p-2.5 text-purple-600">
+              <FolderKanban className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="font-semibold text-sm group-hover:text-primary transition-colors">
                 โปรเจกต์ & ภารกิจ
               </p>
               <p className="text-xs text-muted-foreground">ติดตามความคืบหน้ารายงาน</p>
             </div>
           </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 group-hover:text-primary transition-transform" />
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
         </Link>
       </div>
     </div>
@@ -389,27 +389,27 @@ async function DashboardData() {
 export default function Dashboard() {
   return (
     <main className="flex flex-col items-center w-full pb-16">
-      <div className="w-full max-w-6xl mx-auto flex flex-col gap-8 px-4 sm:px-6">
+      <div className="w-full max-w-6xl min-w-0 mx-auto flex flex-col gap-6 px-0 sm:gap-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+        <div className="flex min-w-0 flex-col justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
+          <div className="min-w-0 space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               แดชบอร์ดภาพรวม (Dashboard)
             </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               สรุปข้อมูลสถิติการบันทึก ความคืบหน้าโปรเจกต์ และสถานะภารกิจทั้งหมด
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Link
               href="/system/notes/normal"
-              className="inline-flex items-center justify-center text-sm font-medium h-9 px-4 rounded-xl border bg-card hover:bg-muted transition-colors"
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border bg-card px-4 text-sm font-medium transition-colors hover:bg-muted sm:flex-none"
             >
               จัดการโน้ต
             </Link>
             <Link
               href="/system/projects"
-              className="inline-flex items-center justify-center text-sm font-medium h-9 px-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:flex-none"
             >
               ดูโปรเจกต์
             </Link>
