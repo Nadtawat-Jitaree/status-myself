@@ -1,34 +1,51 @@
 import { Suspense } from "react";
 import { getProjects, createProject } from "@/app/actions/projects";
 import Link from "next/link";
-import { FolderKanban, Plus, Calendar } from "lucide-react";
+import { FolderKanban, Plus, Calendar, LoaderCircle } from "lucide-react";
 import Image from "next/image";
 import ProjectListClient from "@/components/ProjectListClient";
 
-function ProjectsSkeleton() {
+function ProjectsLoading() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="bg-card border rounded-xl p-6 h-[200px] flex flex-col animate-pulse"
-        >
-          <div className="flex items-start gap-4 mb-4">
-            <div className="w-12 h-12 bg-muted rounded-lg" />
-            <div className="space-y-2 flex-1 pt-1">
-              <div className="h-5 bg-muted rounded w-3/4" />
-              <div className="h-4 bg-muted rounded w-1/2" />
-            </div>
-          </div>
-          <div className="mt-auto pt-4 border-t space-y-3">
-            <div className="flex justify-between">
-              <div className="h-4 bg-muted rounded w-16" />
-              <div className="h-4 bg-muted rounded w-8" />
-            </div>
-            <div className="h-2 bg-muted rounded-full w-full" />
-          </div>
+    <div className="space-y-5 sm:space-y-6" role="status" aria-live="polite">
+      <div className="flex min-h-36 flex-col items-center justify-center gap-2 rounded-2xl border bg-card px-4 py-6 text-center sm:min-h-44 sm:flex-row sm:gap-3 sm:py-8">
+        <LoaderCircle
+          className="h-7 w-7 animate-spin text-primary sm:h-8 sm:w-8"
+          aria-hidden="true"
+        />
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-foreground sm:text-base">
+            กำลังโหลดข้อมูลโปรเจกต์
+          </p>
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            กรุณารอสักครู่
+          </p>
         </div>
-      ))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="flex h-[200px] animate-pulse flex-col rounded-xl border bg-card p-4 sm:p-6"
+            aria-hidden="true"
+          >
+            <div className="mb-4 flex items-start gap-4">
+              <div className="h-12 w-12 rounded-lg bg-muted" />
+              <div className="flex-1 space-y-2 pt-1">
+                <div className="h-5 w-3/4 rounded bg-muted" />
+                <div className="h-4 w-1/2 rounded bg-muted" />
+              </div>
+            </div>
+            <div className="mt-auto space-y-3 border-t pt-4">
+              <div className="flex justify-between">
+                <div className="h-4 w-16 rounded bg-muted" />
+                <div className="h-4 w-8 rounded bg-muted" />
+              </div>
+              <div className="h-2 w-full rounded-full bg-muted" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -105,7 +122,7 @@ export default function ProjectsPage() {
         </form>
       </div>
 
-      <Suspense fallback={<ProjectsSkeleton />}>
+      <Suspense fallback={<ProjectsLoading />}>
         <ProjectList />
       </Suspense>
     </div>

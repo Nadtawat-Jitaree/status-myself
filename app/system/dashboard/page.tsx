@@ -14,23 +14,27 @@ import {
   ArrowRight,
   BookOpen,
   Calendar,
+  LoaderCircle,
 } from "lucide-react";
 
-function DashboardSkeleton() {
+function DashboardLoading() {
   return (
-    <div className="w-full space-y-8 animate-pulse">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-28 rounded-2xl bg-muted/60" />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="h-72 rounded-2xl bg-muted/60" />
-        <div className="h-72 rounded-2xl bg-muted/60" />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="h-60 rounded-2xl bg-muted/60" />
-        <div className="h-60 rounded-2xl bg-muted/60" />
+    <div
+      className="flex min-h-[240px] w-full flex-col items-center justify-center gap-3 rounded-2xl border bg-card px-4 py-8 text-center sm:min-h-[320px] sm:gap-4 sm:py-12"
+      role="status"
+      aria-live="polite"
+    >
+      <LoaderCircle
+        className="h-8 w-8 animate-spin text-primary sm:h-10 sm:w-10"
+        aria-hidden="true"
+      />
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-foreground sm:text-base">
+          กำลังโหลดข้อมูลแดชบอร์ด
+        </p>
+        <p className="text-xs text-muted-foreground sm:text-sm">
+          กรุณารอสักครู่
+        </p>
       </div>
     </div>
   );
@@ -417,7 +421,7 @@ export default function Dashboard() {
         </div>
 
         {hasEnvVars && (
-          <Suspense fallback={<DashboardSkeleton />}>
+          <Suspense fallback={<DashboardLoading />}>
             <DashboardData />
           </Suspense>
         )}
