@@ -43,9 +43,18 @@ import {
   Layers,
   FolderPlus,
   Folder,
+  Share2,
+  Globe,
 } from "lucide-react";
+import ShareModal from "@/components/ShareModal";
 
-type Category = { id: string; name: string; pic?: string | null };
+type Category = {
+  id: string;
+  name: string;
+  pic?: string | null;
+  is_shared?: boolean;
+  share_token?: string | null;
+};
 type Note = {
   id: string;
   title: string;
@@ -55,6 +64,8 @@ type Note = {
   status: string;
   file_path?: string | null;
   is_pinned?: boolean;
+  is_shared?: boolean;
+  share_token?: string | null;
   note_categories?: { name: string; pic?: string | null };
   noteToEdit?: boolean;
 };
@@ -98,6 +109,67 @@ export default function NotesPage({ noteType }: Props) {
   const [categoryFilterSearch, setCategoryFilterSearch] = useState("");
   const [categorySelectSearch, setCategorySelectSearch] = useState("");
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
+  const [shareItem, setShareItem] = useState<{
+    type: "note" | "category";
+    item: any;
+  } | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  const handleShareUpdate = (updatedData: {
+    is_shared: boolean;
+    share_token: string | null;
+  }) => {
+    if (!shareItem) return;
+    if (shareItem.type === "note") {
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === shareItem.item.id
+            ? {
+                ...n,
+                is_shared: updatedData.is_shared,
+                share_token: updatedData.share_token,
+              }
+            : n,
+        ),
+      );
+      if (readingNote && readingNote.id === shareItem.item.id) {
+        setReadingNote((prev: any) =>
+          prev
+            ? {
+                ...prev,
+                is_shared: updatedData.is_shared,
+                share_token: updatedData.share_token,
+              }
+            : null,
+        );
+      }
+    } else {
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === shareItem.item.id
+            ? {
+                ...c,
+                is_shared: updatedData.is_shared,
+                share_token: updatedData.share_token,
+              }
+            : c,
+        ),
+      );
+    }
+    setShareItem((prev) =>
+      prev
+        ? {
+            ...prev,
+            item: {
+              ...prev.item,
+              is_shared: updatedData.is_shared,
+              share_token: updatedData.share_token,
+            },
+          }
+        : null,
+    );
+  };
 
   const categoryNoteCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -963,6 +1035,20 @@ export default function NotesPage({ noteType }: Props) {
                   </div>
                 )}
 
+                {note.is_shared && (
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShareItem({ type: "note", item: note });
+                      setIsShareModalOpen(true);
+                    }}
+                    className="absolute top-0 right-3 bg-sky-500 hover:bg-sky-600 text-white px-2 py-0.5 rounded-b-md text-[10px] font-bold flex items-center gap-1 shadow-sm z-10 cursor-pointer transition-colors"
+                    title="กำลังแชร์สาธารณะ (คลิกเพื่อดูลิงก์)"
+                  >
+                    <Share2 className="w-3 h-3" /> แชร์อยู่
+                  </div>
+                )}
+
                 <CardHeader className="pb-2 pt-8">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl pr-12">
@@ -985,6 +1071,21 @@ export default function NotesPage({ noteType }: Props) {
                         <Pin
                           className={`w-4 h-4 ${note.is_pinned ? "fill-amber-500" : ""}`}
                         />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShareItem({ type: "note", item: note });
+                          setIsShareModalOpen(true);
+                        }}
+                        className={`p-1.5 rounded-md transition-colors ${
+                          note.is_shared
+                            ? "text-sky-600 hover:bg-sky-100/60 bg-sky-50"
+                            : "text-slate-400 hover:bg-slate-200/50 hover:text-slate-700"
+                        }`}
+                        title="แชร์บันทึก"
+                      >
+                        <Share2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setReadingNote(note)}
@@ -1327,6 +1428,15 @@ export default function NotesPage({ noteType }: Props) {
                         </span>
                       )}
 
+                      {cat.is_shared && (
+                        <span
+                          className="absolute top-2.5 left-2.5 w-5 h-5 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center shadow-xs"
+                          title="กำลังแชร์สาธารณะ"
+                        >
+                          <Globe className="w-3 h-3" />
+                        </span>
+                      )}
+
                       {cat.pic ? (
                         <img
                           src={getPicUrl(cat.pic)}
@@ -1379,24 +1489,43 @@ export default function NotesPage({ noteType }: Props) {
             className={`w-full h-full max-h-[90vh] bg-background rounded-2xl overflow-hidden flex flex-col relative ${!readingNote.file_path ? "max-w-4xl" : ""}`}
           >
             <div className="flex items-start justify-between p-6 border-b">
-              <h2 className="text-2xl md:text-3xl font-bold pr-12 leading-tight">
+              <h2 className="text-2xl md:text-3xl font-bold pr-28 leading-tight">
                 {readingNote.title}
               </h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setReadingNote(null)}
-                className="h-10 w-10 rounded-full absolute top-5 right-5 hover:bg-slate-100"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-6 h-6"
+              <div className="flex items-center gap-2 absolute top-5 right-5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShareItem({ type: "note", item: readingNote });
+                    setIsShareModalOpen(true);
+                  }}
+                  className={`h-9 rounded-xl px-3 text-xs flex items-center gap-1.5 transition-colors ${
+                    readingNote.is_shared
+                      ? "bg-sky-50 text-sky-700 border-sky-300 font-semibold"
+                      : "text-slate-600 hover:text-sky-600"
+                  }`}
+                  title="แชร์บันทึกนี้"
                 >
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
-              </Button>
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>{readingNote.is_shared ? "แชร์อยู่ 🌐" : "แชร์"}</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setReadingNote(null)}
+                  className="h-9 w-9 rounded-full hover:bg-slate-100"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-6 h-6"
+                  >
+                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                  </svg>
+                </Button>
+              </div>
             </div>
             <div
               className={`flex-1 overflow-y-auto lg:overflow-auto p-6 md:p-8 bg-slate-50/50 ${readingNote.file_path ? "lg:grid lg:grid-cols-12" : ""}`}
@@ -2098,8 +2227,29 @@ export default function NotesPage({ noteType }: Props) {
                             <span className="text-sm font-medium">
                               {cat.name}
                             </span>
+                            {cat.is_shared && (
+                              <span title="กำลังแชร์สาธารณะ" className="inline-flex items-center">
+                                <Globe className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                              </span>
+                            )}
                           </div>
                           <div className="flex gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className={`h-7 w-7 transition-colors ${
+                                cat.is_shared
+                                  ? "text-sky-600 bg-sky-50 hover:bg-sky-100"
+                                  : "text-slate-400 hover:text-sky-600 hover:bg-sky-50"
+                              }`}
+                              title="แชร์หมวดหมู่นี้"
+                              onClick={() => {
+                                setShareItem({ type: "category", item: cat });
+                                setIsShareModalOpen(true);
+                              }}
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                            </Button>
                             <Button
                               size="icon"
                               variant="ghost"
@@ -2188,6 +2338,15 @@ export default function NotesPage({ noteType }: Props) {
           </div>
         </div>
       )}
+
+      {/* Share Modal for Note & Category */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        type={shareItem?.type || "note"}
+        item={shareItem?.item || null}
+        onUpdate={handleShareUpdate}
+      />
     </div>
   );
 }

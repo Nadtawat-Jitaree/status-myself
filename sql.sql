@@ -21,6 +21,8 @@ CREATE TABLE public.note_categories (
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   note_type text DEFAULT 'normal'::text,
   pic text,
+  is_shared boolean DEFAULT false,
+  share_token text UNIQUE,
   CONSTRAINT note_categories_pkey PRIMARY KEY (id),
   CONSTRAINT note_categories_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
@@ -35,6 +37,8 @@ CREATE TABLE public.notes (
   status text DEFAULT 'ทั่วไป'::text,
   file_path text,
   is_pinned boolean DEFAULT false,
+  is_shared boolean DEFAULT false,
+  share_token text UNIQUE,
   CONSTRAINT notes_pkey PRIMARY KEY (id),
   CONSTRAINT notes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT notes_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.note_categories(id)
