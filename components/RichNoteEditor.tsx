@@ -1,7 +1,22 @@
 "use client";
 
 import React, { useRef, useEffect, useCallback, useState } from "react";
-import { CheckSquare, Bold, List, Heading } from "lucide-react";
+import {
+  CheckSquare,
+  Bold,
+  Italic,
+  Strikethrough,
+  List,
+  ListOrdered,
+  Heading,
+  Quote,
+  Minus,
+  Image as ImageIcon,
+  Palette,
+  Highlighter,
+  Undo2,
+  Redo2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RichNoteEditorProps {
@@ -18,8 +33,8 @@ interface RichNoteEditorProps {
 function markdownToHtml(md: string): string {
   if (!md) return "";
 
-  // If it already looks like HTML with our custom checklist or tags, return directly
-  if (/<(div|p|h[1-6]|ul|ol|strong|b|em|i)\b[^>]*>/i.test(md)) {
+  // If it already looks like full HTML document structure with our custom checklist or tags, return directly
+  if (/<(div|p|h[1-6]|ul|ol|blockquote|hr)\b[^>]*>/i.test(md)) {
     return md;
   }
 
@@ -66,6 +81,40 @@ function markdownToHtml(md: string): string {
       continue;
     }
 
+    // Blockquote: > text
+    const quoteMatch = line.match(/^>\s*(.*)$/);
+    if (quoteMatch) {
+      htmlParts.push(
+        `<blockquote class="border-l-4 border-primary/60 bg-muted/30 pl-3 py-1 my-1.5 rounded-r text-muted-foreground italic">${parseInlineMdToHtml(quoteMatch[1]) || "<br>"}</blockquote>`,
+      );
+      continue;
+    }
+
+    // Divider: --- or *** or ___
+    if (/^(\s*[-*_]\s*){3,}$/.test(line)) {
+      htmlParts.push(`<hr class="border-t border-border/70 my-2" />`);
+      continue;
+    }
+
+    // Numbered list item: 1. text
+    const numMatch = line.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
+    if (numMatch) {
+      const lis: string[] = [];
+      lis.push(`<li>${parseInlineMdToHtml(numMatch[3]) || "<br>"}</li>`);
+      while (i + 1 < lines.length) {
+        const nextLine = lines[i + 1];
+        const nextNum = nextLine.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
+        if (nextNum) {
+          lis.push(`<li>${parseInlineMdToHtml(nextNum[3]) || "<br>"}</li>`);
+          i++;
+        } else {
+          break;
+        }
+      }
+      htmlParts.push(`<ol class="list-decimal pl-5 my-0.5">${lis.join("")}</ol>`);
+      continue;
+    }
+
     // Bullet item
     const bulletMatch = line.match(/^(\s*)[•\-\*]\s+(.*)$/);
     if (bulletMatch) {
@@ -102,7 +151,12 @@ function markdownToHtml(md: string): string {
 
 function parseInlineMdToHtml(text: string): string {
   if (!text) return "";
-  let out = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  // Images: ![alt](url)
+  let out = text.replace(
+    /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<img src="$2" alt="$1" class="rounded max-h-56 object-contain border border-border/50 my-1 inline-block" />',
+  );
+  out = out.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   out = out.replace(/__(.+?)__/g, "<strong>$1</strong>");
   out = out.replace(/~~(.+?)~~/g, "<del>$1</del>");
   out = out.replace(/\*([^*]+?)\*/g, "<em>$1</em>");
@@ -144,8 +198,27 @@ function htmlToMarkdown(html: string): string {
     if (tagName === "h2") return `## ${processInline(el).trim()}`;
     if (tagName === "h3") return `### ${processInline(el).trim()}`;
 
-    // Lists
-    if (tagName === "ul" || tagName === "ol") {
+    // Blockquote
+    if (tagName === "blockquote") {
+      return `> ${processInline(el).trim()}`;
+    }
+
+    // Divider
+    if (tagName === "hr") {
+      return "---";
+    }
+
+    // Numbered Lists
+    if (tagName === "ol") {
+      const items = Array.from(el.querySelectorAll(":scope > li"));
+      items.forEach((li, idx) => {
+        lines.push(`${idx + 1}. ${processInline(li).trim()}`);
+      });
+      return undefined;
+    }
+
+    // Bullet Lists
+    if (tagName === "ul") {
       const items = Array.from(el.querySelectorAll(":scope > li"));
       items.forEach((li) => {
         lines.push(`• ${processInline(li).trim()}`);
@@ -178,10 +251,35 @@ function htmlToMarkdown(html: string): string {
           return;
         }
 
-        if (tag === "span" && childEl.style && childEl.style.fontSize) {
-          const size = childEl.style.fontSize;
+        // Image tag -> markdown ![alt](src)
+        if (tag === "img") {
+          const img = childEl as HTMLImageElement;
+          const src = img.getAttribute("src") || "";
+          const alt = img.getAttribute("alt") || "";
+          if (src) {
+            result += `![${alt}](${src})`;
+          }
+          return;
+        }
+
+        // Span with styles: font-size, color, background-color
+        if (tag === "span" && childEl.style) {
+          const styleRules: string[] = [];
+          if (childEl.style.fontSize) styleRules.push(`font-size:${childEl.style.fontSize}`);
+          if (childEl.style.color) styleRules.push(`color:${childEl.style.color}`);
+          if (childEl.style.backgroundColor) styleRules.push(`background-color:${childEl.style.backgroundColor}`);
+
+          if (styleRules.length > 0) {
+            const inner = processInline(childEl);
+            result += `<span style="${styleRules.join(";")}">${inner}</span>`;
+            return;
+          }
+        }
+
+        // Mark tag (highlight)
+        if (tag === "mark") {
           const inner = processInline(childEl);
-          result += `<span style="font-size:${size}">${inner}</span>`;
+          result += `<span style="background-color:#fef08a">${inner}</span>`;
           return;
         }
 
@@ -191,7 +289,7 @@ function htmlToMarkdown(html: string): string {
         } else if (tag === "em" || tag === "i") {
           const inner = processInline(childEl);
           result += inner ? `*${inner}*` : "";
-        } else if (tag === "del" || tag === "s") {
+        } else if (tag === "del" || tag === "s" || tag === "strike") {
           const inner = processInline(childEl);
           result += inner ? `~~${inner}~~` : "";
         } else if (tag === "br") {
@@ -260,12 +358,33 @@ export default function RichNoteEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const lastMarkdownRef = useRef<string>(value);
   const [fontSize, setFontSize] = useState<number>(16);
+
+  // Undo / Redo history state
+  const historyRef = useRef<string[]>([value || ""]);
+  const historyIndexRef = useRef<number>(0);
+  const isUndoRedoActionRef = useRef<boolean>(false);
+  const [canUndo, setCanUndo] = useState<boolean>(false);
+  const [canRedo, setCanRedo] = useState<boolean>(false);
+
+  // Custom Color inputs state
+  const [textColorInput, setTextColorInput] = useState<string>("#ef4444");
+  const [bgColorInput, setBgColorInput] = useState<string>("#fef08a");
+
   const [activeFormats, setActiveFormats] = useState({
     bold: false,
+    italic: false,
+    strikethrough: false,
     heading: false,
     list: false,
+    orderedList: false,
     checklist: false,
+    quote: false,
   });
+
+  const updateUndoRedoAvailability = useCallback(() => {
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
+  }, []);
 
   // Sync external value changes into editor without resetting caret while typing
   useEffect(() => {
@@ -274,23 +393,86 @@ export default function RichNoteEditor({
     if (value !== currentMd && value !== lastMarkdownRef.current) {
       editorRef.current.innerHTML = markdownToHtml(value);
       lastMarkdownRef.current = value;
+      if (!isUndoRedoActionRef.current) {
+        historyRef.current = [value];
+        historyIndexRef.current = 0;
+        updateUndoRedoAvailability();
+      }
     }
-  }, [value]);
+  }, [value, updateUndoRedoAvailability]);
 
   // Initial load
   useEffect(() => {
     if (editorRef.current && !editorRef.current.innerHTML) {
       editorRef.current.innerHTML = markdownToHtml(value);
       lastMarkdownRef.current = value;
+      historyRef.current = [value || ""];
+      historyIndexRef.current = 0;
+      updateUndoRedoAvailability();
     }
-  }, []);
+  }, [value, updateUndoRedoAvailability]);
 
-  const triggerChange = useCallback(() => {
+  const triggerChange = useCallback((skipHistory = false) => {
     if (!editorRef.current) return;
     const md = htmlToMarkdown(editorRef.current.innerHTML);
     lastMarkdownRef.current = md;
+
+    if (!skipHistory && !isUndoRedoActionRef.current) {
+      const currentHist = historyRef.current.slice(0, historyIndexRef.current + 1);
+      if (currentHist[currentHist.length - 1] !== md) {
+        currentHist.push(md);
+        // limit history to 50 steps
+        if (currentHist.length > 50) currentHist.shift();
+        historyRef.current = currentHist;
+        historyIndexRef.current = currentHist.length - 1;
+        updateUndoRedoAvailability();
+      }
+    }
+
     onChange(md);
-  }, [onChange]);
+  }, [onChange, updateUndoRedoAvailability]);
+
+  // Undo implementation
+  const handleUndo = useCallback(() => {
+    if (disabled || historyIndexRef.current <= 0) return;
+    isUndoRedoActionRef.current = true;
+    historyIndexRef.current -= 1;
+    const prevMd = historyRef.current[historyIndexRef.current] || "";
+    if (editorRef.current) {
+      editorRef.current.innerHTML = markdownToHtml(prevMd);
+      lastMarkdownRef.current = prevMd;
+      onChange(prevMd);
+    }
+    updateUndoRedoAvailability();
+    setTimeout(() => {
+      isUndoRedoActionRef.current = false;
+      if (editorRef.current) {
+        editorRef.current.focus();
+        placeCaretAtEnd(editorRef.current);
+      }
+    }, 0);
+  }, [disabled, onChange, updateUndoRedoAvailability]);
+
+  // Redo implementation
+  const handleRedo = useCallback(() => {
+    if (disabled || historyIndexRef.current >= historyRef.current.length - 1) return;
+    isUndoRedoActionRef.current = true;
+    historyIndexRef.current += 1;
+    const nextMd = historyRef.current[historyIndexRef.current] || "";
+    if (editorRef.current) {
+      editorRef.current.innerHTML = markdownToHtml(nextMd);
+      lastMarkdownRef.current = nextMd;
+      onChange(nextMd);
+    }
+    updateUndoRedoAvailability();
+    setTimeout(() => {
+      isUndoRedoActionRef.current = false;
+      if (editorRef.current) {
+        editorRef.current.focus();
+        placeCaretAtEnd(editorRef.current);
+      }
+    }, 0);
+  }, [disabled, onChange, updateUndoRedoAvailability]);
 
   // Update active formats & font size from selection
   const updateActiveFormats = useCallback(() => {
@@ -309,15 +491,29 @@ export default function RichNoteEditor({
       typeof document !== "undefined" && document.queryCommandState
         ? document.queryCommandState("bold")
         : false;
+    const isItalic =
+      typeof document !== "undefined" && document.queryCommandState
+        ? document.queryCommandState("italic")
+        : false;
+    const isStrike =
+      typeof document !== "undefined" && document.queryCommandState
+        ? document.queryCommandState("strikeThrough")
+        : false;
     const isHeading = Boolean(el.closest("h1, h2, h3, h4, h5, h6"));
-    const isList = Boolean(el.closest("li, ul, ol"));
+    const isUl = Boolean(el.closest("ul"));
+    const isOl = Boolean(el.closest("ol"));
     const isChecklist = Boolean(el.closest(".note-check-item"));
+    const isQuote = Boolean(el.closest("blockquote"));
 
     setActiveFormats({
       bold: isBold,
+      italic: isItalic,
+      strikethrough: isStrike,
       heading: isHeading,
-      list: isList,
+      list: isUl && !isChecklist,
+      orderedList: isOl,
       checklist: isChecklist,
+      quote: isQuote,
     });
 
     const parentSpan = el.closest("span[style*='font-size']");
@@ -350,7 +546,7 @@ export default function RichNoteEditor({
     };
   }, [updateActiveFormats]);
 
-  const applyFontSize = (sizePx: number) => {
+  const applyInlineStyle = (styleKey: "color" | "backgroundColor" | "fontSize", styleValue: string) => {
     if (disabled) return;
     editorRef.current?.focus();
     const selection = window.getSelection();
@@ -361,33 +557,37 @@ export default function RichNoteEditor({
     if (range.collapsed) {
       let node: Node | null = range.commonAncestorContainer;
       if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
-      const existingSpan = (node as HTMLElement)?.closest("span[style*='font-size']");
+      const existingSpan = (node as HTMLElement)?.closest("span[style]");
       if (existingSpan && existingSpan instanceof HTMLElement) {
-        existingSpan.style.fontSize = `${sizePx}px`;
-        triggerChange();
-      } else {
-        const block = (node as HTMLElement)?.closest("p, div, li, h1, h2, h3");
-        if (block && block instanceof HTMLElement && block !== editorRef.current) {
-          block.style.fontSize = `${sizePx}px`;
-          triggerChange();
+        if (styleValue) {
+          (existingSpan.style as any)[styleKey] = styleValue;
+        } else {
+          (existingSpan.style as any)[styleKey] = "";
         }
+        triggerChange();
       }
       return;
     }
 
     let commonParent: Node | null = range.commonAncestorContainer;
     if (commonParent.nodeType === Node.TEXT_NODE) commonParent = commonParent.parentNode;
-    const parentSpan = (commonParent as HTMLElement)?.closest("span[style*='font-size']");
+    const parentSpan = (commonParent as HTMLElement)?.closest("span[style]");
 
     if (
       parentSpan &&
       parentSpan instanceof HTMLElement &&
       parentSpan.textContent?.trim() === range.toString().trim()
     ) {
-      parentSpan.style.fontSize = `${sizePx}px`;
+      if (styleValue) {
+        (parentSpan.style as any)[styleKey] = styleValue;
+      } else {
+        (parentSpan.style as any)[styleKey] = "";
+      }
     } else {
       const span = document.createElement("span");
-      span.style.fontSize = `${sizePx}px`;
+      if (styleValue) {
+        (span.style as any)[styleKey] = styleValue;
+      }
       try {
         const contents = range.extractContents();
         span.appendChild(contents);
@@ -398,11 +598,15 @@ export default function RichNoteEditor({
         selection.removeAllRanges();
         selection.addRange(newRange);
       } catch (err) {
-        console.error("Apply font size failed:", err);
+        console.error("Apply inline style failed:", err);
       }
     }
 
     triggerChange();
+  };
+
+  const applyFontSize = (sizePx: number) => {
+    applyInlineStyle("fontSize", `${sizePx}px`);
   };
 
   const handleDecreaseFontSize = () => {
@@ -426,11 +630,262 @@ export default function RichNoteEditor({
     applyFontSize(newSize);
   };
 
-  // Toggle Bold (Native execCommand handles toggle on/off automatically)
+  // Toggle Bold
   const handleToggleBold = () => {
     if (disabled) return;
     editorRef.current?.focus();
     document.execCommand("bold", false);
+    updateActiveFormats();
+    triggerChange();
+  };
+
+  // Toggle Italic
+  const handleToggleItalic = () => {
+    if (disabled) return;
+    editorRef.current?.focus();
+    document.execCommand("italic", false);
+    updateActiveFormats();
+    triggerChange();
+  };
+
+  // Toggle Strikethrough
+  const handleToggleStrikethrough = () => {
+    if (disabled) return;
+    editorRef.current?.focus();
+    document.execCommand("strikeThrough", false);
+    updateActiveFormats();
+    triggerChange();
+  };
+
+  // Toggle Ordered List (1. 2. 3.)
+  const handleToggleOrderedList = () => {
+    if (disabled) return;
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    let node: Node | null = range.commonAncestorContainer;
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+    if (!editor.contains(node)) return;
+
+    // Check if inside ol > li
+    const olLi = (node as HTMLElement)?.closest("ol > li") as HTMLElement | null;
+    if (olLi && editor.contains(olLi)) {
+      // Toggle OFF: convert back to paragraph
+      const p = document.createElement("p");
+      p.className = "my-0.5 leading-relaxed";
+      p.innerHTML = olLi.innerHTML || "<br>";
+
+      const parentList = olLi.parentElement;
+      if (parentList) {
+        const lis = Array.from(parentList.children);
+        const liIndex = lis.indexOf(olLi);
+        const afterLis = lis.slice(liIndex + 1);
+
+        olLi.remove();
+
+        if (afterLis.length > 0) {
+          const newOl = document.createElement("ol");
+          newOl.className = parentList.className;
+          afterLis.forEach((item) => newOl.appendChild(item));
+          parentList.after(newOl);
+          parentList.after(p);
+        } else {
+          parentList.after(p);
+        }
+
+        if (parentList.children.length === 0) {
+          parentList.remove();
+        }
+      } else {
+        olLi.replaceWith(p);
+      }
+
+      placeCaretAtEnd(p);
+      updateActiveFormats();
+      triggerChange();
+      return;
+    }
+
+    // Toggle ON: convert current block into <ol><li>...</li></ol>
+    let block: HTMLElement | null = node as HTMLElement;
+    const checkItem = block.closest(".note-check-item") as HTMLElement | null;
+    const heading = block.closest("h1, h2, h3, h4, h5, h6") as HTMLElement | null;
+    const ulLi = block.closest("ul > li") as HTMLElement | null;
+
+    const newLi = document.createElement("li");
+
+    if (ulLi && editor.contains(ulLi)) {
+      newLi.innerHTML = ulLi.innerHTML || "<br>";
+      const parentUl = ulLi.parentElement;
+      const ol = document.createElement("ol");
+      ol.className = "list-decimal pl-5 my-0.5";
+      ol.appendChild(newLi);
+      if (parentUl && parentUl.children.length === 1) {
+        parentUl.replaceWith(ol);
+      } else if (parentUl) {
+        ulLi.remove();
+        parentUl.after(ol);
+      }
+    } else if (checkItem && editor.contains(checkItem)) {
+      const textSpan = checkItem.querySelector(".note-check-text") || checkItem;
+      newLi.innerHTML = textSpan.innerHTML.replace(/<input[^>]*>/gi, "").trim() || "<br>";
+      const ol = document.createElement("ol");
+      ol.className = "list-decimal pl-5 my-0.5";
+      ol.appendChild(newLi);
+      checkItem.replaceWith(ol);
+    } else if (heading && editor.contains(heading)) {
+      newLi.innerHTML = heading.innerHTML || "<br>";
+      const ol = document.createElement("ol");
+      ol.className = "list-decimal pl-5 my-0.5";
+      ol.appendChild(newLi);
+      heading.replaceWith(ol);
+    } else {
+      while (block && block.parentElement && block.parentElement !== editor) {
+        block = block.parentElement;
+      }
+      if (block && editor.contains(block)) {
+        newLi.innerHTML = block.innerHTML || "<br>";
+        const ol = document.createElement("ol");
+        ol.className = "list-decimal pl-5 my-0.5";
+        ol.appendChild(newLi);
+        block.replaceWith(ol);
+      } else {
+        newLi.innerHTML = "<br>";
+        const ol = document.createElement("ol");
+        ol.className = "list-decimal pl-5 my-0.5";
+        ol.appendChild(newLi);
+        editor.appendChild(ol);
+      }
+    }
+
+    placeCaretAtEnd(newLi);
+    updateActiveFormats();
+    triggerChange();
+  };
+
+  // Toggle Blockquote
+  const handleToggleQuote = () => {
+    if (disabled) return;
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    let node: Node | null = range.commonAncestorContainer;
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+    if (!editor.contains(node)) return;
+
+    const quote = (node as HTMLElement)?.closest("blockquote") as HTMLElement | null;
+    if (quote && editor.contains(quote)) {
+      // Toggle OFF: convert back to paragraph
+      const p = document.createElement("p");
+      p.className = "my-0.5 leading-relaxed";
+      p.innerHTML = quote.innerHTML || "<br>";
+      quote.replaceWith(p);
+      placeCaretAtEnd(p);
+      updateActiveFormats();
+      triggerChange();
+      return;
+    }
+
+    // Toggle ON: convert block to blockquote
+    let block: HTMLElement | null = node as HTMLElement;
+    while (block && block.parentElement && block.parentElement !== editor) {
+      block = block.parentElement;
+    }
+
+    const bq = document.createElement("blockquote");
+    bq.className = "border-l-4 border-primary/60 bg-muted/30 pl-3 py-1 my-1.5 rounded-r text-muted-foreground italic";
+
+    if (block && editor.contains(block)) {
+      bq.innerHTML = block.innerHTML || "<br>";
+      block.replaceWith(bq);
+    } else {
+      bq.innerHTML = "<br>";
+      editor.appendChild(bq);
+    }
+
+    placeCaretAtEnd(bq);
+    updateActiveFormats();
+    triggerChange();
+  };
+
+  // Insert Horizontal Rule / Divider
+  const handleInsertDivider = () => {
+    if (disabled) return;
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const hr = document.createElement("hr");
+    hr.className = "border-t border-border/70 my-2";
+    const p = document.createElement("p");
+    p.className = "my-0.5 leading-relaxed";
+    p.innerHTML = "<br>";
+
+    const range = selection.getRangeAt(0);
+    let node: Node | null = range.commonAncestorContainer;
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+
+    let block: HTMLElement | null = node as HTMLElement;
+    while (block && block.parentElement && block.parentElement !== editor) {
+      block = block.parentElement;
+    }
+
+    if (block && editor.contains(block)) {
+      block.after(p);
+      block.after(hr);
+    } else {
+      editor.appendChild(hr);
+      editor.appendChild(p);
+    }
+
+    placeCaretAtEnd(p);
+    updateActiveFormats();
+    triggerChange();
+  };
+
+  // Insert Inline Image via URL prompt
+  const handleInsertImage = () => {
+    if (disabled) return;
+    const url = window.prompt("กรุณาวาง URL ของรูปภาพ (เช่น https://example.com/image.png):");
+    if (!url || !url.trim()) return;
+
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+
+    const img = document.createElement("img");
+    img.src = url.trim();
+    img.alt = "รูปภาพประกอบ";
+    img.className = "rounded max-h-56 object-contain border border-border/50 my-1 inline-block";
+
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(img);
+
+      const p = document.createElement("p");
+      p.className = "my-0.5 leading-relaxed";
+      p.innerHTML = "<br>";
+      img.after(p);
+      placeCaretAtEnd(p);
+    } else {
+      editor.appendChild(img);
+    }
+
     updateActiveFormats();
     triggerChange();
   };
@@ -749,6 +1204,22 @@ export default function RichNoteEditor({
 
   // Keyboard navigation & Enter key handling
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Ctrl+Z for Undo / Ctrl+Shift+Z (or Ctrl+Y) for Redo
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        handleRedo();
+      } else {
+        handleUndo();
+      }
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+      e.preventDefault();
+      handleRedo();
+      return;
+    }
+
     // Ctrl+B for bold
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
       e.preventDefault();
@@ -921,6 +1392,188 @@ export default function RichNoteEditor({
             </button>
           </div>
 
+          {/* Undo / Redo Controls */}
+          <div className="flex items-center gap-0.5 pr-1 border-r border-border/60">
+            <button
+              type="button"
+              onClick={handleUndo}
+              disabled={disabled || !canUndo}
+              className={cn(
+                "p-1 rounded transition flex items-center justify-center h-7 w-7",
+                canUndo && !disabled
+                  ? "hover:bg-background text-foreground"
+                  : "text-muted-foreground/40 cursor-not-allowed",
+              )}
+              title="ย้อนกลับ (Ctrl+Z)"
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleRedo}
+              disabled={disabled || !canRedo}
+              className={cn(
+                "p-1 rounded transition flex items-center justify-center h-7 w-7",
+                canRedo && !disabled
+                  ? "hover:bg-background text-foreground"
+                  : "text-muted-foreground/40 cursor-not-allowed",
+              )}
+              title="ยกเลิกการย้อนกลับ (Ctrl+Shift+Z หรือ Ctrl+Y)"
+            >
+              <Redo2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Color & Highlight Pickers */}
+          <div className="flex items-center gap-1 px-1 border-r border-border/60">
+            {/* Text Color Picker */}
+            <div className="relative group/color">
+              <button
+                type="button"
+                disabled={disabled}
+                className="px-1.5 py-1 rounded hover:bg-background transition flex items-center gap-0.5 text-foreground h-7"
+                title="เปลี่ยนสีข้อความ"
+              >
+                <Palette className="w-3.5 h-3.5" />
+                <span className="text-[10px] opacity-70">▼</span>
+              </button>
+              <div className="hidden group-hover/color:flex group-focus-within/color:flex absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg p-2.5 gap-2 z-50 flex-col w-52">
+                <span className="text-[11px] font-medium text-foreground">สีตัวอักษร</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: "ปกติ", color: "" },
+                    { label: "ดำ", color: "#0f172a" },
+                    { label: "เทา", color: "#64748b" },
+                    { label: "แดง", color: "#ef4444" },
+                    { label: "ส้ม", color: "#f97316" },
+                    { label: "เหลืองเข้ม", color: "#eab308" },
+                    { label: "เขียว", color: "#10b981" },
+                    { label: "ฟ้า", color: "#06b6d4" },
+                    { label: "น้ำเงิน", color: "#3b82f6" },
+                    { label: "ม่วง", color: "#8b5cf6" },
+                    { label: "ชมพู", color: "#ec4899" },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => applyInlineStyle("color", item.color)}
+                      className="w-5 h-5 rounded-full border border-border/60 hover:scale-115 transition flex items-center justify-center text-[10px] shadow-xs"
+                      style={{ backgroundColor: item.color || "transparent" }}
+                      title={item.label}
+                    >
+                      {!item.color && "×"}
+                    </button>
+                  ))}
+                </div>
+                <div className="pt-1.5 border-t border-border/60 flex items-center gap-1.5">
+                  <input
+                    type="color"
+                    value={textColorInput}
+                    onChange={(e) => {
+                      setTextColorInput(e.target.value);
+                      applyInlineStyle("color", e.target.value);
+                    }}
+                    className="w-7 h-7 p-0 rounded border border-border cursor-pointer bg-transparent"
+                    title="เลือกแถบสี"
+                  />
+                  <input
+                    type="text"
+                    value={textColorInput}
+                    placeholder="#ff0000"
+                    onChange={(e) => setTextColorInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        applyInlineStyle("color", textColorInput);
+                      }
+                    }}
+                    className="h-7 px-1.5 flex-1 rounded bg-background border border-input text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    title="ใส่รหัสสี เช่น #ef4444"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => applyInlineStyle("color", textColorInput)}
+                    className="h-7 px-2 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition"
+                  >
+                    ใช้
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Highlight Background Color Picker */}
+            <div className="relative group/highlight">
+              <button
+                type="button"
+                disabled={disabled}
+                className="px-1.5 py-1 rounded hover:bg-background transition flex items-center gap-0.5 text-foreground h-7"
+                title="ไฮไลท์สีพื้นหลัง"
+              >
+                <Highlighter className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-[10px] opacity-70">▼</span>
+              </button>
+              <div className="hidden group-hover/highlight:flex group-focus-within/highlight:flex absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg p-2.5 gap-2 z-50 flex-col w-52">
+                <span className="text-[11px] font-medium text-foreground">สีไฮไลท์พื้นหลัง</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: "ลบไฮไลท์", color: "" },
+                    { label: "เหลืองอ่อน", color: "#fef08a" },
+                    { label: "เขียวอ่อน", color: "#bbf7d0" },
+                    { label: "ฟ้าอ่อน", color: "#bae6fd" },
+                    { label: "ชมพูอ่อน", color: "#fbcfe8" },
+                    { label: "ส้มอ่อน", color: "#fed7aa" },
+                    { label: "ม่วงอ่อน", color: "#e9d5ff" },
+                    { label: "เทาอ่อน", color: "#e2e8f0" },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => applyInlineStyle("backgroundColor", item.color)}
+                      className="w-5 h-5 rounded border border-border/60 hover:scale-115 transition flex items-center justify-center text-[10px] shadow-xs"
+                      style={{ backgroundColor: item.color || "transparent" }}
+                      title={item.label}
+                    >
+                      {!item.color && "×"}
+                    </button>
+                  ))}
+                </div>
+                <div className="pt-1.5 border-t border-border/60 flex items-center gap-1.5">
+                  <input
+                    type="color"
+                    value={bgColorInput}
+                    onChange={(e) => {
+                      setBgColorInput(e.target.value);
+                      applyInlineStyle("backgroundColor", e.target.value);
+                    }}
+                    className="w-7 h-7 p-0 rounded border border-border cursor-pointer bg-transparent"
+                    title="เลือกแถบสี"
+                  />
+                  <input
+                    type="text"
+                    value={bgColorInput}
+                    placeholder="#fef08a"
+                    onChange={(e) => setBgColorInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        applyInlineStyle("backgroundColor", bgColorInput);
+                      }
+                    }}
+                    className="h-7 px-1.5 flex-1 rounded bg-background border border-input text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    title="ใส่รหัสสี เช่น #fef08a"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => applyInlineStyle("backgroundColor", bgColorInput)}
+                    className="h-7 px-2 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition"
+                  >
+                    ใช้
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={handleToggleChecklist}
@@ -952,6 +1605,34 @@ export default function RichNoteEditor({
           </button>
           <button
             type="button"
+            onClick={handleToggleItalic}
+            disabled={disabled}
+            className={cn(
+              "px-2 py-1 rounded transition flex items-center gap-1 italic h-7",
+              activeFormats.italic
+                ? "bg-background text-primary shadow-xs border border-border/80"
+                : "hover:bg-background text-foreground",
+            )}
+            title="สลับตัวเอียง (Italic)"
+          >
+            <Italic className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleStrikethrough}
+            disabled={disabled}
+            className={cn(
+              "px-2 py-1 rounded transition flex items-center gap-1 line-through h-7",
+              activeFormats.strikethrough
+                ? "bg-background text-primary shadow-xs border border-border/80"
+                : "hover:bg-background text-foreground",
+            )}
+            title="สลับขีดทับ (Strikethrough)"
+          >
+            <Strikethrough className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
             onClick={handleToggleList}
             disabled={disabled}
             className={cn(
@@ -960,9 +1641,23 @@ export default function RichNoteEditor({
                 ? "bg-background text-primary shadow-xs border border-border/80 font-medium"
                 : "hover:bg-background text-foreground",
             )}
-            title="สลับรายการข้อย่อย"
+            title="สลับรายการข้อย่อย (Bullet)"
           >
             <List className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleOrderedList}
+            disabled={disabled}
+            className={cn(
+              "px-2 py-1 rounded transition flex items-center gap-1 h-7",
+              activeFormats.orderedList
+                ? "bg-background text-primary shadow-xs border border-border/80 font-medium"
+                : "hover:bg-background text-foreground",
+            )}
+            title="สลับรายการตัวเลข (Numbered List)"
+          >
+            <ListOrdered className="w-3.5 h-3.5" />
           </button>
           <button
             type="button"
@@ -974,9 +1669,41 @@ export default function RichNoteEditor({
                 ? "bg-background text-primary shadow-xs border border-border/80 font-medium"
                 : "hover:bg-background text-foreground",
             )}
-            title="สลับหัวข้อ"
+            title="สลับหัวข้อ (Heading)"
           >
             <Heading className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleQuote}
+            disabled={disabled}
+            className={cn(
+              "px-2 py-1 rounded transition flex items-center gap-1 h-7",
+              activeFormats.quote
+                ? "bg-background text-primary shadow-xs border border-border/80 font-medium"
+                : "hover:bg-background text-foreground",
+            )}
+            title="สลับข้อความอ้างอิง (Blockquote)"
+          >
+            <Quote className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertDivider}
+            disabled={disabled}
+            className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-foreground h-7"
+            title="แทรกเส้นคั่น (Divider)"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertImage}
+            disabled={disabled}
+            className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-foreground h-7"
+            title="แทรกรูปภาพจาก URL (Image)"
+          >
+            <ImageIcon className="w-3.5 h-3.5 text-blue-500" />
           </button>
         </div>
       </div>

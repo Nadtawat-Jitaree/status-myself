@@ -25,16 +25,16 @@ interface NoteContentRendererProps {
 function renderInline(text: string): React.ReactNode {
   if (!text) return null;
 
-  // Split by supported inline syntax tokens (including style spans)
+  // Split by supported inline syntax tokens (including style spans, images, links)
   const tokenRegex =
-    /(<span[^>]*style="[^"]*"[^>]*>[\s\S]*?<\/span>|\[(?:[^\]]+)\]\((?:https?:\/\/[^\s)]+)\)|https?:\/\/[^\s]+|\*\*(?:[^*]+?)\*\*|__(?:[^_]+?)__|~~(?:[^~]+?)~~|`[^`]+`|\*(?:[^*]+?)\*)/g;
+    /(<span[^>]*style="[^"]*"[^>]*>[\s\S]*?<\/span>|!\[(?:[^\]]*)\]\((?:https?:\/\/[^\s)]+)\)|\[(?:[^\]]+)\]\((?:https?:\/\/[^\s)]+)\)|https?:\/\/[^\s]+|\*\*(?:[^*]+?)\*\*|__(?:[^_]+?)__|~~(?:[^~]+?)~~|`[^`]+`|\*(?:[^*]+?)\*)/g;
 
   const parts = text.split(tokenRegex);
 
   return parts.map((part, index) => {
     if (!part) return null;
 
-    // 0. Span with style (e.g. font-size)
+    // 0. Span with style (e.g. font-size, color, background-color)
     const spanMatch = part.match(/^<span[^>]*style="([^"]*)"[^>]*>([\s\S]*?)<\/span>$/i);
     if (spanMatch) {
       const styleString = spanMatch[1];
@@ -50,6 +50,24 @@ function renderInline(text: string): React.ReactNode {
       return (
         <span key={index} style={styleObj as React.CSSProperties}>
           {renderInline(innerContent)}
+        </span>
+      );
+    }
+
+    // 0.1 Image inline: ![alt](url)
+    const imgMatch = part.match(/^!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (imgMatch) {
+      return (
+        <span key={index} className="inline-block my-1 max-w-full">
+          <img
+            src={imgMatch[2]}
+            alt={imgMatch[1] || "รูปภาพประกอบ"}
+            className="rounded-md max-h-72 object-contain border border-border/50 shadow-xs inline-block"
+            loading="lazy"
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = "none";
+            }}
+          />
         </span>
       );
     }
@@ -337,12 +355,41 @@ export default function NoteContentRenderer({
           );
         }
 
-        // 7. Empty line (blank line)
+        // 7. Blockquote: > text
+        const quoteMatch = line.match(/^>\s*(.*)$/);
+        if (quoteMatch) {
+          return (
+            <blockquote
+              key={lineIndex}
+              className={cn(
+                "border-l-4 border-primary/60 bg-muted/30 pl-3 py-1 my-1.5 rounded-r text-muted-foreground italic",
+                isCompact ? "text-xs my-1" : "text-sm my-2",
+              )}
+            >
+              {renderInline(quoteMatch[1])}
+            </blockquote>
+          );
+        }
+
+        // 8. Divider / Horizontal Rule: --- or *** or ___
+        if (/^(\s*[-*_]\s*){3,}$/.test(line)) {
+          return (
+            <hr
+              key={lineIndex}
+              className={cn(
+                "border-t border-border/70 my-2",
+                isCompact ? "my-1.5" : "my-3",
+              )}
+            />
+          );
+        }
+
+        // 9. Empty line (blank line)
         if (!line.trim()) {
           return <div key={lineIndex} className={isCompact ? "h-1" : "h-2.5"} />;
         }
 
-        // 8. Normal text paragraph line
+        // 10. Normal text paragraph line
         return (
           <p
             key={lineIndex}
