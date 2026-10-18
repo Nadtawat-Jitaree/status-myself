@@ -47,6 +47,9 @@ import {
   Globe,
 } from "lucide-react";
 import ShareModal from "@/components/ShareModal";
+import NoteContentRenderer from "@/components/NoteContentRenderer";
+import RichNoteEditor from "@/components/RichNoteEditor";
+import { cn } from "@/lib/utils";
 
 type Category = {
   id: string;
@@ -220,39 +223,49 @@ export default function NotesPage({ noteType }: Props) {
     }
   };
 
-  const insertFormat = (formatType: "checklist" | "bold" | "list" | "heading") => {
-    const textarea = document.getElementById("content") as HTMLTextAreaElement;
-    if (!textarea) return;
+  const handleToggleChecklist = async (
+    noteId: string,
+    lineIndex: number,
+    newChecked: boolean,
+  ) => {
+    const noteInState =
+      (readingNote && readingNote.id === noteId ? readingNote : null) ||
+      notes.find((n) => n.id === noteId);
+    if (!noteInState) return;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-    let insertText = "";
+    const lines = (noteInState.content || "").split("\n");
+    if (lines[lineIndex] === undefined) return;
 
-    switch (formatType) {
-      case "checklist":
-        insertText = "\n- [ ] ";
-        break;
-      case "bold":
-        insertText = "**ข้อความ**";
-        break;
-      case "list":
-        insertText = "\n• ";
-        break;
-      case "heading":
-        insertText = "\n### ";
-        break;
+    const match = lines[lineIndex].match(
+      /^(\s*(?:[-*]\s*)?\[)([ xX])(\]\s*)(.*)$/,
+    );
+    if (!match) return;
+
+    lines[lineIndex] = `${match[1]}${newChecked ? "x" : " "}${match[3]}${match[4]}`;
+    const newContent = lines.join("\n");
+
+    setNotes((prev) =>
+      prev.map((n) => (n.id === noteId ? { ...n, content: newContent } : n)),
+    );
+    if (readingNote && readingNote.id === noteId) {
+      setReadingNote((prev) =>
+        prev ? { ...prev, content: newContent } : null,
+      );
     }
 
-    const newContent = text.substring(0, start) + insertText + text.substring(end);
-    setContent(newContent);
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(
-        start + insertText.length,
-        start + insertText.length,
-      );
-    }, 50);
+    try {
+      await updateNote(noteId, {
+        title: noteInState.title,
+        content: newContent,
+        category_id: noteInState.category_id || null,
+        status: noteInState.status,
+        file_path: noteInState.file_path,
+        is_pinned: noteInState.is_pinned,
+      });
+    } catch (err: any) {
+      console.error("Failed to toggle checklist:", err);
+      await loadNotes();
+    }
   };
 
   const handleRemoveExistingPdf = async () => {
@@ -1222,9 +1235,16 @@ export default function NotesPage({ noteType }: Props) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col justify-between">
-                  <p className="text-sm line-clamp-4 mb-4 text-foreground/80 whitespace-pre-wrap">
-                    {note.content || "ไม่มีรายละเอียด"}
-                  </p>
+                  <div className="text-sm line-clamp-4 mb-4 text-foreground/80 overflow-hidden">
+                    <NoteContentRenderer
+                      content={note.content}
+                      isCompact
+                      emptyText="ไม่มีรายละเอียด"
+                      onToggleChecklist={(lineIndex, newChecked) =>
+                        handleToggleChecklist(note.id, lineIndex, newChecked)
+                      }
+                    />
+                  </div>
 
                   {note.file_path && (
                     <div className="mb-4">
@@ -1573,8 +1593,18 @@ export default function NotesPage({ noteType }: Props) {
                     น.
                   </span>
                 </div>
-                <div className="prose prose-slate max-w-none text-base md:text-lg leading-relaxed whitespace-pre-wrap text-slate-800 lg:h-[500px] overflow-y-auto">
-                  {readingNote.content || "ไม่มีรายละเอียดเนื้อหา"}
+                <div className="max-w-none text-base md:text-lg leading-relaxed text-slate-800 dark:text-slate-200 lg:h-[500px] overflow-y-auto pr-2">
+                  <NoteContentRenderer
+                    content={readingNote.content}
+                    emptyText="ไม่มีรายละเอียดเนื้อหา"
+                    onToggleChecklist={(lineIndex, newChecked) =>
+                      handleToggleChecklist(
+                        readingNote.id,
+                        lineIndex,
+                        newChecked,
+                      )
+                    }
+                  />
                 </div>
               </div>
               {readingNote.file_path && (
@@ -1733,54 +1763,11 @@ export default function NotesPage({ noteType }: Props) {
                       disabled={isSubmittingNote}
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="content">รายละเอียด (Content)</Label>
-                      <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border text-xs">
-                        <button
-                          type="button"
-                          onClick={() => insertFormat("checklist")}
-                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700"
-                          title="แทรก Checklist"
-                        >
-                          <CheckSquare className="w-3.5 h-3.5 text-primary" />
-                          <span className="hidden sm:inline">Checklist</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => insertFormat("bold")}
-                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700 font-bold"
-                          title="ตัวหนา"
-                        >
-                          <Bold className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => insertFormat("list")}
-                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700"
-                          title="รายการข้อย่อย"
-                        >
-                          <List className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => insertFormat("heading")}
-                          className="px-2 py-1 rounded hover:bg-background transition flex items-center gap-1 text-slate-700"
-                          title="หัวข้อ"
-                        >
-                          <Heading className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                    <textarea
-                      id="content"
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      disabled={isSubmittingNote}
-                      placeholder="เขียนบันทึกของคุณที่นี่... สามารถคลิกปุ่มด้านบนเพื่อแทรก Checklist หรือหัวข้อได้"
-                      className="flex min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                  </div>
+                  <RichNoteEditor
+                    value={content}
+                    onChange={setContent}
+                    disabled={isSubmittingNote}
+                  />
 
                   <div className="grid gap-2">
                     <Label htmlFor="file">แนบไฟล์ (PDF หรือ รูปภาพ - ทางเลือก)</Label>

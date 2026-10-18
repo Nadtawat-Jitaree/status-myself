@@ -10,6 +10,7 @@ import {
   Lock,
 } from "lucide-react";
 import CopyButton from "./CopyButton";
+import NoteContentRenderer from "@/components/NoteContentRenderer";
 
 interface PageProps {
   params: Promise<{
@@ -184,8 +185,12 @@ async function SharedNoteContent({ params }: PageProps) {
           </div>
 
           {/* Content */}
-          <div className="text-slate-700 text-base sm:text-lg leading-relaxed whitespace-pre-wrap font-sans min-h-[120px]">
-            {note.content || "ไม่มีเนื้อหา"}
+          <div className="text-slate-700 text-base sm:text-lg leading-relaxed font-sans min-h-[120px]">
+            <NoteContentRenderer
+              content={note.content}
+              readOnly
+              emptyText="ไม่มีเนื้อหา"
+            />
           </div>
 
           {/* Attachment section */}

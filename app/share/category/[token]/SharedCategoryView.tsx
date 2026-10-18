@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import NoteContentRenderer from "@/components/NoteContentRenderer";
 
 interface SharedCategoryViewProps {
   category: {
@@ -266,9 +267,14 @@ export default function SharedCategoryView({
                 </CardHeader>
 
                 <CardContent className="flex-1 flex flex-col justify-between">
-                  <p className="text-sm text-slate-600 line-clamp-4 whitespace-pre-wrap mb-4">
-                    {note.content || "ไม่มีเนื้อหา"}
-                  </p>
+                  <div className="text-sm text-slate-600 line-clamp-4 mb-4 overflow-hidden">
+                    <NoteContentRenderer
+                      content={note.content}
+                      isCompact
+                      readOnly
+                      emptyText="ไม่มีเนื้อหา"
+                    />
+                  </div>
 
                   {note.file_path && (
                     <div className="mb-4">
@@ -355,8 +361,12 @@ export default function SharedCategoryView({
             </div>
 
             <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
-              <div className="text-slate-800 text-base leading-relaxed whitespace-pre-wrap font-sans">
-                {readingNote.content || "ไม่มีเนื้อหา"}
+              <div className="text-slate-800 text-base leading-relaxed font-sans">
+                <NoteContentRenderer
+                  content={readingNote.content}
+                  readOnly
+                  emptyText="ไม่มีเนื้อหา"
+                />
               </div>
 
               {readingNote.file_path && (

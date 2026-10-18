@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import NoteContentRenderer from "@/components/NoteContentRenderer";
 
 const mockCategories = [
   {
@@ -428,17 +429,13 @@ export default function Home() {
                             </CardHeader>
 
                             <CardContent className="flex-1 flex flex-col justify-between">
-                              <p
-                                className="
-                                text-sm
-                                line-clamp-4
-                                mb-4
-                                text-black/65
-                                whitespace-pre-wrap
-                              "
-                              >
-                                {note.content}
-                              </p>
+                              <div className="text-sm line-clamp-4 mb-4 text-black/65 overflow-hidden">
+                                <NoteContentRenderer
+                                  content={note.content}
+                                  isCompact
+                                  readOnly
+                                />
+                              </div>
 
                               <div
                                 className="
