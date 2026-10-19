@@ -200,16 +200,16 @@ export default function CalendarClient() {
   }
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 sm:space-y-6 pb-12">
       {/* Page Title & Month Navigator */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <CalendarIcon className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-foreground">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
                 ปฏิทิน & บันทึกรายวัน
               </h1>
               <p className="text-xs text-muted-foreground">
@@ -220,30 +220,30 @@ export default function CalendarClient() {
         </div>
 
         {/* Month Selector Buttons */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
           <button
             onClick={handleGoToday}
-            className="rounded-xl border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+            className="rounded-xl border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted shrink-0"
           >
             วันนี้
           </button>
 
-          <div className="flex items-center rounded-xl border bg-card p-1 shadow-sm">
+          <div className="flex items-center rounded-xl border bg-card p-1 shadow-sm flex-1 sm:flex-initial justify-between sm:justify-start">
             <button
               onClick={handlePrevMonth}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground shrink-0"
               title="เดือนก่อนหน้า"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
 
-            <span className="min-w-[140px] text-center text-sm font-bold text-foreground">
+            <span className="min-w-[120px] sm:min-w-[140px] text-center text-xs sm:text-sm font-bold text-foreground">
               {THAI_MONTH_NAMES[currentMonth - 1]} {currentYear}
             </span>
 
             <button
               onClick={handleNextMonth}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground shrink-0"
               title="เดือนถัดไป"
             >
               <ChevronRight className="h-4 w-4" />
@@ -276,13 +276,13 @@ export default function CalendarClient() {
       />
 
       {/* Calendar Grid Container */}
-      <div className="rounded-3xl border bg-card p-3 sm:p-5 shadow-sm">
+      <div className="rounded-2xl sm:rounded-3xl border bg-card p-2 sm:p-5 shadow-sm">
         {/* Days of Week Header */}
-        <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-1.5 sm:mb-2">
           {DAY_NAMES.map((name, idx) => (
             <div
               key={name}
-              className={`text-center py-2 text-xs font-bold uppercase tracking-wider ${
+              className={`text-center py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold uppercase tracking-wider ${
                 idx === 0
                   ? 'text-red-500'
                   : idx === 6
@@ -310,7 +310,7 @@ export default function CalendarClient() {
               <div
                 key={cell.dateStr}
                 onClick={() => handleCellClick(cell.dateStr)}
-                className={`group relative flex flex-col justify-between min-h-[90px] sm:min-h-[120px] rounded-2xl border p-1.5 sm:p-2.5 cursor-pointer ${
+                className={`group relative flex flex-col justify-between min-h-[68px] sm:min-h-[110px] md:min-h-[125px] rounded-xl sm:rounded-2xl border p-1 sm:p-2 md:p-2.5 cursor-pointer ${
                   cell.isCurrentMonth
                     ? 'bg-card hover:border-primary/50 hover:shadow-md'
                     : 'bg-muted/20 opacity-40 hover:opacity-80'
@@ -324,7 +324,7 @@ export default function CalendarClient() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <span
-                      className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                      className={`flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full text-[11px] sm:text-xs font-bold ${
                         cell.isToday
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : cell.isCurrentMonth
@@ -346,19 +346,42 @@ export default function CalendarClient() {
                   {/* Mood & Note Indicators */}
                   <div className="flex items-center gap-1">
                     {moodInfo && (
-                      <moodInfo.icon className={`h-4 w-4 ${moodInfo.color}`} />
+                      <moodInfo.icon className={`h-3 w-3 sm:h-4 sm:w-4 ${moodInfo.color}`} />
                     )}
                     {hasNote && (
                       <span
                         title="มีบันทึกสรุปประจำวัน"
-                        className="flex h-2 w-2 rounded-full bg-amber-400 ring-2 ring-background"
+                        className="flex h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-amber-400 ring-2 ring-background"
                       />
                     )}
                   </div>
                 </div>
 
                 {/* Middle: Items preview */}
-                <div className="flex-1 my-1 space-y-1 overflow-hidden">
+                {/* 1. Mobile Compact Dots (screens < 640px) */}
+                <div className="sm:hidden flex flex-wrap items-center gap-1 my-1 px-0.5 min-h-[14px]">
+                  {dayItems.slice(0, 3).map((item) => {
+                    const isDone = item.status === 'completed'
+                    const catStyle = getCategoryStyle(item.category)
+                    return (
+                      <span
+                        key={item.id}
+                        className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                          isDone ? 'bg-emerald-500' : catStyle.dot
+                        }`}
+                        title={item.title}
+                      />
+                    )
+                  })}
+                  {dayItems.length > 3 && (
+                    <span className="text-[9px] font-bold text-muted-foreground/80 leading-none">
+                      +{dayItems.length - 3}
+                    </span>
+                  )}
+                </div>
+
+                {/* 2. Desktop/Tablet Item Bars (screens >= 640px) */}
+                <div className="hidden sm:block flex-1 my-1 space-y-1 overflow-hidden">
                   {dayItems.slice(0, 2).map((item) => {
                     const isDone = item.status === 'completed'
                     const catStyle = getCategoryStyle(item.category)
@@ -385,18 +408,19 @@ export default function CalendarClient() {
                 </div>
 
                 {/* Bottom Row: Quick completion pill & Add hover */}
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/40">
+                <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-muted-foreground pt-0.5 sm:pt-1 border-t border-border/40">
                   {totalTasks > 0 ? (
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      {completedTasks}/{totalTasks} เสร็จ
+                      <span className="sm:hidden">{completedTasks}/{totalTasks}</span>
+                      <span className="hidden sm:inline">{completedTasks}/{totalTasks} เสร็จ</span>
                     </span>
                   ) : (
-                    <span className="text-[10px] text-muted-foreground/50">
-                      {hasNote ? 'มีโน้ต' : '-'}
+                    <span className="text-[9px] sm:text-[10px] text-muted-foreground/50">
+                      {hasNote ? <span className="text-amber-600 font-medium">โน้ต</span> : '-'}
                     </span>
                   )}
 
-                  <span className="opacity-0 group-hover:opacity-100 text-primary p-0.5 rounded hover:bg-primary/10">
+                  <span className="hidden sm:inline-block opacity-0 group-hover:opacity-100 text-primary p-0.5 rounded hover:bg-primary/10">
                     <Plus className="h-3.5 w-3.5" />
                   </span>
                 </div>

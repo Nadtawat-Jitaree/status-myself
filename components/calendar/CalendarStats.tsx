@@ -64,83 +64,83 @@ export default function CalendarStats({
   }))
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
       {/* Card 1: Completed Rate */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <div className="rounded-2xl border bg-card p-3 sm:p-4 shadow-sm flex items-center justify-between">
+        <div className="min-w-0 flex-1 pr-1.5">
+          <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate">
             ความคืบหน้ารวม
           </p>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-black text-foreground">{completionRate}%</span>
-            <span className="text-xs text-muted-foreground">
-              ({completedTasks}/{totalTasks} งาน)
+          <div className="flex flex-wrap items-baseline gap-1 sm:gap-2 mt-1">
+            <span className="text-lg sm:text-2xl font-black text-foreground">{completionRate}%</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
+              ({completedTasks}/{totalTasks})
             </span>
           </div>
-          <div className="w-28 h-1.5 rounded-full bg-muted mt-2 overflow-hidden">
+          <div className="w-full max-w-[110px] h-1.5 rounded-full bg-muted mt-2 overflow-hidden">
             <div
               className="h-full bg-emerald-500 rounded-full"
               style={{ width: `${completionRate}%` }}
             />
           </div>
         </div>
-        <div className="h-10 w-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center border border-emerald-200">
-          <CheckCircle2 className="h-5 w-5" />
+        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center border border-emerald-200 shrink-0">
+          <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
       </div>
 
       {/* Card 2: Active Days */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            วันที่บันทึก (Active Days)
+      <div className="rounded-2xl border bg-card p-3 sm:p-4 shadow-sm flex items-center justify-between">
+        <div className="min-w-0 flex-1 pr-1.5">
+          <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate">
+            วันที่บันทึก
           </p>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-black text-foreground">{activeDaysCount}</span>
-            <span className="text-xs text-muted-foreground">วันในเดือนนี้</span>
+          <div className="flex items-baseline gap-1 sm:gap-2 mt-1">
+            <span className="text-lg sm:text-2xl font-black text-foreground">{activeDaysCount}</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">วันในเดือนนี้</span>
           </div>
-          <p className="text-[11px] text-muted-foreground/80 mt-1">มีกิจกรรมหรือโน้ตประจำวัน</p>
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 mt-1 truncate">มีกิจกรรม/โน้ต</p>
         </div>
-        <div className="h-10 w-10 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 flex items-center justify-center border border-blue-200">
-          <CalendarIcon className="h-5 w-5" />
+        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 flex items-center justify-center border border-blue-200 shrink-0">
+          <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
       </div>
 
       {/* Card 3: Total Logs / Tasks */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <div className="rounded-2xl border bg-card p-3 sm:p-4 shadow-sm flex items-center justify-between">
+        <div className="min-w-0 flex-1 pr-1.5">
+          <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate">
             ภารกิจทั้งหมด
           </p>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-black text-foreground">{totalTasks}</span>
-            <span className="text-xs text-muted-foreground">รายการ</span>
+          <div className="flex items-baseline gap-1 sm:gap-2 mt-1">
+            <span className="text-lg sm:text-2xl font-black text-foreground">{totalTasks}</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">รายการ</span>
           </div>
-          <p className="text-[11px] text-muted-foreground/80 mt-1">
-            {totalTasks - completedTasks} งานยังรอทำ
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 mt-1 truncate">
+            {totalTasks - completedTasks} งานรอทำ
           </p>
         </div>
-        <div className="h-10 w-10 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center border border-amber-200">
-          <TrendingUp className="h-5 w-5" />
+        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center border border-amber-200 shrink-0">
+          <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
       </div>
 
       {/* Card 4: Category Distribution Mini Chart */}
-      <div className="rounded-2xl border bg-card p-3 shadow-sm flex items-center justify-between">
-        <div className="flex-1 min-w-0 pr-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            สัดส่วนหมวดหมู่
+      <div className="rounded-2xl border bg-card p-3 sm:p-4 shadow-sm flex items-center justify-between">
+        <div className="flex-1 min-w-0 pr-1 sm:pr-2">
+          <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate">
+            สัดส่วนหมวด
           </p>
           <div className="flex flex-wrap gap-1 mt-1.5">
             {chartData.slice(0, 3).map((c) => (
-              <span key={c.name} className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
-                <span className="capitalize">{c.name}</span>
+              <span key={c.name} className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground">
+                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full" style={{ backgroundColor: c.color }} />
+                <span className="capitalize truncate max-w-[50px] sm:max-w-none">{c.name}</span>
               </span>
             ))}
           </div>
         </div>
-        <div className="h-14 w-14 shrink-0">
+        <div className="h-11 w-11 sm:h-14 sm:w-14 shrink-0">
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -148,8 +148,8 @@ export default function CalendarStats({
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={15}
-                  outerRadius={26}
+                  innerRadius={13}
+                  outerRadius={24}
                   paddingAngle={3}
                   dataKey="value"
                 >
