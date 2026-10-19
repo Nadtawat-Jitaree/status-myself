@@ -187,7 +187,8 @@ function htmlToMarkdown(html: string): string {
     // Checklist item
     if (el.classList.contains("note-check-item") || el.getAttribute("data-checked") !== null) {
       const checkbox = el.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
-      const isChecked = checkbox ? checkbox.checked : el.getAttribute("data-checked") === "true";
+      const dataChecked = el.getAttribute("data-checked");
+      const isChecked = dataChecked !== null ? dataChecked === "true" : (checkbox ? (checkbox.checked || checkbox.hasAttribute("checked")) : false);
       const textSpan = el.querySelector(".note-check-text") || el;
       const text = processInline(textSpan);
       return `${isChecked ? "- [x]" : "- [ ]"} ${text.trim()}`;
@@ -337,6 +338,11 @@ function createChecklistItem(contentHtml: string, isChecked: boolean = false): H
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.checked = isChecked;
+  if (isChecked) {
+    checkbox.setAttribute("checked", "checked");
+  } else {
+    checkbox.removeAttribute("checked");
+  }
   checkbox.className = "note-checkbox mt-1 w-4 h-4 rounded accent-primary cursor-pointer shrink-0";
 
   const textSpan = document.createElement("span");
@@ -1188,6 +1194,11 @@ export default function RichNoteEditor({
       const checkItem = input.closest(".note-check-item") as HTMLElement | null;
       if (checkItem) {
         checkItem.setAttribute("data-checked", input.checked ? "true" : "false");
+        if (input.checked) {
+          input.setAttribute("checked", "checked");
+        } else {
+          input.removeAttribute("checked");
+        }
         const textSpan = checkItem.querySelector(".note-check-text");
         if (textSpan) {
           if (input.checked) {
