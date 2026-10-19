@@ -74,7 +74,7 @@ export default function ProjectDetailPage({
       <div>
         <Link
           href="/system/projects"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors     
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground     
                       h-10
                       flex-1
                       justify-center

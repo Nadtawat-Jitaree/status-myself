@@ -22,11 +22,11 @@ export default function NoteCard() {
         />
 
         <div className="relative z-10 flex flex-col items-center gap-1">
-          <span className="text-xl font-bold text-foreground transition-colors duration-300 group-hover:text-primary">
+          <span className="text-xl font-bold text-foreground group-hover:text-primary">
             Note บันทึกข้อมูล
           </span>
 
-          <span className="text-sm font-medium text-muted-foreground transition-colors duration-300 group-hover:text-primary/70">
+          <span className="text-sm font-medium text-muted-foreground group-hover:text-primary/70">
             คลิกเพื่อดูและจัดการโน้ตของคุณ
           </span>
         </div>

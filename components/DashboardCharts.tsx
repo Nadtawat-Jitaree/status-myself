@@ -29,7 +29,7 @@ export default function DashboardCharts({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
       {/* Chart 1: Donut Chart สถานะงานและโน้ต */}
-      <Card className="min-w-0 rounded-2xl border bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow">
+      <Card className="min-w-0 rounded-2xl border bg-card shadow-sm hover:shadow-md">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold flex items-center justify-between">
             <span>สัดส่วนสถานะงานและโน้ต</span>
@@ -105,7 +105,7 @@ export default function DashboardCharts({
       </Card>
 
       {/* Chart 2: Bar Chart แยกตามหมวดหมู่ */}
-      <Card className="min-w-0 rounded-2xl border bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow">
+      <Card className="min-w-0 rounded-2xl border bg-card shadow-sm hover:shadow-md">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold flex items-center justify-between">
             <span>บันทึกแยกตามหมวดหมู่</span>

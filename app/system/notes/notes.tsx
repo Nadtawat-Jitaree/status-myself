@@ -864,7 +864,7 @@ export default function NotesPage({ noteType }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat backdrop-blur-sm">
+      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold tracking-tight">รายการบันทึก</h2>
@@ -982,7 +982,7 @@ export default function NotesPage({ noteType }: Props) {
                 key={tab.id}
                 type="button"
                 onClick={() => setStatusFilter(tab.id)}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap border shrink-0 cursor-pointer ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer ${
                   isActive
                     ? tab.activeCls
                     : "bg-background/90 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
@@ -991,7 +991,7 @@ export default function NotesPage({ noteType }: Props) {
                 <span>{tab.icon}</span>
                 <span>{tab.label}</span>
                 <span
-                  className={`text-[11px] px-1.5 py-0.2 rounded-full font-semibold transition-colors ${
+                  className={`text-[11px] px-1.5 py-0.2 rounded-full font-semibold ${
                     isActive
                       ? tab.badgeActive
                       : "bg-muted text-muted-foreground"
@@ -1036,7 +1036,7 @@ export default function NotesPage({ noteType }: Props) {
             paginatedNotes.map((note, index) => (
               <Card
                 key={note.id}
-                className={`flex flex-col h-full relative group transition-colors overflow-hidden ${getCardStyle(note.status)}`}
+                className={`flex flex-col h-full relative group overflow-hidden ${getCardStyle(note.status)}`}
               >
                 <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10 ">
                   #{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
@@ -1055,7 +1055,7 @@ export default function NotesPage({ noteType }: Props) {
                       setShareItem({ type: "note", item: note });
                       setIsShareModalOpen(true);
                     }}
-                    className="absolute top-0 right-3 bg-sky-500 hover:bg-sky-600 text-white px-2 py-0.5 rounded-b-md text-[10px] font-bold flex items-center gap-1 shadow-sm z-10 cursor-pointer transition-colors"
+                    className="absolute top-0 right-3 bg-sky-500 hover:bg-sky-600 text-white px-2 py-0.5 rounded-b-md text-[10px] font-bold flex items-center gap-1 shadow-sm z-10 cursor-pointer"
                     title="กำลังแชร์สาธารณะ (คลิกเพื่อดูลิงก์)"
                   >
                     <Share2 className="w-3 h-3" /> แชร์อยู่
@@ -1067,10 +1067,10 @@ export default function NotesPage({ noteType }: Props) {
                     <CardTitle className="text-xl pr-12">
                       {note.title}
                     </CardTitle>
-                    <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100">
                       <button
                         onClick={() => handleTogglePin(note.id, !note.is_pinned)}
-                        className={`p-1.5 rounded-md transition-colors ${
+                        className={`p-1.5 rounded-md ${
                           note.is_pinned
                             ? "text-amber-500 hover:bg-amber-100/50 bg-amber-50"
                             : "text-slate-400 hover:bg-slate-200/50 hover:text-slate-700"
@@ -1091,7 +1091,7 @@ export default function NotesPage({ noteType }: Props) {
                           setShareItem({ type: "note", item: note });
                           setIsShareModalOpen(true);
                         }}
-                        className={`p-1.5 rounded-md transition-colors ${
+                        className={`p-1.5 rounded-md ${
                           note.is_shared
                             ? "text-sky-600 hover:bg-sky-100/60 bg-sky-50"
                             : "text-slate-400 hover:bg-slate-200/50 hover:text-slate-700"
@@ -1102,7 +1102,7 @@ export default function NotesPage({ noteType }: Props) {
                       </button>
                       <button
                         onClick={() => setReadingNote(note)}
-                        className="p-1.5 text-emerald-600 hover:bg-emerald-100/50 rounded-md transition-colors"
+                        className="p-1.5 text-emerald-600 hover:bg-emerald-100/50 rounded-md"
                         title="อ่านแบบเต็มจอ"
                       >
                         <svg
@@ -1116,7 +1116,7 @@ export default function NotesPage({ noteType }: Props) {
                       </button>
                       <button
                         onClick={() => handleCopyContent(note.content)}
-                        className="p-1.5 text-slate-600 hover:bg-slate-200/50 rounded-md transition-colors"
+                        className="p-1.5 text-slate-600 hover:bg-slate-200/50 rounded-md"
                         title="คัดลอกเนื้อหา"
                       >
                         <svg
@@ -1139,7 +1139,7 @@ export default function NotesPage({ noteType }: Props) {
                       </button>
                       <button
                         onClick={() => handleEditNoteClick(note)}
-                        className="p-1.5 text-blue-600 hover:bg-blue-100/50 rounded-md transition-colors"
+                        className="p-1.5 text-blue-600 hover:bg-blue-100/50 rounded-md"
                         title="แก้ไข"
                       >
                         <svg
@@ -1154,7 +1154,7 @@ export default function NotesPage({ noteType }: Props) {
                       </button>
                       <button
                         onClick={() => handleDeleteNote(note.id)}
-                        className="p-1.5 text-red-600 hover:bg-red-100/50 rounded-md transition-colors"
+                        className="p-1.5 text-red-600 hover:bg-red-100/50 rounded-md"
                         title="ลบ"
                       >
                         <svg
@@ -1179,7 +1179,7 @@ export default function NotesPage({ noteType }: Props) {
                         onChange={(e) =>
                           handleInlineStatusChange(note, e.target.value)
                         }
-                        className={`appearance-none px-2 pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer outline-none border border-transparent hover:border-current transition-colors ${getStatusBadgeColor(note.status)}`}
+                        className={`appearance-none px-2 pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer outline-none border border-transparent hover:border-current ${getStatusBadgeColor(note.status)}`}
                       >
                         <option
                           value="ทั่วไป"
@@ -1259,9 +1259,9 @@ export default function NotesPage({ noteType }: Props) {
                           <img
                             src={getAttachmentUrl(note.file_path)}
                             alt="แนบรูปภาพ"
-                            className="w-full h-full object-cover transition group-hover/img:scale-105"
+                            className="w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white text-xs gap-1.5 font-medium">
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white text-xs gap-1.5 font-medium">
                             <Maximize2 className="w-3.5 h-3.5" /> คลิกดูรูปเต็ม
                           </div>
                         </div>
@@ -1271,7 +1271,7 @@ export default function NotesPage({ noteType }: Props) {
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 text-xs text-red-600 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-100 transition"
+                          className="inline-flex items-center gap-1.5 text-xs text-red-600 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-100"
                         >
                           <FileText className="w-3.5 h-3.5" />
                           <span>เอกสารแนบ (PDF)</span>
@@ -1332,11 +1332,11 @@ export default function NotesPage({ noteType }: Props) {
 
       {isFilterModalOpen && (
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"
           onClick={() => setIsFilterModalOpen(false)}
         >
           <div
-            className="w-full max-w-3xl bg-background rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+            className="w-full max-w-3xl bg-background rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -1394,7 +1394,7 @@ export default function NotesPage({ noteType }: Props) {
                     setFilterCategory("all");
                     setIsFilterModalOpen(false);
                   }}
-                  className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border text-center transition-all ${
+                  className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border text-center ${
                     filterCategory === "all"
                       ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm"
                       : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
@@ -1460,11 +1460,11 @@ export default function NotesPage({ noteType }: Props) {
                       {cat.pic ? (
                         <img
                           src={getPicUrl(cat.pic)}
-                          className="w-14 h-14 rounded-2xl object-cover shadow-sm mb-3  transition-transform"
+                          className="w-14 h-14 rounded-2xl object-cover shadow-sm mb-3"
                           alt={cat.name}
                         />
                       ) : (
-                        <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shadow-sm mb-3  transition-transform">
+                        <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shadow-sm mb-3">
                           <Folder className="w-7 h-7" />
                         </div>
                       )}
@@ -1486,9 +1486,9 @@ export default function NotesPage({ noteType }: Props) {
                   setIsFilterModalOpen(false);
                   setIsCategoryModalOpen(true);
                 }}
-                className="group flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-muted hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-all duration-200"
+                className="group flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-muted hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-primary"
               >
-                <div className="w-14 h-14 rounded-2xl bg-muted/60 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors mb-3">
+                <div className="w-14 h-14 rounded-2xl bg-muted/60 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary mb-3">
                   <FolderPlus className="w-6 h-6" />
                 </div>
                 <span className="font-semibold text-xs">
@@ -1504,7 +1504,7 @@ export default function NotesPage({ noteType }: Props) {
       )}
 
       {readingNote && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80  p-4 md:p-10 animate-in fade-in duration-200 ">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 md:p-10">
           <div
             className={`w-full h-full max-h-[90vh] bg-background rounded-2xl overflow-hidden flex flex-col relative ${!readingNote.file_path ? "max-w-4xl" : ""}`}
           >
@@ -1520,7 +1520,7 @@ export default function NotesPage({ noteType }: Props) {
                     setShareItem({ type: "note", item: readingNote });
                     setIsShareModalOpen(true);
                   }}
-                  className={`h-9 rounded-xl px-3 text-xs flex items-center gap-1.5 transition-colors ${
+                  className={`h-9 rounded-xl px-3 text-xs flex items-center gap-1.5 ${
                     readingNote.is_shared
                       ? "bg-sky-50 text-sky-700 border-sky-300 font-semibold"
                       : "text-slate-600 hover:text-sky-600"
@@ -1627,7 +1627,7 @@ export default function NotesPage({ noteType }: Props) {
                       href={getAttachmentUrl(readingNote.file_path)}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition font-medium"
+                      className="inline-flex items-center gap-1.5 text-xs text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg font-medium"
                     >
                       <Download className="w-3.5 h-3.5" /> ดาวน์โหลด / เปิดแท็บใหม่
                     </a>
@@ -1647,7 +1647,7 @@ export default function NotesPage({ noteType }: Props) {
                         className="w-full h-auto max-h-[500px] object-contain rounded-xl"
                         alt="ไฟล์แนบ"
                       />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm gap-2 font-medium">
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-sm gap-2 font-medium">
                         <Maximize2 className="w-4 h-4" /> คลิกเพื่อขยายเต็มจอ
                       </div>
                     </div>
@@ -1699,7 +1699,7 @@ export default function NotesPage({ noteType }: Props) {
       )}
 
       {isNoteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
             <Card className="border-0 shadow-none">
               <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
@@ -1888,11 +1888,11 @@ export default function NotesPage({ noteType }: Props) {
 
       {isNoteCategoryModalOpen && (
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"
           onClick={() => setIsNoteCategoryModalOpen(false)}
         >
           <div
-            className="w-full max-w-2xl bg-background rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+            className="w-full max-w-2xl bg-background rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -2018,7 +2018,7 @@ export default function NotesPage({ noteType }: Props) {
       )}
 
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60  p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md bg-background rounded-xl overflow-hidden">
             <Card className="border-0 shadow-none">
               <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
@@ -2224,7 +2224,7 @@ export default function NotesPage({ noteType }: Props) {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className={`h-7 w-7 transition-colors ${
+                              className={`h-7 w-7 ${
                                 cat.is_shared
                                   ? "text-sky-600 bg-sky-50 hover:bg-sky-100"
                                   : "text-slate-400 hover:text-sky-600 hover:bg-sky-50"
@@ -2291,7 +2291,7 @@ export default function NotesPage({ noteType }: Props) {
 
       {previewImageUrl && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
           onClick={() => setPreviewImageUrl(null)}
         >
           <div
@@ -2304,14 +2304,14 @@ export default function NotesPage({ noteType }: Props) {
                 target="_blank"
                 rel="noreferrer"
                 download
-                className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition"
+                className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30"
                 title="ดาวน์โหลดรูปภาพ"
               >
                 <Download className="w-5 h-5" />
               </a>
               <button
                 onClick={() => setPreviewImageUrl(null)}
-                className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition"
+                className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30"
                 title="ปิด"
               >
                 <X className="w-5 h-5" />

@@ -52,21 +52,33 @@ export default function NoteTypeModal({
       iconBg: "bg-purple-100/80 text-purple-600",
       tagColor: "bg-purple-50 text-purple-700 border-purple-200/60",
     },
+    {
+      title: "ปฏิทิน & บันทึกรายวัน",
+      description: "ดูตารางปฏิทิน เช็คกิจกรรมที่ทำแล้ว และบันทึกสรุปประจำวัน",
+      href: "/system/calendar",
+      image: "/all.webp",
+      tag: "Daily Log & Calendar",
+      color: "amber",
+      borderHover: "hover:border-amber-500/50 hover:shadow-amber-500/5",
+      bgHover: "hover:bg-amber-50/50",
+      iconBg: "bg-amber-100/80 text-amber-600",
+      tagColor: "bg-amber-50 text-amber-700 border-amber-200/60",
+    },
   ];
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg rounded-3xl border bg-card p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-lg rounded-3xl border bg-card p-6 sm:p-8 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
           aria-label="ปิด"
         >
           <X className="w-5 h-5" />
@@ -113,7 +125,7 @@ export default function NoteTypeModal({
               {/* Text Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-base text-foreground group-hover:text-primary transition-colors">
+                  <span className="font-bold text-base text-foreground group-hover:text-primary">
                     {item.title}
                   </span>
                   <span
@@ -129,7 +141,7 @@ export default function NoteTypeModal({
               </div>
 
               {/* Arrow Icon */}
-              <div className="shrink-0 text-muted-foreground/60 transition-all duration-200 group-hover:text-primary">
+              <div className="shrink-0 text-muted-foreground/60 group-hover:text-primary">
                 <ArrowRight className="w-5 h-5" />
               </div>
             </Link>
@@ -139,7 +151,7 @@ export default function NoteTypeModal({
         {/* Cancel Button */}
         <button
           onClick={onClose}
-          className="mt-6 w-full rounded-xl border bg-background py-2.5 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className="mt-6 w-full rounded-xl border bg-background py-2.5 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           ยกเลิก
         </button>

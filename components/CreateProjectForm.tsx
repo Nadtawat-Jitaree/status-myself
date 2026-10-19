@@ -67,7 +67,7 @@ export default function CreateProjectForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-2 lg:mt-0 h-10 px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed rounded-md font-medium transition-colors inline-flex items-center justify-center gap-2 shrink-0"
+            className="mt-2 lg:mt-0 h-10 px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed rounded-md font-medium inline-flex items-center justify-center gap-2 shrink-0"
           >
             {isSubmitting ? (
               <>

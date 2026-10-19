@@ -161,11 +161,11 @@ export default function ShareModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-background rounded-3xl border shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg bg-background rounded-3xl border shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -197,7 +197,7 @@ export default function ShareModal({
         <div className="p-6 flex flex-col gap-6">
           {/* Status Box */}
           <div
-            className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+            className={`flex items-center justify-between p-4 rounded-2xl border ${
               isShared
                 ? "bg-sky-50/50 border-sky-200 dark:bg-sky-950/20 dark:border-sky-800"
                 : "bg-muted/40 border-border"
@@ -293,7 +293,7 @@ export default function ShareModal({
                   type="button"
                   onClick={handleRegenerate}
                   disabled={isUpdating}
-                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium"
                   title="สร้างลิงก์ใหม่ ลิงก์เดิมจะใช้งานไม่ได้"
                 >
                   <RefreshCw

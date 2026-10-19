@@ -136,7 +136,7 @@ async function DashboardData() {
       {/* 1. สรุปตัวเลข 4 การ์ด (Stat Cards) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         {/* ทั่วไป */}
-        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm transition hover:shadow-md sm:gap-4 sm:p-5">
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm hover:shadow-md sm:gap-4 sm:p-5">
           <div className="shrink-0 rounded-xl bg-slate-100 p-2 text-slate-600 sm:p-3">
             <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
@@ -151,7 +151,7 @@ async function DashboardData() {
         </div>
 
         {/* สำคัญ */}
-        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm transition hover:shadow-md sm:gap-4 sm:p-5">
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm hover:shadow-md sm:gap-4 sm:p-5">
           <div className="shrink-0 rounded-xl bg-red-50 p-2 text-red-600 sm:p-3">
             <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
@@ -166,7 +166,7 @@ async function DashboardData() {
         </div>
 
         {/* งานค้าง */}
-        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm transition hover:shadow-md sm:gap-4 sm:p-5">
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm hover:shadow-md sm:gap-4 sm:p-5">
           <div className="shrink-0 rounded-xl bg-orange-50 p-2 text-orange-600 sm:p-3">
             <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
@@ -181,7 +181,7 @@ async function DashboardData() {
         </div>
 
         {/* เสร็จสิ้น */}
-        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm transition hover:shadow-md sm:gap-4 sm:p-5">
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm hover:shadow-md sm:gap-4 sm:p-5">
           <div className="shrink-0 rounded-xl bg-emerald-50 p-2 text-emerald-600 sm:p-3">
             <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
@@ -238,7 +238,7 @@ async function DashboardData() {
               activeProjects.map((p) => (
                 <div
                   key={p.id}
-                  className="p-3.5 rounded-xl border bg-card hover:bg-muted/30 transition-colors space-y-2"
+                  className="p-3.5 rounded-xl border bg-card hover:bg-muted/30 space-y-2"
                 >
                   <div className="flex min-w-0 items-center justify-between gap-2 text-sm">
                     <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
@@ -250,7 +250,7 @@ async function DashboardData() {
                   </div>
                   <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                     <div
-                      className={`h-full transition-all duration-500 rounded-full ${
+                      className={`h-full rounded-full ${
                         p.progress === 100 ? "bg-emerald-500" : "bg-primary"
                       }`}
                       style={{ width: `${p.progress}%` }}
@@ -306,7 +306,7 @@ async function DashboardData() {
                 return (
                   <div
                     key={note.id}
-                    className="flex min-w-0 items-center justify-between gap-2 rounded-xl border bg-card p-3 text-sm transition-colors hover:bg-muted/30"
+                    className="flex min-w-0 items-center justify-between gap-2 rounded-xl border bg-card p-3 text-sm hover:bg-muted/30"
                   >
                     <div className="min-w-0 flex-1 pr-3">
                       <p className="font-semibold text-foreground truncate">
@@ -334,56 +334,56 @@ async function DashboardData() {
       <div className="grid grid-cols-1 gap-3 pt-2 sm:gap-4 md:grid-cols-3">
         <Link
           href="/system/notes/normal"
-          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border bg-card p-4 transition-all hover:border-primary/40 hover:bg-primary/5"
+          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border bg-card p-4 hover:border-primary/40 hover:bg-primary/5"
         >
           <div className="flex min-w-0 items-center gap-3">
             <div className="shrink-0 rounded-xl bg-blue-50 p-2.5 text-blue-600">
               <FileText className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-sm group-hover:text-primary transition-colors">
+              <p className="font-semibold text-sm group-hover:text-primary">
                 โน้ตทั่วไป
               </p>
               <p className="text-xs text-muted-foreground">บันทึกงานและเรื่องส่วนตัว</p>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:translate-x-1 group-hover:text-primary" />
         </Link>
 
         <Link
           href="/system/notes/school"
-          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border bg-card p-4 transition-all hover:border-primary/40 hover:bg-primary/5"
+          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border bg-card p-4 hover:border-primary/40 hover:bg-primary/5"
         >
           <div className="flex min-w-0 items-center gap-3">
             <div className="shrink-0 rounded-xl bg-emerald-50 p-2.5 text-emerald-600">
               <BookOpen className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-sm group-hover:text-primary transition-colors">
+              <p className="font-semibold text-sm group-hover:text-primary">
                 โน้ตการเรียน
               </p>
               <p className="text-xs text-muted-foreground">บันทึกวิชาและการบ้าน</p>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:translate-x-1 group-hover:text-primary" />
         </Link>
 
         <Link
           href="/system/projects"
-          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border bg-card p-4 transition-all hover:border-primary/40 hover:bg-primary/5"
+          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border bg-card p-4 hover:border-primary/40 hover:bg-primary/5"
         >
           <div className="flex min-w-0 items-center gap-3">
             <div className="shrink-0 rounded-xl bg-purple-50 p-2.5 text-purple-600">
               <FolderKanban className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-sm group-hover:text-primary transition-colors">
+              <p className="font-semibold text-sm group-hover:text-primary">
                 โปรเจกต์ & ภารกิจ
               </p>
               <p className="text-xs text-muted-foreground">ติดตามความคืบหน้ารายงาน</p>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:translate-x-1 group-hover:text-primary" />
         </Link>
       </div>
     </div>
@@ -407,13 +407,13 @@ export default function Dashboard() {
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Link
               href="/system/notes/normal"
-              className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border bg-card px-4 text-sm font-medium transition-colors hover:bg-muted sm:flex-none"
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border bg-card px-4 text-sm font-medium hover:bg-muted sm:flex-none"
             >
               จัดการโน้ต
             </Link>
             <Link
               href="/system/projects"
-              className="inline-flex h-9 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:flex-none"
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 sm:flex-none"
             >
               ดูโปรเจกต์
             </Link>
