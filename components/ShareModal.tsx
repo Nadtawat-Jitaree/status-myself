@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Share2,
@@ -43,8 +44,13 @@ export default function ShareModal({
 }: ShareModalProps) {
   const [isCopied, setIsCopied] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen || !item) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !item || !mounted) return null;
 
   const isShared = Boolean(item.is_shared);
   const shareToken = item.share_token;
@@ -159,7 +165,7 @@ export default function ShareModal({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
@@ -318,6 +324,7 @@ export default function ShareModal({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

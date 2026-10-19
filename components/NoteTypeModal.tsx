@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, X, Sparkles, FileText, GraduationCap, FolderKanban } from "lucide-react";
@@ -13,7 +15,13 @@ export default function NoteTypeModal({
   open,
   onClose,
 }: NoteTypeModalProps) {
-  if (!open) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!open || !mounted) return null;
 
   const menuItems = [
     {
@@ -66,9 +74,9 @@ export default function NoteTypeModal({
     },
   ];
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
       <div
@@ -156,6 +164,7 @@ export default function NoteTypeModal({
           ยกเลิก
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

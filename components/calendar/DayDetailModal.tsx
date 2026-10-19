@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useTransition } from 'react'
+import { createPortal } from 'react-dom'
 import {
   X,
   Plus,
@@ -57,6 +58,7 @@ export default function DayDetailModal({
   onClose,
   onRefresh,
 }: DayDetailModalProps) {
+  const [mounted, setMounted] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [summary, setSummary] = useState(dailyLog?.summary || '')
   const [selectedMood, setSelectedMood] = useState(dailyLog?.mood || '')
@@ -71,6 +73,10 @@ export default function DayDetailModal({
   const [newEndTime, setNewEndTime] = useState('')
   const [showAdvancedAdd, setShowAdvancedAdd] = useState(false)
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Sync state when dailyLog or dateStr changes
   useEffect(() => {
     setSummary(dailyLog?.summary || '')
@@ -78,7 +84,7 @@ export default function DayDetailModal({
     setIsSavedSummary(false)
   }, [dailyLog, dateStr])
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted) return null
 
   // Format Thai Date
   const dateObj = new Date(dateStr + 'T00:00:00')
@@ -209,13 +215,13 @@ export default function DayDetailModal({
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
   const unfinishedCount = items.filter((i) => i.status === 'todo' || i.status === 'in_progress').length
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 md:p-6"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 sm:p-6"
       onClick={onClose}
     >
       <div
-        className="relative flex flex-col max-h-[92vh] sm:max-h-[90vh] w-full max-w-2xl rounded-t-3xl sm:rounded-3xl border bg-card shadow-2xl overflow-hidden"
+        className="relative flex flex-col max-h-[90vh] w-full max-w-2xl rounded-3xl border bg-card shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}
@@ -536,4 +542,6 @@ export default function DayDetailModal({
       </div>
     </div>
   )
+
+  return createPortal(modalContent, document.body)
 }
