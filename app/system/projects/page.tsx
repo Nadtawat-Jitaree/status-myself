@@ -1,9 +1,10 @@
 import { Suspense } from "react";
-import { getProjects, createProject } from "@/app/actions/projects";
+import { getProjects } from "@/app/actions/projects";
 import Link from "next/link";
-import { FolderKanban, Plus, Calendar, LoaderCircle } from "lucide-react";
+import { FolderKanban, Calendar, LoaderCircle } from "lucide-react";
 import Image from "next/image";
 import ProjectListClient from "@/components/ProjectListClient";
+import CreateProjectForm from "@/components/CreateProjectForm";
 
 function ProjectsLoading() {
   return (
@@ -84,43 +85,7 @@ export default function ProjectsPage() {
         </p>
       </div>
 
-      <div className="bg-card border rounded-xl p-6">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Plus className="w-5 h-5 text-primary" />
-          สร้างโปรเจคใหม่
-        </h2>
-        <form action={createProject} className="lg:flex gap-4 items-end">
-          <div className="lg:flex-1 space-y-2">
-            <label className="text-sm font-medium">ชื่อโปรเจค</label>
-            <input
-              type="text"
-              name="name"
-              required
-              className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="เช่น พัฒนาระบบ CRM..."
-            />
-          </div>
-          <div className="lg:flex-1 space-y-2">
-            <label className="text-sm font-medium">
-              รายละเอียด (ไม่บังคับ)
-            </label>
-            <input
-              type="text"
-              name="description"
-              className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="เป้าหมายของโปรเจค..."
-            />
-          </div>
-          <div className="flex justify-end lg:block lg:justify-start">
-            <button
-              type="submit"
-              className="mt-2 lg:mt-0 h-10 px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md font-medium transition-colors"
-            >
-              บันทึก
-            </button>
-          </div>
-        </form>
-      </div>
+      <CreateProjectForm />
 
       <Suspense fallback={<ProjectsLoading />}>
         <ProjectList />

@@ -18,8 +18,7 @@ async function getProjectDetails(id: string) {
   if (project?.tasks) {
     project.tasks.sort(
       (a: any, b: any) =>
-        (a.order_index ?? 0) - (b.order_index ?? 0) ||
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
   }
 

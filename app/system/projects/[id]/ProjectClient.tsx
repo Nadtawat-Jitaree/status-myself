@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   updateProject,
   deleteProject,
@@ -26,7 +26,20 @@ import {
   AlertCircle,
   Clock,
   ArrowDown,
+  Loader2,
+  CalendarDays,
+  SlidersHorizontal,
+  ChevronDown,
+  Check,
 } from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 import {
   DragDropContext,
@@ -42,6 +55,13 @@ export default function ProjectClient({ project }: { project: any }) {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<any[]>(project.tasks || []);
   const [isMounted, setIsMounted] = useState(false);
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [sortBy, setSortBy] = useState<
+    "newest" | "oldest" | "priority" | "due_date" | "custom"
+  >("newest");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "todo" | "in_progress" | "done"
+  >("all");
 
   useEffect(() => {
     setIsMounted(true);
@@ -55,6 +75,89 @@ export default function ProjectClient({ project }: { project: any }) {
   const doneTasks = tasks.filter((t: any) => t.status === "done").length;
   const progress =
     totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
+
+  const processedTasks = useMemo(() => {
+    let list = [...tasks];
+
+    // Filter by status if not "all"
+    if (filterStatus !== "all") {
+      list = list.filter((t: any) => t.status === filterStatus);
+    }
+
+    // Sort
+    list.sort((a: any, b: any) => {
+      if (sortBy === "newest") {
+        return (
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime()
+        );
+      }
+      if (sortBy === "oldest") {
+        return (
+          new Date(a.created_at || 0).getTime() -
+          new Date(b.created_at || 0).getTime()
+        );
+      }
+      if (sortBy === "priority") {
+        const pWeights: Record<string, number> = {
+          high: 3,
+          medium: 2,
+          low: 1,
+        };
+        const diff =
+          (pWeights[b.priority] || 2) - (pWeights[a.priority] || 2);
+        if (diff !== 0) return diff;
+        return (
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime()
+        );
+      }
+      if (sortBy === "due_date") {
+        if (a.due_date && b.due_date) {
+          return (
+            new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+          );
+        }
+        if (a.due_date) return -1;
+        if (b.due_date) return 1;
+        return (
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime()
+        );
+      }
+      if (sortBy === "custom") {
+        return (a.order_index ?? 0) - (b.order_index ?? 0);
+      }
+      return 0;
+    });
+
+    return list;
+  }, [tasks, filterStatus, sortBy]);
+
+  const handleCreateTask = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isAddingTask) return;
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const title = (formData.get("title") as string)?.trim();
+    if (!title) return;
+
+    setIsAddingTask(true);
+    try {
+      await createTask(project.id, formData);
+      form.reset();
+    } catch (error) {
+      console.error("Failed to create task:", error);
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: "ไม่สามารถเพิ่มงานได้ กรุณาลองใหม่อีกครั้ง",
+      });
+    } finally {
+      setIsAddingTask(false);
+    }
+  };
 
   const handleDeleteProject = async () => {
     const result = await Swal.fire({
@@ -117,6 +220,7 @@ export default function ProjectClient({ project }: { project: any }) {
     if (sourceIndex === destIndex) return;
 
     const reordered = Array.from(tasks);
+    reordered.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
     const [moved] = reordered.splice(sourceIndex, 1);
     reordered.splice(destIndex, 0, moved);
 
@@ -195,6 +299,30 @@ export default function ProjectClient({ project }: { project: any }) {
       <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground px-2.5 py-0.5 rounded-full bg-muted/60">
         <Calendar className="w-3 h-3" />
         ครบกำหนด: {dueDate.toLocaleDateString("th-TH")}
+      </span>
+    );
+  };
+
+  const renderCreatedDateBadge = (createdAtStr?: string) => {
+    if (!createdAtStr) return null;
+    const createdDate = new Date(createdAtStr);
+    const formattedDate = createdDate.toLocaleDateString("th-TH", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const formattedTime = createdDate.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    return (
+      <span
+        className="inline-flex items-center gap-1 text-[11px] text-muted-foreground px-2.5 py-0.5 rounded-full bg-muted/60"
+        title={`สร้างเมื่อ: ${createdDate.toLocaleString("th-TH")}`}
+      >
+        <CalendarDays className="w-3 h-3 text-muted-foreground/70" />
+        สร้าง: {formattedDate} {formattedTime} น.
       </span>
     );
   };
@@ -334,7 +462,7 @@ export default function ProjectClient({ project }: { project: any }) {
 
       {/* Tasks Section */}
       <section className="rounded-2xl border bg-card p-4 sm:p-6 lg:p-8 shadow-sm">
-        <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="mb-6 flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <ListTodo className="h-5 w-5" />
@@ -344,15 +472,171 @@ export default function ProjectClient({ project }: { project: any }) {
                 ขั้นตอนการทำงาน (Tasks)
               </h2>
               <p className="text-xs text-muted-foreground">
-                สามารถลากสัญลักษณ์ <GripVertical className="inline w-3.5 h-3.5" /> เพื่อเรียงลำดับขั้นตอนได้
+                {sortBy === "custom" && filterStatus === "all" ? (
+                  <span>
+                    สามารถลากสัญลักษณ์ <GripVertical className="inline w-3.5 h-3.5" /> เพื่อเรียงลำดับขั้นตอนได้
+                  </span>
+                ) : (
+                  <span>
+                    เรียงตาม:{" "}
+                    <strong className="font-semibold text-foreground">
+                      {sortBy === "newest" && "งานล่าสุด (ล่าสุดมาก่อน)"}
+                      {sortBy === "oldest" && "งานเก่าสุด (เก่าสุดมาก่อน)"}
+                      {sortBy === "priority" && "ความสำคัญ (ด่วนมาก่อน)"}
+                      {sortBy === "due_date" && "วันครบกำหนด (ใกล้ถึงก่อน)"}
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSortBy("custom");
+                        setFilterStatus("all");
+                      }}
+                      className="ml-2 text-primary underline hover:text-primary/80"
+                    >
+                      (สลับไปโหมดลากจัดลำดับ)
+                    </button>
+                  </span>
+                )}
               </p>
+            </div>
+          </div>
+
+          {/* Filter & Sort Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            {/* Status Filter Tabs */}
+            <div className="flex items-center gap-1 p-1 bg-muted/60 rounded-xl border text-xs font-medium overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setFilterStatus("all")}
+                className={`px-3 py-1.5 rounded-lg transition-all shrink-0 ${
+                  filterStatus === "all"
+                    ? "bg-background text-foreground shadow-sm font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                ทั้งหมด ({tasks.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterStatus("todo")}
+                className={`px-3 py-1.5 rounded-lg transition-all shrink-0 ${
+                  filterStatus === "todo"
+                    ? "bg-background text-foreground shadow-sm font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                รอทำ ({tasks.filter((t) => t.status === "todo").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterStatus("in_progress")}
+                className={`px-3 py-1.5 rounded-lg transition-all shrink-0 ${
+                  filterStatus === "in_progress"
+                    ? "bg-background text-foreground shadow-sm font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                กำลังทำ ({tasks.filter((t) => t.status === "in_progress").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterStatus("done")}
+                className={`px-3 py-1.5 rounded-lg transition-all shrink-0 ${
+                  filterStatus === "done"
+                    ? "bg-background text-foreground shadow-sm font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                เสร็จแล้ว ({tasks.filter((t) => t.status === "done").length})
+              </button>
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-xl border bg-background px-3.5 py-2 text-xs font-semibold hover:bg-muted transition shadow-sm"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+                    <span>
+                      เรียงตาม:{" "}
+                      {sortBy === "newest" && "งานล่าสุด"}
+                      {sortBy === "oldest" && "งานเก่าสุด"}
+                      {sortBy === "priority" && "ความสำคัญ"}
+                      {sortBy === "due_date" && "วันครบกำหนด"}
+                      {sortBy === "custom" && "ตามลำดับขั้นตอน"}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60">
+                  <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                    เรียงลำดับขั้นตอนงาน
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("newest")}
+                    className="cursor-pointer"
+                  >
+                    <Clock className="w-4 h-4 mr-2 text-primary" />
+                    <span className="flex-1">งานล่าสุด (ค่าเริ่มต้น)</span>
+                    {sortBy === "newest" && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("oldest")}
+                    className="cursor-pointer"
+                  >
+                    <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <span className="flex-1">งานเก่าสุด</span>
+                    {sortBy === "oldest" && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("priority")}
+                    className="cursor-pointer"
+                  >
+                    <AlertCircle className="w-4 h-4 mr-2 text-red-500" />
+                    <span className="flex-1">ความสำคัญ (ด่วนมาก่อน)</span>
+                    {sortBy === "priority" && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("due_date")}
+                    className="cursor-pointer"
+                  >
+                    <CalendarDays className="w-4 h-4 mr-2 text-amber-500" />
+                    <span className="flex-1">วันครบกำหนด (ใกล้ถึงก่อน)</span>
+                    {sortBy === "due_date" && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy("custom");
+                      setFilterStatus("all");
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <GripVertical className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <span className="flex-1">ตามลำดับขั้นตอน (ลากจัดเอง)</span>
+                    {sortBy === "custom" && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
 
         {/* Task Creation Form with Priority & Due Date */}
         <form
-          action={createTask.bind(null, project.id)}
+          onSubmit={handleCreateTask}
           className="mb-8 p-4 rounded-2xl border bg-muted/20 space-y-3"
         >
           <div className="flex flex-col lg:flex-row gap-3">
@@ -362,8 +646,9 @@ export default function ProjectClient({ project }: { project: any }) {
                 type="text"
                 name="title"
                 required
+                disabled={isAddingTask}
                 placeholder="เพิ่มขั้นตอนใหม่ของโปรเจกต์..."
-                className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
+                className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
               />
             </div>
 
@@ -372,7 +657,8 @@ export default function ProjectClient({ project }: { project: any }) {
                 <select
                   name="priority"
                   defaultValue="medium"
-                  className="h-11 w-full rounded-xl border bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                  disabled={isAddingTask}
+                  className="h-11 w-full rounded-xl border bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
                 >
                   <option value="low">ความสำคัญ: ทั่วไป</option>
                   <option value="medium">ความสำคัญ: ปานกลาง</option>
@@ -384,16 +670,27 @@ export default function ProjectClient({ project }: { project: any }) {
                 <input
                   type="date"
                   name="due_date"
-                  className="h-11 w-full rounded-xl border bg-background px-3 text-xs text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
+                  disabled={isAddingTask}
+                  className="h-11 w-full rounded-xl border bg-background px-3 text-xs text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
                 />
               </div>
 
               <button
                 type="submit"
-                className="flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.98]"
+                disabled={isAddingTask}
+                className="flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98]"
               >
-                <Plus className="h-4 w-4" />
-                เพิ่มงาน
+                {isAddingTask ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>กำลังเพิ่มงาน...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    <span>เพิ่มงาน</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -410,6 +707,19 @@ export default function ProjectClient({ project }: { project: any }) {
               เริ่มเพิ่มงานแรกของโปรเจคได้จากแบบฟอร์มด้านบน
             </p>
           </div>
+        ) : processedTasks.length === 0 ? (
+          <div className="rounded-2xl border-2 border-dashed px-5 py-10 text-center">
+            <p className="font-medium text-muted-foreground">
+              ไม่พบงานที่ตรงกับสถานะที่เลือก
+            </p>
+            <button
+              type="button"
+              onClick={() => setFilterStatus("all")}
+              className="mt-2 text-xs text-primary underline hover:text-primary/80"
+            >
+              แสดงงานทั้งหมด
+            </button>
+          </div>
         ) : isMounted ? (
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="project-tasks">
@@ -419,197 +729,214 @@ export default function ProjectClient({ project }: { project: any }) {
                   {...provided.droppableProps}
                   className="space-y-3"
                 >
-                  {tasks.map((task: any, index: number) => (
-                    <Draggable
-                      key={task.id}
-                      draggableId={task.id}
-                      index={index}
-                    >
-                      {(dragProvided, snapshot) => (
-                        <div
-                          ref={dragProvided.innerRef}
-                          {...dragProvided.draggableProps}
-                          className={`group rounded-2xl border p-3.5 sm:p-4 transition-all duration-200 ${getTaskStyle(
-                            task.status
-                          )} ${
-                            snapshot.isDragging
-                              ? "shadow-lg ring-2 ring-primary/30"
-                              : ""
-                          }`}
-                        >
-                          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                            {/* Drag Handle & Index */}
-                            <div className="flex min-w-0 flex-1 items-start gap-3">
-                              <div
-                                {...dragProvided.dragHandleProps}
-                                className="pt-2 text-muted-foreground/50 hover:text-foreground cursor-grab active:cursor-grabbing transition-colors"
-                                title="ลากเพื่อเรียงลำดับ"
-                              >
-                                <GripVertical className="w-4 h-4" />
+                  {processedTasks.map((task: any, index: number) => {
+                    const isDragEnabled =
+                      sortBy === "custom" && filterStatus === "all";
+
+                    return (
+                      <Draggable
+                        key={task.id}
+                        draggableId={task.id}
+                        index={index}
+                        isDragDisabled={!isDragEnabled}
+                      >
+                        {(dragProvided, snapshot) => (
+                          <div
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            className={`group rounded-2xl border p-3.5 sm:p-4 transition-all duration-200 ${getTaskStyle(
+                              task.status
+                            )} ${
+                              snapshot.isDragging
+                                ? "shadow-lg ring-2 ring-primary/30"
+                                : ""
+                            }`}
+                          >
+                            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                              {/* Drag Handle & Index */}
+                              <div className="flex min-w-0 flex-1 items-start gap-3">
+                                <div
+                                  {...(isDragEnabled
+                                    ? dragProvided.dragHandleProps
+                                    : {})}
+                                  className={`pt-2 transition-colors ${
+                                    isDragEnabled
+                                      ? "text-muted-foreground/50 hover:text-foreground cursor-grab active:cursor-grabbing"
+                                      : "text-muted-foreground/20 cursor-default"
+                                  }`}
+                                  title={
+                                    isDragEnabled
+                                      ? "ลากเพื่อเรียงลำดับ"
+                                      : "สลับเป็นโหมด 'ตามลำดับขั้นตอน' เพื่อเปิดใช้งานการลากจัดลำดับ"
+                                  }
+                                >
+                                  <GripVertical className="w-4 h-4" />
+                                </div>
+
+                                <div
+                                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold sm:h-10 sm:w-10 ${
+                                    task.status === "done"
+                                      ? "bg-emerald-200 text-emerald-800"
+                                      : task.status === "in_progress"
+                                      ? "bg-blue-200 text-blue-800"
+                                      : "bg-primary/10 text-primary"
+                                  }`}
+                                >
+                                  {index + 1}
+                                </div>
+
+                                {/* Task Title & Meta Info */}
+                                <div className="min-w-0 flex-1 pt-1">
+                                  {editingTaskId === task.id ? (
+                                    <form
+                                      action={(formData) =>
+                                        handleUpdateTaskTitle(formData, task.id)
+                                      }
+                                      className="flex flex-col gap-2 sm:flex-row"
+                                    >
+                                      <input
+                                        type="text"
+                                        name="title"
+                                        defaultValue={task.title}
+                                        autoFocus
+                                        required
+                                        className="h-9 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                                      />
+                                      <div className="flex gap-2">
+                                        <button
+                                          type="submit"
+                                          className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                                        >
+                                          <Save className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditingTaskId(null)}
+                                          className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-secondary px-3 text-xs font-medium hover:bg-secondary/80"
+                                        >
+                                          <X className="h-3.5 w-3.5" />
+                                        </button>
+                                      </div>
+                                    </form>
+                                  ) : (
+                                    <div>
+                                      <p
+                                        className={`break-words text-sm font-semibold leading-relaxed sm:text-base ${
+                                          task.status === "done"
+                                            ? "text-emerald-700/70 line-through"
+                                            : "text-foreground"
+                                        }`}
+                                      >
+                                        {task.title}
+                                      </p>
+
+                                      {/* Priority, Due Date & Created Date Badges */}
+                                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                                        {renderPriorityBadge(task.priority)}
+                                        {renderDueDateBadge(
+                                          task.due_date,
+                                          task.status
+                                        )}
+                                        {renderCreatedDateBadge(task.created_at)}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
 
-                              <div
-                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold sm:h-10 sm:w-10 ${
-                                  task.status === "done"
-                                    ? "bg-emerald-200 text-emerald-800"
-                                    : task.status === "in_progress"
-                                    ? "bg-blue-200 text-blue-800"
-                                    : "bg-primary/10 text-primary"
-                                }`}
-                              >
-                                {index + 1}
-                              </div>
-
-                              {/* Task Title & Meta Info */}
-                              <div className="min-w-0 flex-1 pt-1">
-                                {editingTaskId === task.id ? (
-                                  <form
-                                    action={(formData) =>
-                                      handleUpdateTaskTitle(formData, task.id)
-                                    }
-                                    className="flex flex-col gap-2 sm:flex-row"
-                                  >
-                                    <input
-                                      type="text"
-                                      name="title"
-                                      defaultValue={task.title}
-                                      autoFocus
-                                      required
-                                      className="h-9 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                                    />
-                                    <div className="flex gap-2">
+                              {/* Status Change Buttons & Actions */}
+                              {editingTaskId !== task.id && (
+                                <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+                                  <div className="grid w-full grid-cols-3 gap-1 rounded-xl border bg-muted/40 p-1 lg:w-auto">
+                                    <form
+                                      action={updateTaskStatus.bind(
+                                        null,
+                                        task.id,
+                                        "todo",
+                                        project.id
+                                      )}
+                                    >
                                       <button
                                         type="submit"
-                                        className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                                        className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition sm:px-3 ${
+                                          task.status === "todo"
+                                            ? "bg-background text-foreground shadow-sm"
+                                            : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                                        }`}
                                       >
-                                        <Save className="h-3.5 w-3.5" />
+                                        <Circle className="h-3.5 w-3.5 shrink-0" />
+                                        <span>รอทำ</span>
                                       </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setEditingTaskId(null)}
-                                        className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-secondary px-3 text-xs font-medium hover:bg-secondary/80"
-                                      >
-                                        <X className="h-3.5 w-3.5" />
-                                      </button>
-                                    </div>
-                                  </form>
-                                ) : (
-                                  <div>
-                                    <p
-                                      className={`break-words text-sm font-semibold leading-relaxed sm:text-base ${
-                                        task.status === "done"
-                                          ? "text-emerald-700/70 line-through"
-                                          : "text-foreground"
-                                      }`}
-                                    >
-                                      {task.title}
-                                    </p>
+                                    </form>
 
-                                    {/* Priority & Due Date Badges */}
-                                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                                      {renderPriorityBadge(task.priority)}
-                                      {renderDueDateBadge(
-                                        task.due_date,
-                                        task.status
+                                    <form
+                                      action={updateTaskStatus.bind(
+                                        null,
+                                        task.id,
+                                        "in_progress",
+                                        project.id
                                       )}
-                                    </div>
+                                    >
+                                      <button
+                                        type="submit"
+                                        className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition sm:px-3 ${
+                                          task.status === "in_progress"
+                                            ? "bg-blue-100 text-blue-700 font-semibold"
+                                            : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                                        }`}
+                                      >
+                                        <Timer className="h-3.5 w-3.5 shrink-0" />
+                                        <span>กำลังทำ</span>
+                                      </button>
+                                    </form>
+
+                                    <form
+                                      action={updateTaskStatus.bind(
+                                        null,
+                                        task.id,
+                                        "done",
+                                        project.id
+                                      )}
+                                    >
+                                      <button
+                                        type="submit"
+                                        className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition sm:px-3 ${
+                                          task.status === "done"
+                                            ? "bg-emerald-100 text-emerald-700 font-semibold"
+                                            : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                                        }`}
+                                      >
+                                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                                        <span>เสร็จ</span>
+                                      </button>
+                                    </form>
                                   </div>
-                                )}
-                              </div>
+
+                                  <div className="flex w-full gap-2 lg:w-auto">
+                                    <button
+                                      onClick={() => setEditingTaskId(task.id)}
+                                      className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border bg-background px-3 text-xs font-medium text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition lg:flex-none"
+                                      title="แก้ไขชื่องาน"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleDeleteTask(task.id)}
+                                      className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-medium text-red-600 hover:bg-red-100 transition lg:flex-none"
+                                      title="ลบงาน"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-
-                            {/* Status Change Buttons & Actions */}
-                            {editingTaskId !== task.id && (
-                              <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-                                <div className="grid w-full grid-cols-3 gap-1 rounded-xl border bg-muted/40 p-1 lg:w-auto">
-                                  <form
-                                    action={updateTaskStatus.bind(
-                                      null,
-                                      task.id,
-                                      "todo",
-                                      project.id
-                                    )}
-                                  >
-                                    <button
-                                      type="submit"
-                                      className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition sm:px-3 ${
-                                        task.status === "todo"
-                                          ? "bg-background text-foreground shadow-sm"
-                                          : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
-                                      }`}
-                                    >
-                                      <Circle className="h-3.5 w-3.5 shrink-0" />
-                                      <span>รอทำ</span>
-                                    </button>
-                                  </form>
-
-                                  <form
-                                    action={updateTaskStatus.bind(
-                                      null,
-                                      task.id,
-                                      "in_progress",
-                                      project.id
-                                    )}
-                                  >
-                                    <button
-                                      type="submit"
-                                      className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition sm:px-3 ${
-                                        task.status === "in_progress"
-                                          ? "bg-blue-100 text-blue-700 font-semibold"
-                                          : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
-                                      }`}
-                                    >
-                                      <Timer className="h-3.5 w-3.5 shrink-0" />
-                                      <span>กำลังทำ</span>
-                                    </button>
-                                  </form>
-
-                                  <form
-                                    action={updateTaskStatus.bind(
-                                      null,
-                                      task.id,
-                                      "done",
-                                      project.id
-                                    )}
-                                  >
-                                    <button
-                                      type="submit"
-                                      className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition sm:px-3 ${
-                                        task.status === "done"
-                                          ? "bg-emerald-100 text-emerald-700 font-semibold"
-                                          : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
-                                      }`}
-                                    >
-                                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                                      <span>เสร็จ</span>
-                                    </button>
-                                  </form>
-                                </div>
-
-                                <div className="flex w-full gap-2 lg:w-auto">
-                                  <button
-                                    onClick={() => setEditingTaskId(task.id)}
-                                    className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border bg-background px-3 text-xs font-medium text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition lg:flex-none"
-                                    title="แก้ไขชื่องาน"
-                                  >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </button>
-
-                                  <button
-                                    onClick={() => handleDeleteTask(task.id)}
-                                    className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-medium text-red-600 hover:bg-red-100 transition lg:flex-none"
-                                    title="ลบงาน"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
+                        )}
+                      </Draggable>
+                    );
+                  })}
                   {provided.placeholder}
                 </div>
               )}
@@ -617,7 +944,7 @@ export default function ProjectClient({ project }: { project: any }) {
           </DragDropContext>
         ) : (
           <div className="space-y-3">
-            {tasks.map((task: any, index: number) => (
+            {processedTasks.map((task: any, index: number) => (
               <div
                 key={task.id}
                 className={`rounded-2xl border p-4 ${getTaskStyle(task.status)}`}
@@ -626,7 +953,14 @@ export default function ProjectClient({ project }: { project: any }) {
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs">
                     {index + 1}
                   </div>
-                  <span className="font-semibold">{task.title}</span>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-semibold">{task.title}</span>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      {renderPriorityBadge(task.priority)}
+                      {renderDueDateBadge(task.due_date, task.status)}
+                      {renderCreatedDateBadge(task.created_at)}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
