@@ -33,12 +33,16 @@ interface RichNoteEditorProps {
 function markdownToHtml(md: string): string {
   if (!md) return "";
 
-  // If it already looks like full HTML document structure with our custom checklist or tags, return directly
-  if (/<(div|p|h[1-6]|ul|ol|blockquote|hr)\b[^>]*>/i.test(md)) {
-    return md;
+  // Strip empty spans from incoming content to prevent empty phantom tags
+  let sanitized = md.replace(/<span[^>]*>\s*<\/span>/gi, "").trim();
+  if (!sanitized) return "";
+
+  // If it already looks like full HTML document structure with our custom checklist or tags, return sanitized
+  if (/<(div|p|h[1-6]|ul|ol|blockquote|hr)\b[^>]*>/i.test(sanitized)) {
+    return sanitized;
   }
 
-  const lines = md.split("\n");
+  const lines = sanitized.split("\n");
   const htmlParts: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
@@ -136,8 +140,9 @@ function markdownToHtml(md: string): string {
       continue;
     }
 
-    // Empty line
-    if (!line.trim()) {
+    // Empty line or line containing only empty HTML tags
+    const lineVisibleText = line.replace(/<[^>]+>/g, "").trim();
+    if (!lineVisibleText && !/<img\b/i.test(line)) {
       htmlParts.push(`<p class="my-0.5"><br></p>`);
       continue;
     }
@@ -170,6 +175,14 @@ function htmlToMarkdown(html: string): string {
   if (!html) return "";
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = html;
+
+  // Pre-clean: strip empty spans or spans with only whitespace/breaks before processing
+  const emptySpans = tempDiv.querySelectorAll("span");
+  emptySpans.forEach((s) => {
+    if (!s.textContent?.trim() && !s.querySelector("img")) {
+      s.remove();
+    }
+  });
 
   const lines: string[] = [];
 
@@ -266,13 +279,21 @@ function htmlToMarkdown(html: string): string {
         // Span with styles: font-size, color, background-color
         if (tag === "span" && childEl.style) {
           const styleRules: string[] = [];
-          if (childEl.style.fontSize) styleRules.push(`font-size:${childEl.style.fontSize}`);
+          // Skip redundant font-size:16px (16px is default body size)
+          if (childEl.style.fontSize && childEl.style.fontSize !== "16px") {
+            styleRules.push(`font-size:${childEl.style.fontSize}`);
+          }
           if (childEl.style.color) styleRules.push(`color:${childEl.style.color}`);
           if (childEl.style.backgroundColor) styleRules.push(`background-color:${childEl.style.backgroundColor}`);
 
-          if (styleRules.length > 0) {
-            const inner = processInline(childEl);
+          const inner = processInline(childEl);
+          // Never output a span if inner content is empty or contains no visible text/image
+          const hasVisibleContent = inner.replace(/<[^>]+>/g, "").trim().length > 0 || /<img\b/i.test(inner);
+          if (styleRules.length > 0 && hasVisibleContent) {
             result += `<span style="${styleRules.join(";")}">${inner}</span>`;
+            return;
+          } else {
+            result += inner;
             return;
           }
         }
@@ -280,19 +301,21 @@ function htmlToMarkdown(html: string): string {
         // Mark tag (highlight)
         if (tag === "mark") {
           const inner = processInline(childEl);
-          result += `<span style="background-color:#fef08a">${inner}</span>`;
+          if (inner && inner.trim()) {
+            result += `<span style="background-color:#fef08a">${inner}</span>`;
+          }
           return;
         }
 
         if (tag === "strong" || tag === "b") {
           const inner = processInline(childEl);
-          result += inner ? `**${inner}**` : "";
+          result += inner && inner.trim() ? `**${inner}**` : inner;
         } else if (tag === "em" || tag === "i") {
           const inner = processInline(childEl);
-          result += inner ? `*${inner}*` : "";
+          result += inner && inner.trim() ? `*${inner}*` : inner;
         } else if (tag === "del" || tag === "s" || tag === "strike") {
           const inner = processInline(childEl);
-          result += inner ? `~~${inner}~~` : "";
+          result += inner && inner.trim() ? `~~${inner}~~` : inner;
         } else if (tag === "br") {
           result += "\n";
         } else {
@@ -311,7 +334,12 @@ function htmlToMarkdown(html: string): string {
     }
   }
 
-  return lines.join("\n").trim();
+  let finalMd = lines.join("\n").trim();
+  // Strip any empty spans that might remain
+  finalMd = finalMd.replace(/<span[^>]*>\s*<\/span>/gi, "");
+  // Collapse excessive empty newlines (max 2)
+  finalMd = finalMd.replace(/\n{3,}/g, "\n\n");
+  return finalMd;
 }
 
 const FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32];
@@ -554,57 +582,186 @@ export default function RichNoteEditor({
 
   const applyInlineStyle = (styleKey: "color" | "backgroundColor" | "fontSize", styleValue: string) => {
     if (disabled) return;
-    editorRef.current?.focus();
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
     const range = selection.getRangeAt(0);
+    if (!editor.contains(range.commonAncestorContainer)) return;
 
+    // Helper to unwrap span if it has no styles left
+    const cleanupSpan = (s: HTMLElement) => {
+      if (!s.getAttribute("style") || !s.style.cssText.trim()) {
+        s.replaceWith(...Array.from(s.childNodes));
+      }
+    };
+
+    // 1. Collapsed selection (Caret only, no text highlighted)
     if (range.collapsed) {
       let node: Node | null = range.commonAncestorContainer;
       if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
       const existingSpan = (node as HTMLElement)?.closest("span[style]");
-      if (existingSpan && existingSpan instanceof HTMLElement) {
-        if (styleValue) {
-          (existingSpan.style as any)[styleKey] = styleValue;
+
+      if (existingSpan && existingSpan instanceof HTMLElement && editor.contains(existingSpan)) {
+        if (styleKey === "fontSize" && styleValue === "16px") {
+          existingSpan.style.removeProperty("font-size");
+          cleanupSpan(existingSpan);
         } else {
-          (existingSpan.style as any)[styleKey] = "";
+          (existingSpan.style as any)[styleKey] = styleValue;
         }
         triggerChange();
+        return;
       }
+
+      // If caret is inside a block with text, style the current block so user doesn't have to manually highlight
+      const currentBlock = (node as HTMLElement)?.closest("p, h1, h2, h3, h4, h5, h6, blockquote, li, .note-check-text");
+      if (currentBlock && editor.contains(currentBlock) && currentBlock.textContent?.trim()) {
+        if (currentBlock.children.length === 1 && currentBlock.firstElementChild?.tagName === "SPAN") {
+          const s = currentBlock.firstElementChild as HTMLElement;
+          if (styleKey === "fontSize" && styleValue === "16px") {
+            s.style.removeProperty("font-size");
+            cleanupSpan(s);
+          } else {
+            (s.style as any)[styleKey] = styleValue;
+          }
+        } else {
+          const cssProp = styleKey === "fontSize" ? "font-size" : styleKey === "backgroundColor" ? "background-color" : "color";
+          const innerSpans = currentBlock.querySelectorAll(`span[style*='${cssProp}']`);
+          innerSpans.forEach((s) => {
+            (s as HTMLElement).style.removeProperty(cssProp);
+            cleanupSpan(s as HTMLElement);
+          });
+
+          if (!(styleKey === "fontSize" && styleValue === "16px")) {
+            const span = document.createElement("span");
+            (span.style as any)[styleKey] = styleValue;
+            while (currentBlock.firstChild) {
+              span.appendChild(currentBlock.firstChild);
+            }
+            currentBlock.appendChild(span);
+          }
+        }
+        triggerChange();
+        return;
+      }
+
+      // Empty block: don't insert empty spans
       return;
     }
 
-    let commonParent: Node | null = range.commonAncestorContainer;
-    if (commonParent.nodeType === Node.TEXT_NODE) commonParent = commonParent.parentNode;
-    const parentSpan = (commonParent as HTMLElement)?.closest("span[style]");
+    // 2. Active selection (!range.collapsed)
+    const cloned = range.cloneContents();
+    const containsBlocks = cloned.querySelector("p, div, h1, h2, h3, h4, h5, h6, li, blockquote") !== null;
 
-    if (
-      parentSpan &&
-      parentSpan instanceof HTMLElement &&
-      parentSpan.textContent?.trim() === range.toString().trim()
-    ) {
-      if (styleValue) {
-        (parentSpan.style as any)[styleKey] = styleValue;
-      } else {
-        (parentSpan.style as any)[styleKey] = "";
+    if (containsBlocks) {
+      // MULTI-BLOCK SELECTION ("คลุมทั้งหมด" / Select All)
+      const allBlocks = Array.from(
+        editor.querySelectorAll("p, h1, h2, h3, h4, h5, h6, blockquote, li, .note-check-text")
+      );
+      const selectedBlocks = allBlocks.filter((b) => selection.containsNode(b, true));
+
+      const cssProp = styleKey === "fontSize" ? "font-size" : styleKey === "backgroundColor" ? "background-color" : "color";
+
+      selectedBlocks.forEach((block) => {
+        // If block is empty, strip any ghost spans inside it
+        if (!block.textContent?.trim() && !block.querySelector("img")) {
+          const emptySpans = block.querySelectorAll("span");
+          emptySpans.forEach((s) => s.remove());
+          if (!block.innerHTML.trim()) block.innerHTML = "<br>";
+          return;
+        }
+
+        // Reverting to default 16px font-size
+        if (styleKey === "fontSize" && styleValue === "16px") {
+          const innerSpans = block.querySelectorAll("span[style*='font-size']");
+          innerSpans.forEach((s) => {
+            (s as HTMLElement).style.removeProperty("font-size");
+            cleanupSpan(s as HTMLElement);
+          });
+          if (block.children.length === 1 && block.firstElementChild?.tagName === "SPAN") {
+            const s = block.firstElementChild as HTMLElement;
+            s.style.removeProperty("font-size");
+            cleanupSpan(s);
+          }
+          return;
+        }
+
+        // Block already has a single top-level span wrapper
+        if (block.children.length === 1 && block.firstElementChild?.tagName === "SPAN") {
+          const s = block.firstElementChild as HTMLElement;
+          (s.style as any)[styleKey] = styleValue;
+        } else {
+          // Remove existing nested conflicting styles
+          const innerSpans = block.querySelectorAll(`span[style*='${cssProp}']`);
+          innerSpans.forEach((s) => {
+            (s as HTMLElement).style.removeProperty(cssProp);
+            cleanupSpan(s as HTMLElement);
+          });
+
+          const span = document.createElement("span");
+          (span.style as any)[styleKey] = styleValue;
+          while (block.firstChild) {
+            span.appendChild(block.firstChild);
+          }
+          block.appendChild(span);
+        }
+      });
+
+      // Keep selection across blocks
+      if (selectedBlocks.length > 0) {
+        try {
+          const newRange = document.createRange();
+          newRange.setStartBefore(selectedBlocks[0]);
+          newRange.setEndAfter(selectedBlocks[selectedBlocks.length - 1]);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        } catch {
+          // ignore selection errors
+        }
       }
     } else {
-      const span = document.createElement("span");
-      if (styleValue) {
-        (span.style as any)[styleKey] = styleValue;
-      }
-      try {
-        const contents = range.extractContents();
-        span.appendChild(contents);
-        range.insertNode(span);
+      // SINGLE-BLOCK INLINE SELECTION
+      let commonParent: Node | null = range.commonAncestorContainer;
+      if (commonParent.nodeType === Node.TEXT_NODE) commonParent = commonParent.parentNode;
+      const parentSpan = (commonParent as HTMLElement)?.closest("span[style]");
 
-        const newRange = document.createRange();
-        newRange.selectNodeContents(span);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-      } catch (err) {
-        console.error("Apply inline style failed:", err);
+      if (
+        parentSpan &&
+        parentSpan instanceof HTMLElement &&
+        editor.contains(parentSpan) &&
+        parentSpan.textContent?.trim() === range.toString().trim()
+      ) {
+        if (styleKey === "fontSize" && styleValue === "16px") {
+          parentSpan.style.removeProperty("font-size");
+          cleanupSpan(parentSpan);
+        } else {
+          (parentSpan.style as any)[styleKey] = styleValue;
+        }
+      } else {
+        if (styleKey === "fontSize" && styleValue === "16px") {
+          if (parentSpan && parentSpan instanceof HTMLElement && editor.contains(parentSpan)) {
+            parentSpan.style.removeProperty("font-size");
+            cleanupSpan(parentSpan);
+          }
+        } else {
+          const span = document.createElement("span");
+          (span.style as any)[styleKey] = styleValue;
+          try {
+            const contents = range.extractContents();
+            span.appendChild(contents);
+            range.insertNode(span);
+
+            const newRange = document.createRange();
+            newRange.selectNodeContents(span);
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+          } catch (err) {
+            console.error("Apply inline style failed:", err);
+          }
+        }
       }
     }
 

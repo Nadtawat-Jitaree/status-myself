@@ -525,9 +525,13 @@ export default function NotesPage({ noteType }: Props) {
       if (!categoryId) {
         throw new Error("กรุณาเลือกหมวดหมู่");
       }
+      const cleanedContent = (content || "")
+        .replace(/<span[^>]*>\s*<\/span>/gi, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
       const notePayload = {
         title,
-        content,
+        content: cleanedContent,
         category_id: categoryId,
         status: status,
         ...(uploadedFilePath && { file_path: uploadedFilePath }),

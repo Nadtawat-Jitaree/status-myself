@@ -39,6 +39,11 @@ function renderInline(text: string): React.ReactNode {
     if (spanMatch) {
       const styleString = spanMatch[1];
       const innerContent = spanMatch[2];
+      // If innerContent has no visible text and no image, do not render an empty phantom span
+      const hasContent = innerContent.replace(/<[^>]+>/g, "").trim().length > 0 || /<img\b/i.test(innerContent);
+      if (!hasContent) {
+        return null;
+      }
       const styleObj: Record<string, string> = {};
       styleString.split(";").forEach((pair) => {
         const [k, v] = pair.split(":");
@@ -166,7 +171,13 @@ export default function NoteContentRenderer({
   emptyText = "ไม่มีรายละเอียดเนื้อหา",
   onToggleChecklist,
 }: NoteContentRendererProps) {
-  if (!content || !content.trim()) {
+  // Clean empty spans and excessive blank lines before rendering
+  const cleanedContent = (content || "")
+    .replace(/<span[^>]*>\s*<\/span>/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  if (!cleanedContent) {
     return (
       <p className={cn("text-muted-foreground/70 italic text-sm", className)}>
         {emptyText}
@@ -174,7 +185,7 @@ export default function NoteContentRenderer({
     );
   }
 
-  const lines = content.split("\n");
+  const lines = cleanedContent.split("\n");
 
   return (
     <div className={cn("note-content space-y-1", className)}>
@@ -384,8 +395,9 @@ export default function NoteContentRenderer({
           );
         }
 
-        // 9. Empty line (blank line)
-        if (!line.trim()) {
+        // 9. Empty line (blank line or line containing only empty spans/tags)
+        const lineVisibleText = line.replace(/<[^>]+>/g, "").trim();
+        if (!lineVisibleText && !/<img\b/i.test(line)) {
           return <div key={lineIndex} className={isCompact ? "h-1" : "h-2.5"} />;
         }
 
