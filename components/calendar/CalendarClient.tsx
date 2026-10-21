@@ -13,7 +13,8 @@ import {
   FileText,
   CheckCircle2,
   Circle,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react'
 import CalendarFilters, { getCategoryStyle } from './CalendarFilters'
 import DayDetailModal from './DayDetailModal'
@@ -276,7 +277,22 @@ export default function CalendarClient() {
       />
 
       {/* Calendar Grid Container */}
-      <div className="rounded-2xl sm:rounded-3xl border bg-card p-2 sm:p-5 shadow-sm">
+      <div
+        className="relative rounded-2xl sm:rounded-3xl border bg-card p-2 sm:p-5 shadow-sm"
+        aria-busy={loading}
+      >
+        {loading && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl sm:rounded-3xl bg-background/70 backdrop-blur-[2px]"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span>กำลังโหลดข้อมูล...</span>
+            </div>
+          </div>
+        )}
         {/* Days of Week Header */}
         <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-1.5 sm:mb-2">
           {DAY_NAMES.map((name, idx) => (
