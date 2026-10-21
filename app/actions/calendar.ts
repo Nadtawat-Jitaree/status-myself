@@ -329,51 +329,39 @@ export async function carryOverUnfinishedTasks(sourceDate: string, targetDate: s
   if (!unfinished || unfinished.length === 0) return { movedCount: 0 }
 
   // สร้างหรือหา daily_log ของ targetDate
-  let targetDailyLogId: string | null = null
-  const { data: targetLog } = await supabase
+  const { data: targetLog, error: targetLogError } = await supabase
     .from('daily_logs')
     .select('id')
     .eq('user_id', user.id)
     .eq('date', targetDate)
     .maybeSingle()
 
-  if (targetLog) {
-    targetDailyLogId = targetLog.id
-  } else {
-    const { data: newLog } = await supabase
+  if (targetLogError) throw targetLogError
+
+  let targetDailyLogId = targetLog?.id ?? null
+  if (!targetDailyLogId) {
+    const { data: newLog, error: newLogError } = await supabase
       .from('daily_logs')
       .insert({ user_id: user.id, date: targetDate })
       .select('id')
       .single()
-    if (newLog) targetDailyLogId = newLog.id
+
+    if (newLogError) throw newLogError
+    targetDailyLogId = newLog.id
   }
 
-  // สร้างสำเนารายการไปยัง targetDate
-  const itemsToInsert = unfinished.map((item) => ({
-    user_id: user.id,
-    daily_log_id: targetDailyLogId,
-    date: targetDate,
-    title: item.title,
-    description: item.description,
-    category: item.category,
-    priority: item.priority,
-    status: 'todo',
-    tags: item.tags,
-  }))
-
-  const { error: insertError } = await supabase
+  // ย้ายรายการเดิมไปวันใหม่เพื่อคง ID และไม่สร้างรายการซ้ำ
+  const { data: movedItems, error: moveError } = await supabase
     .from('log_items')
-    .insert(itemsToInsert)
+    .update({ date: targetDate, daily_log_id: targetDailyLogId })
+    .eq('user_id', user.id)
+    .eq('date', sourceDate)
+    .in('status', ['todo', 'in_progress'])
+    .in('id', unfinished.map((item) => item.id))
+    .select('id')
 
-  if (insertError) throw insertError
-
-  // ปรับสถานะในวันเดิมเป็น 'cancelled' หรือจะลบออกเพื่อไม่ให้ซ้ำซ้อน
-  const oldIds = unfinished.map((i) => i.id)
-  await supabase
-    .from('log_items')
-    .update({ status: 'cancelled' })
-    .in('id', oldIds)
+  if (moveError) throw moveError
 
   revalidatePath('/system/calendar')
-  return { movedCount: unfinished.length }
+  return { movedCount: movedItems.length }
 }

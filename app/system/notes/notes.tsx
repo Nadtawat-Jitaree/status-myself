@@ -1703,10 +1703,10 @@ export default function NotesPage({ noteType }: Props) {
       )}
 
       {isNoteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
-            <Card className="border-0 shadow-none">
-              <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-2 sm:p-4">
+          <div className="my-auto flex max-h-[calc(100dvh-1rem)] w-full max-w-lg min-h-0 flex-col overflow-hidden rounded-xl bg-background sm:max-h-[calc(100dvh-2rem)]">
+            <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-0 shadow-none">
+              <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b pb-4">
                 <CardTitle className="flex items-center gap-2 text-xl">
                   {editingNoteId ? (
                     <>
@@ -1755,7 +1755,7 @@ export default function NotesPage({ noteType }: Props) {
                   </svg>
                 </Button>
               </CardHeader>
-              <CardContent className="pt-6">
+              <CardContent className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pt-5 sm:p-6">
                 <form onSubmit={handleSaveNote} className="flex flex-col gap-5">
                   <div className="grid gap-2">
                     <Label htmlFor="title">หัวข้อ (Title)</Label>

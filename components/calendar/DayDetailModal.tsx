@@ -5,6 +5,8 @@ import { createPortal } from 'react-dom'
 import {
   X,
   Plus,
+  Pencil,
+  Loader2,
   CheckCircle2,
   Circle,
   Trash2,
@@ -29,6 +31,7 @@ import {
   createLogItem,
   toggleLogItemStatus,
   deleteLogItem,
+  updateLogItem,
   carryOverUnfinishedTasks,
 } from '@/app/actions/calendar'
 import { getCategoryStyle } from './CalendarFilters'
@@ -72,6 +75,18 @@ export default function DayDetailModal({
   const [newStartTime, setNewStartTime] = useState('')
   const [newEndTime, setNewEndTime] = useState('')
   const [showAdvancedAdd, setShowAdvancedAdd] = useState(false)
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editCategory, setEditCategory] = useState('general')
+  const [editPriority, setEditPriority] = useState<'low' | 'medium' | 'high'>('medium')
+  const [editTags, setEditTags] = useState('')
+  const [editStartTime, setEditStartTime] = useState('')
+  const [editEndTime, setEditEndTime] = useState('')
+  const [itemAction, setItemAction] = useState<{
+    itemId: string
+    action: 'complete' | 'delete' | 'edit'
+  } | null>(null)
+  const [isCarryingOver, setIsCarryingOver] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -153,10 +168,7 @@ export default function DayDetailModal({
 
   // Handle Toggle Item
   const handleToggleItem = (item: LogItem) => {
-    startTransition(async () => {
-      await toggleLogItemStatus(item.id, item.status)
-      onRefresh()
-    })
+    runItemAction(item, 'complete', () => toggleLogItemStatus(item.id, item.status))
   }
 
   // Handle Delete Item
@@ -172,22 +184,74 @@ export default function DayDetailModal({
     })
 
     if (result.isConfirmed) {
-      startTransition(async () => {
-        await deleteLogItem(itemId)
-        onRefresh()
-      })
+      const item = items.find((currentItem) => currentItem.id === itemId)
+      if (item) runItemAction(item, 'delete', () => deleteLogItem(itemId))
     }
+  }
+
+  const runItemAction = (
+    item: LogItem,
+    action: 'complete' | 'delete' | 'edit',
+    operation: () => Promise<unknown>
+  ) => {
+    setItemAction({ itemId: item.id, action })
+    startTransition(async () => {
+      try {
+        await operation()
+        await onRefresh()
+        if (action === 'edit') setEditingItemId(null)
+      } catch (error) {
+        console.error(`Failed to ${action} calendar item`, error)
+        await Swal.fire({
+          icon: 'error',
+          title: 'ดำเนินการไม่สำเร็จ',
+          text: 'กรุณาลองอีกครั้ง',
+        })
+      } finally {
+        setItemAction(null)
+      }
+    })
+  }
+
+  const handleStartEdit = (item: LogItem) => {
+    setEditingItemId(item.id)
+    setEditTitle(item.title)
+    setEditCategory(item.category)
+    setEditPriority(item.priority)
+    setEditTags(item.tags.join(', '))
+    setEditStartTime(item.start_time?.slice(0, 5) || '')
+    setEditEndTime(item.end_time?.slice(0, 5) || '')
+  }
+
+  const handleSaveItem = (item: LogItem) => {
+    if (!editTitle.trim()) return
+
+    const tags = editTags
+      .split(',')
+      .map((tag) => tag.trim().replace(/^#/, ''))
+      .filter(Boolean)
+
+    runItemAction(item, 'edit', () =>
+      updateLogItem(item.id, {
+        title: editTitle.trim(),
+        category: editCategory,
+        priority: editPriority,
+        tags,
+        start_time: editStartTime || null,
+        end_time: editEndTime || null,
+      })
+    )
   }
 
   // Handle Carry-over Unfinished Tasks to Tomorrow
   const handleCarryOver = async () => {
     const tomorrow = new Date(dateObj)
     tomorrow.setDate(tomorrow.getDate() + 1)
-    const tomorrowStr = tomorrow.toISOString().split('T')[0]
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
 
     const result = await Swal.fire({
       title: 'ยกยอดงานไปวันพรุ่งนี้?',
-      text: `จะทำการคัดลอกงานที่ยังไม่ได้ทำไปวันที่ ${tomorrow.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} และเปลี่ยนสถานะเดิม`,
+      text: `จะย้ายงานที่ยังไม่ได้ทำไปวันที่ ${tomorrow.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'ใช่, ยกยอดเลย',
@@ -196,16 +260,28 @@ export default function DayDetailModal({
     })
 
     if (result.isConfirmed) {
+      setIsCarryingOver(true)
       startTransition(async () => {
-        const res = await carryOverUnfinishedTasks(dateStr, tomorrowStr)
-        Swal.fire({
-          icon: 'success',
-          title: 'ยกยอดสำเร็จ!',
-          text: `ย้ายงานทั้งหมด ${res.movedCount} รายการเรียบร้อย`,
-          timer: 1500,
-          showConfirmButton: false,
-        })
-        onRefresh()
+        try {
+          const res = await carryOverUnfinishedTasks(dateStr, tomorrowStr)
+          await Swal.fire({
+            icon: 'success',
+            title: 'ยกยอดสำเร็จ!',
+            text: `ย้ายงานทั้งหมด ${res.movedCount} รายการเรียบร้อย`,
+            timer: 1500,
+            showConfirmButton: false,
+          })
+          await onRefresh()
+        } catch (error) {
+          console.error('Failed to carry over calendar items', error)
+          await Swal.fire({
+            icon: 'error',
+            title: 'ยกยอดไม่สำเร็จ',
+            text: 'กรุณาลองอีกครั้ง',
+          })
+        } finally {
+          setIsCarryingOver(false)
+        }
       })
     }
   }
@@ -324,10 +400,15 @@ export default function DayDetailModal({
               {unfinishedCount > 0 && (
                 <button
                   onClick={handleCarryOver}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100 w-full sm:w-auto"
+                  disabled={isPending}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100 disabled:opacity-50 w-full sm:w-auto"
                 >
-                  <ArrowRight className="h-3.5 w-3.5" />
-                  ยกยอดค้าง {unfinishedCount} รายการไปพรุ่งนี้
+                  {isCarryingOver ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  )}
+                  {isCarryingOver ? 'กำลังยกยอด...' : `ยกยอดค้าง ${unfinishedCount} รายการไปพรุ่งนี้`}
                 </button>
               )}
             </div>
@@ -377,7 +458,7 @@ export default function DayDetailModal({
 
                   <select
                     value={newPriority}
-                    onChange={(e) => setNewPriority(e.target.value as any)}
+                    onChange={(e) => setNewPriority(e.target.value as 'low' | 'medium' | 'high')}
                     className="rounded-lg border bg-background px-2 py-1 font-medium text-foreground focus:outline-none"
                   >
                     <option value="low">ความสำคัญ: ต่ำ</option>
@@ -456,69 +537,180 @@ export default function DayDetailModal({
                         <button
                           type="button"
                           onClick={() => handleToggleItem(item)}
-                          className="shrink-0"
+                          disabled={isPending || editingItemId === item.id}
+                          className="shrink-0 disabled:opacity-60"
                         >
-                          {isDone ? (
+                          {itemAction?.itemId === item.id && itemAction.action === 'complete' ? (
+                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                          ) : isDone ? (
                             <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                           ) : (
                             <Circle className="h-5 w-5 text-muted-foreground hover:text-primary" />
                           )}
                         </button>
 
-                        <div className="min-w-0 flex-1">
-                          <span
-                            className={`text-sm font-medium block truncate ${
-                              isDone ? 'line-through text-muted-foreground' : 'text-foreground'
-                            }`}
-                          >
-                            {item.title}
-                          </span>
-
-                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                            {/* Category Badge */}
+                        {editingItemId === item.id ? (
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <input
+                              value={editTitle}
+                              onChange={(event) => setEditTitle(event.target.value)}
+                              disabled={isPending}
+                              aria-label="ชื่อรายการ"
+                              className="w-full rounded-lg border bg-background px-2.5 py-1.5 text-sm"
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <select
+                                value={editCategory}
+                                onChange={(event) => setEditCategory(event.target.value)}
+                                disabled={isPending}
+                                aria-label="หมวดหมู่"
+                                className="rounded-lg border bg-background px-2 py-1 text-xs"
+                              >
+                                <option value="general">หมวดทั่วไป</option>
+                                <option value="work">งาน (Work)</option>
+                                <option value="study">เรียน (Study)</option>
+                                <option value="exercise">ออกกำลังกาย</option>
+                                <option value="personal">ส่วนตัว</option>
+                              </select>
+                              <select
+                                value={editPriority}
+                                onChange={(event) => setEditPriority(event.target.value as 'low' | 'medium' | 'high')}
+                                disabled={isPending}
+                                aria-label="ความสำคัญ"
+                                className="rounded-lg border bg-background px-2 py-1 text-xs"
+                              >
+                                <option value="low">ความสำคัญ: ต่ำ</option>
+                                <option value="medium">ความสำคัญ: ปานกลาง</option>
+                                <option value="high">ความสำคัญ: สูง</option>
+                              </select>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <input
+                                type="time"
+                                value={editStartTime}
+                                onChange={(event) => setEditStartTime(event.target.value)}
+                                disabled={isPending}
+                                aria-label="เวลาเริ่ม"
+                                className="rounded-lg border bg-background px-2 py-1 text-xs"
+                              />
+                              <span className="text-xs text-muted-foreground">ถึง</span>
+                              <input
+                                type="time"
+                                value={editEndTime}
+                                onChange={(event) => setEditEndTime(event.target.value)}
+                                disabled={isPending}
+                                aria-label="เวลาสิ้นสุด"
+                                className="rounded-lg border bg-background px-2 py-1 text-xs"
+                              />
+                              <input
+                                value={editTags}
+                                onChange={(event) => setEditTags(event.target.value)}
+                                disabled={isPending}
+                                aria-label="แท็ก"
+                                placeholder="แท็ก คั่นด้วยจุลภาค"
+                                className="min-w-[120px] flex-1 rounded-lg border bg-background px-2 py-1 text-xs"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleSaveItem(item)}
+                                disabled={!editTitle.trim() || isPending}
+                                className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                              >
+                                {itemAction?.itemId === item.id && itemAction.action === 'edit' ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Save className="h-3.5 w-3.5" />
+                                )}
+                                บันทึก
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingItemId(null)}
+                                disabled={isPending}
+                                className="rounded-lg border px-2.5 py-1 text-xs font-semibold text-muted-foreground disabled:opacity-50"
+                              >
+                                ยกเลิก
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="min-w-0 flex-1">
                             <span
-                              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${catStyle.bg} ${catStyle.text} ${catStyle.border}`}
+                              className={`text-sm font-medium block truncate ${
+                                isDone ? 'line-through text-muted-foreground' : 'text-foreground'
+                              }`}
                             >
-                              <span className={`h-1.5 w-1.5 rounded-full ${catStyle.dot}`} />
-                              <span className="capitalize">{item.category}</span>
+                              {item.title}
                             </span>
 
-                            {/* Priority Badge if High */}
-                            {item.priority === 'high' && (
-                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200">
-                                ด่วน
-                              </span>
-                            )}
-
-                            {/* Time */}
-                            {(item.start_time || item.end_time) && (
-                              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {item.start_time?.slice(0, 5)} {item.end_time ? `- ${item.end_time.slice(0, 5)}` : ''}
-                              </span>
-                            )}
-
-                            {/* Tags */}
-                            {item.tags?.map((tag) => (
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
                               <span
-                                key={tag}
-                                className="text-[10px] text-muted-foreground/80 bg-muted px-1.5 py-0.5 rounded"
+                                className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${catStyle.bg} ${catStyle.text} ${catStyle.border}`}
                               >
-                                #{tag}
+                                <span className={`h-1.5 w-1.5 rounded-full ${catStyle.dot}`} />
+                                <span className="capitalize">{item.category}</span>
                               </span>
-                            ))}
+
+                              {item.priority === 'high' && (
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200">
+                                  ด่วน
+                                </span>
+                              )}
+
+                              {(item.start_time || item.end_time) && (
+                                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {item.start_time?.slice(0, 5)} {item.end_time ? `- ${item.end_time.slice(0, 5)}` : ''}
+                                </span>
+                              )}
+
+                              {item.tags?.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="text-[10px] text-muted-foreground/80 bg-muted px-1.5 py-0.5 rounded"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
 
-                      {/* Delete Action */}
-                      <button
-                        onClick={() => handleDeleteItem(item.id)}
-                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-destructive p-1.5 rounded-lg hover:bg-muted shrink-0"
-                        title="ลบรายการ"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {editingItemId !== item.id && (
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit(item)}
+                            disabled={isPending}
+                            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-primary disabled:opacity-50"
+                            title="แก้ไขรายการ"
+                            aria-label={`แก้ไข ${item.title}`}
+                          >
+                            {itemAction?.itemId === item.id && itemAction.action === 'edit' ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Pencil className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteItem(item.id)}
+                            disabled={isPending}
+                            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive disabled:opacity-50"
+                            title="ลบรายการ"
+                            aria-label={`ลบ ${item.title}`}
+                          >
+                            {itemAction?.itemId === item.id && itemAction.action === 'delete' ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )
                 })
