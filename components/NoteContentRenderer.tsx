@@ -67,7 +67,7 @@ function renderInline(text: string): React.ReactNode {
           <img
             src={imgMatch[2]}
             alt={imgMatch[1] || "รูปภาพประกอบ"}
-            className="rounded-md max-h-72 object-contain border border-border/50 shadow-xs inline-block"
+            className="rounded-md max-h-[180px] w-auto max-w-full object-contain border border-border/50 shadow-xs inline-block"
             loading="lazy"
             onError={(e) => {
               (e.currentTarget as HTMLElement).style.display = "none";

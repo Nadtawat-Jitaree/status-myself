@@ -28,10 +28,6 @@ import Swal from "sweetalert2";
 import { createClient } from "@/lib/supabase/client";
 import {
   Pin,
-  CheckSquare,
-  Bold,
-  List,
-  Heading,
   Maximize2,
   FileText,
   Image as ImageIcon,
@@ -49,7 +45,6 @@ import {
 import ShareModal from "@/components/ShareModal";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
 import RichNoteEditor from "@/components/RichNoteEditor";
-import { cn } from "@/lib/utils";
 
 type Category = {
   id: string;
@@ -115,7 +110,7 @@ export default function NotesPage({ noteType }: Props) {
 
   const [shareItem, setShareItem] = useState<{
     type: "note" | "category";
-    item: any;
+    item: Note | Category;
   } | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -137,7 +132,7 @@ export default function NotesPage({ noteType }: Props) {
         ),
       );
       if (readingNote && readingNote.id === shareItem.item.id) {
-        setReadingNote((prev: any) =>
+        setReadingNote((prev: Note | null) =>
           prev
             ? {
                 ...prev,
@@ -217,7 +212,7 @@ export default function NotesPage({ noteType }: Props) {
         showConfirmButton: false,
         timer: 1500,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Toggle pin failed:", err);
       await loadNotes();
     }
@@ -262,7 +257,7 @@ export default function NotesPage({ noteType }: Props) {
         file_path: noteInState.file_path,
         is_pinned: noteInState.is_pinned,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to toggle checklist:", err);
       await loadNotes();
     }
@@ -294,11 +289,12 @@ export default function NotesPage({ noteType }: Props) {
           showConfirmButton: false,
         });
         await loadNotes();
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
         Swal.fire({
           icon: "error",
           title: "เกิดข้อผิดพลาด",
-          text: error.message,
+          text: message,
         });
       } finally {
         setIsDeletingFile(false);
@@ -342,7 +338,7 @@ export default function NotesPage({ noteType }: Props) {
     const loadPdfUrl = async () => {
       if (readingNote && readingNote.file_path) {
         const supabase = createClient();
-        const { data, error } = await supabase.storage
+        const { data } = await supabase.storage
           .from("note_attachments")
           .createSignedUrl(readingNote.file_path, 3600);
 
@@ -558,11 +554,12 @@ export default function NotesPage({ noteType }: Props) {
       closeNoteModal();
       setFile(null);
       await loadNotes();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "ไม่สามารถบันทึกข้อมูลได้";
       Swal.fire({
         icon: "error",
         title: "เกิดข้อผิดพลาด",
-        text: error.message || "ไม่สามารถบันทึกข้อมูลได้",
+        text: message,
       });
     } finally {
       setIsSubmittingNote(false);
@@ -621,7 +618,7 @@ export default function NotesPage({ noteType }: Props) {
         showConfirmButton: false,
         timer: 1500,
       });
-    } catch (error) {
+    } catch {
       setNotes((prevNotes) =>
         prevNotes.map((n) =>
           n.id === note.id ? { ...n, status: originalStatus } : n,
@@ -646,7 +643,7 @@ export default function NotesPage({ noteType }: Props) {
       try {
         await deleteNote(id);
         setNotes((prev) => prev.filter((note) => note.id !== id));
-      } catch (error) {
+      } catch {
         Swal.fire("ข้อผิดพลาด!", "ไม่สามารถลบโน้ตได้", "error");
       }
     }
@@ -674,7 +671,7 @@ export default function NotesPage({ noteType }: Props) {
         showConfirmButton: false,
         timer: 1500,
       });
-    } catch (error) {
+    } catch {
       Swal.fire({
         toast: true,
         position: "top-end",
@@ -728,10 +725,11 @@ export default function NotesPage({ noteType }: Props) {
       setNewCategoryPic(null);
       setNewCategoryPicPreview(null);
       await loadCategories();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
       Swal.fire(
         "ข้อผิดพลาด",
-        "ไม่สามารถสร้างหมวดหมู่ได้: " + error.message,
+        "ไม่สามารถสร้างหมวดหมู่ได้: " + message,
         "error",
       );
     } finally {
@@ -762,10 +760,11 @@ export default function NotesPage({ noteType }: Props) {
       setEditingCategoryPicPreview(null);
       await loadCategories();
       await loadNotes();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
       Swal.fire(
         "ข้อผิดพลาด",
-        "ไม่สามารถแก้ไขหมวดหมู่ได้: " + error.message,
+        "ไม่สามารถแก้ไขหมวดหมู่ได้: " + message,
         "error",
       );
     } finally {
@@ -787,7 +786,7 @@ export default function NotesPage({ noteType }: Props) {
         await deleteCategory(id);
         await loadCategories();
         await loadNotes();
-      } catch (error) {
+      } catch {
         Swal.fire("ข้อผิดพลาด", "ไม่สามารถลบหมวดหมู่ได้", "error");
       }
     }
