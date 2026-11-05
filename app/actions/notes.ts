@@ -45,6 +45,70 @@ export async function removeNoteAttachment(id: string, filePath: string) {
   return { success: true };
 }
 
+export interface NotesPageData {
+  categories: any[];
+  notes: any[];
+}
+
+/**
+ * รวมการดึงข้อมูล Categories และ Notes ไว้ในคำสั่งเดียว (Single Combined Action)
+ * - ตรวจสอบ Auth เพียง 1 ครั้ง (ประหยัดเวลา Supabase Auth ~80-100ms)
+ * - ทำ Parallel Database Query บน Server เดียวกัน (ลด Network Roundtrip ข้ามทวีป)
+ */
+export async function getNotesPageData(noteType: string): Promise<NotesPageData> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  // Query Categories
+  const categoriesQuery = supabase
+    .from("note_categories")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("note_type", noteType)
+    .order("created_at", { ascending: false });
+
+  // Query Notes พร้อม Join Category
+  const notesQuery = (supabase.from("notes") as any)
+    .select("*, note_categories!inner(name, note_type, pic, year, semester)")
+    .eq("user_id", user.id)
+    .eq("note_categories.note_type", noteType)
+    .order("is_pinned", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  const [categoriesRes, notesRes] = await Promise.all([
+    categoriesQuery,
+    notesQuery,
+  ]);
+
+  if (categoriesRes.error) {
+    throw new Error(categoriesRes.error.message);
+  }
+
+  let finalNotes = notesRes.data;
+
+  // Fallback สำหรับกรณี schema ขาดบางฟิลด์
+  if (notesRes.error) {
+    const fallbackRes = await (supabase.from("notes") as any)
+      .select("*, note_categories!inner(name, note_type, pic)")
+      .eq("user_id", user.id)
+      .eq("note_categories.note_type", noteType)
+      .order("created_at", { ascending: false });
+
+    if (fallbackRes.error) {
+      throw new Error(fallbackRes.error.message);
+    }
+    finalNotes = fallbackRes.data;
+  }
+
+  return {
+    categories: categoriesRes.data || [],
+    notes: (finalNotes || []) as any[],
+  };
+}
+
 export async function getNotes(noteType: string): Promise<any[]> {
   const supabase = await createClient();
   const {

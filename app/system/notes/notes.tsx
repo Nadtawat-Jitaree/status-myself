@@ -3,6 +3,7 @@ import Image from "next/image";
 
 import { useEffect, useState, useMemo } from "react";
 import {
+  getNotesPageData,
   getNotes,
   createNote,
   updateNote,
@@ -14,6 +15,12 @@ import {
   removeNoteAttachment,
   togglePinNote,
 } from "@/app/actions/notes";
+import {
+  getCachedNotes,
+  isCacheFresh,
+  setCachedNotes,
+  invalidateNotesCache,
+} from "@/lib/notes-cache";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -100,10 +107,14 @@ const formatYearSemester = (year?: number | null, sem?: number | null) => {
 };
 type Props = {
   noteType: "normal" | "school";
+  initialData?: {
+    categories: Category[];
+    notes: Note[];
+  } | null;
 };
 import { redirect } from "next/navigation";
 
-export default function NotesPage({ noteType }: Props) {
+export default function NotesPage({ noteType, initialData }: Props) {
   if (!noteType || (noteType !== "normal" && noteType !== "school")) {
     redirect("/");
   }
@@ -116,8 +127,16 @@ export default function NotesPage({ noteType }: Props) {
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [notes, setNotes] = useState<Note[]>(() => {
+    if (initialData?.notes) return initialData.notes;
+    const cached = getCachedNotes(noteType);
+    return (cached?.notes as Note[]) || [];
+  });
+  const [categories, setCategories] = useState<Category[]>(() => {
+    if (initialData?.categories) return initialData.categories;
+    const cached = getCachedNotes(noteType);
+    return (cached?.categories as Category[]) || [];
+  });
   const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
 
   const [isDeletingFile, setIsDeletingFile] = useState(false);
@@ -235,6 +254,7 @@ export default function NotesPage({ noteType }: Props) {
     );
     try {
       await togglePinNote(noteId, nextPinned);
+      invalidateNotesCache(noteType);
       Swal.fire({
         toast: true,
         position: "top-end",
@@ -386,7 +406,11 @@ export default function NotesPage({ noteType }: Props) {
     setCurrentPage(1);
   }, [filterCategory, statusFilter, searchQuery, selectedYear, selectedSemester]);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    if (initialData && (initialData.notes.length > 0 || initialData.categories.length > 0)) return false;
+    if (getCachedNotes(noteType)) return false;
+    return true;
+  });
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
 
@@ -415,7 +439,11 @@ export default function NotesPage({ noteType }: Props) {
   }, [readingNote]);
 
   useEffect(() => {
-    initData();
+    if (initialData) {
+      setCachedNotes(noteType, initialData);
+    } else {
+      initData();
+    }
     const supabase = createClient();
 
     const realtimeChannel = supabase
@@ -437,15 +465,37 @@ export default function NotesPage({ noteType }: Props) {
     };
   }, [noteType]);
 
-  const initData = async () => {
-    setIsLoading(true);
+  const initData = async (forceRefresh = false) => {
+    // 1. ตรวจสอบ In-Memory Hash Cache เพื่อ Instant Render 0ms
+    if (!forceRefresh) {
+      const cached = getCachedNotes(noteType);
+      if (cached) {
+        setCategories(cached.categories);
+        setNotes(cached.notes);
+        setIsLoading(false);
+        // หากข้อมูลในแคชยังสดใหม่ (< 60 วินาที) ไม่ต้องยิงเน็ตซ้ำ
+        if (isCacheFresh(noteType)) {
+          return;
+        }
+      }
+    } else {
+      invalidateNotesCache(noteType);
+    }
+
+    // หากไม่มีแคช ให้แสดงสถานะโหลด
+    if (!getCachedNotes(noteType)) {
+      setIsLoading(true);
+    }
+
     try {
-      const [catData, noteData] = await Promise.all([
-        getCategories(noteType),
-        getNotes(noteType),
-      ]);
-      setCategories(catData || []);
-      setNotes(noteData || []);
+      // 2. ดึงข้อมูลแบบ Single Combined Action (ลด Roundtrips เหลือเพียง 1 ครั้ง)
+      const data = await getNotesPageData(noteType);
+      const newCats = data.categories || [];
+      const newNotes = data.notes || [];
+      setCategories(newCats);
+      setNotes(newNotes);
+      // บันทึกลง In-Memory Cache
+      setCachedNotes(noteType, { categories: newCats, notes: newNotes });
     } catch (error) {
       console.error("Failed to fetch initial data:", error);
     } finally {
@@ -455,19 +505,23 @@ export default function NotesPage({ noteType }: Props) {
 
   const loadNotes = async () => {
     try {
-      const noteData = await getNotes(noteType);
-      setNotes(noteData || []);
+      const data = await getNotesPageData(noteType);
+      const newNotes = data.notes || [];
+      setNotes(newNotes);
+      setCachedNotes(noteType, { categories, notes: newNotes });
     } catch (error) {
-      console.error("Failed to fetch notes:", error);
+      console.error("Failed to refresh notes:", error);
     }
   };
 
   const loadCategories = async () => {
     try {
-      const catData = await getCategories(noteType);
-      setCategories(catData || []);
+      const data = await getNotesPageData(noteType);
+      const newCats = data.categories || [];
+      setCategories(newCats);
+      setCachedNotes(noteType, { categories: newCats, notes });
     } catch (error) {
-      console.error("Failed to fetch categories:", error);
+      console.error("Failed to refresh categories:", error);
     }
   };
 
@@ -729,6 +783,7 @@ export default function NotesPage({ noteType }: Props) {
 
       closeNoteModal();
       setFile(null);
+      invalidateNotesCache(noteType);
       await loadNotes();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "ไม่สามารถบันทึกข้อมูลได้";
@@ -785,6 +840,7 @@ export default function NotesPage({ noteType }: Props) {
         category_id: note.category_id || null,
         status: newStatus,
       });
+      invalidateNotesCache(noteType);
 
       Swal.fire({
         toast: true,
@@ -818,6 +874,7 @@ export default function NotesPage({ noteType }: Props) {
     if (result.isConfirmed) {
       try {
         await deleteNote(id);
+        invalidateNotesCache(noteType);
         setNotes((prev) => prev.filter((note) => note.id !== id));
       } catch {
         Swal.fire("ข้อผิดพลาด!", "ไม่สามารถลบโน้ตได้", "error");
@@ -907,6 +964,7 @@ export default function NotesPage({ noteType }: Props) {
       setNewCategoryPicPreview(null);
       setNewCategoryYear(1);
       setNewCategorySemester(1);
+      invalidateNotesCache(noteType);
       await loadCategories();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
@@ -949,6 +1007,7 @@ export default function NotesPage({ noteType }: Props) {
       setEditingCategorySemester(null);
       setEditingCategoryPic(null);
       setEditingCategoryPicPreview(null);
+      invalidateNotesCache(noteType);
       await loadCategories();
       await loadNotes();
     } catch (error: unknown) {
@@ -975,6 +1034,7 @@ export default function NotesPage({ noteType }: Props) {
     if (result.isConfirmed) {
       try {
         await deleteCategory(id);
+        invalidateNotesCache(noteType);
         await loadCategories();
         await loadNotes();
       } catch {
