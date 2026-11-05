@@ -471,10 +471,36 @@ export default function NotesPage({ noteType }: Props) {
     }
   };
 
+  // Hash Map สำหรับ Category Lookup O(1) ช่วยเพิ่มประสิทธิภาพในการกรองและนับข้อมูล
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, Category>();
+    categories.forEach((cat) => map.set(cat.id, cat));
+    return map;
+  }, [categories]);
+
+  // ฟังก์ชันสร้างชื่อไฟล์ด้วย SHA-256 Content Hashing ป้องกันการชนกันและการคาดเดาชื่อไฟล์
+  const hashFileToName = async (targetFile: File): Promise<string> => {
+    const ext = targetFile.name.split(".").pop()?.toLowerCase() || "bin";
+    try {
+      const arrayBuffer = await targetFile.arrayBuffer();
+      const hashBuffer = await window.crypto.subtle.digest("SHA-256", arrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const contentHash = hashArray
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+        .substring(0, 16);
+      const entropySalt = Math.random().toString(36).substring(2, 8);
+      return `${contentHash}_${entropySalt}.${ext}`;
+    } catch {
+      const fallbackHash = Math.random().toString(36).substring(2, 10);
+      return `${Date.now()}_${fallbackHash}.${ext}`;
+    }
+  };
+
   const yearCounts = useMemo(() => {
     const counts = { all: notes.length, 1: 0, 2: 0, 3: 0, 4: 0, none: 0 };
     notes.forEach((n) => {
-      const cat = categories.find((c) => c.id === n.category_id);
+      const cat = n.category_id ? categoryMap.get(n.category_id) : undefined;
       const yr = n.note_categories?.year ?? cat?.year;
       if (yr === 1 || yr === 2 || yr === 3 || yr === 4) {
         counts[yr as 1 | 2 | 3 | 4]++;
@@ -483,7 +509,7 @@ export default function NotesPage({ noteType }: Props) {
       }
     });
     return counts;
-  }, [notes, categories]);
+  }, [notes, categoryMap]);
 
   const hasUnassignedYearCats = useMemo(() => {
     return categories.some((c) => !c.year);
@@ -493,7 +519,7 @@ export default function NotesPage({ noteType }: Props) {
     // นับจำนวนโน้ตในแต่ละเทอม (สอดคล้องกับ selectedYear ที่กำลังเลือก)
     const eligibleNotes = notes.filter((n) => {
       if (noteType !== "school" || selectedYear === "all") return true;
-      const cat = categories.find((c) => c.id === n.category_id);
+      const cat = n.category_id ? categoryMap.get(n.category_id) : undefined;
       const yr = n.note_categories?.year ?? cat?.year;
       if (selectedYear === "none") return !yr;
       return yr === selectedYear;
@@ -501,7 +527,7 @@ export default function NotesPage({ noteType }: Props) {
 
     const counts = { all: eligibleNotes.length, 1: 0, 2: 0, 3: 0, none: 0 };
     eligibleNotes.forEach((n) => {
-      const cat = categories.find((c) => c.id === n.category_id);
+      const cat = n.category_id ? categoryMap.get(n.category_id) : undefined;
       const sem = n.note_categories?.semester ?? cat?.semester;
       if (sem === 1 || sem === 2 || sem === 3) {
         counts[sem as 1 | 2 | 3]++;
@@ -510,7 +536,7 @@ export default function NotesPage({ noteType }: Props) {
       }
     });
     return counts;
-  }, [notes, categories, selectedYear, noteType]);
+  }, [notes, categoryMap, selectedYear, noteType]);
 
   const hasUnassignedSemesterCats = useMemo(() => {
     return categories.some((c) => !c.semester);
@@ -519,7 +545,7 @@ export default function NotesPage({ noteType }: Props) {
   const statusCounts = useMemo(() => {
     const categoryNotes = notes.filter((note) => {
       if (noteType === "school") {
-        const cat = categories.find((c) => c.id === note.category_id);
+        const cat = note.category_id ? categoryMap.get(note.category_id) : undefined;
         const yr = note.note_categories?.year ?? cat?.year;
         const sem = note.note_categories?.semester ?? cat?.semester;
 
@@ -565,12 +591,12 @@ export default function NotesPage({ noteType }: Props) {
     });
 
     return counts;
-  }, [notes, filterCategory, selectedYear, selectedSemester, noteType, categories]);
+  }, [notes, filterCategory, selectedYear, selectedSemester, noteType, categoryMap]);
 
   const filteredNotes = useMemo(() => {
     return notes.filter((note) => {
       if (noteType === "school") {
-        const cat = categories.find((c) => c.id === note.category_id);
+        const cat = note.category_id ? categoryMap.get(note.category_id) : undefined;
         const yr = note.note_categories?.year ?? cat?.year;
         const sem = note.note_categories?.semester ?? cat?.semester;
 
@@ -612,7 +638,7 @@ export default function NotesPage({ noteType }: Props) {
 
       return true;
     });
-  }, [notes, statusFilter, filterCategory, searchQuery, noteType, selectedYear, selectedSemester, categories]);
+  }, [notes, statusFilter, filterCategory, searchQuery, noteType, selectedYear, selectedSemester, categoryMap]);
 
   const totalPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE);
   const paginatedNotes = useMemo(() => {
@@ -658,8 +684,7 @@ export default function NotesPage({ noteType }: Props) {
 
       if (file) {
         const supabase = createClient();
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const fileName = await hashFileToName(file);
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("note_attachments")
           .upload(fileName, file);
@@ -862,8 +887,7 @@ export default function NotesPage({ noteType }: Props) {
       let picPath = null;
       if (newCategoryPic) {
         const supabase = createClient();
-        const fileExt = newCategoryPic.name.split(".").pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const fileName = await hashFileToName(newCategoryPic);
         const { data, error } = await supabase.storage
           .from("logo")
           .upload(fileName, newCategoryPic);
@@ -903,8 +927,7 @@ export default function NotesPage({ noteType }: Props) {
       let picPath = undefined;
       if (editingCategoryPic) {
         const supabase = createClient();
-        const fileExt = editingCategoryPic.name.split(".").pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const fileName = await hashFileToName(editingCategoryPic);
         const { data, error } = await supabase.storage
           .from("logo")
           .upload(fileName, editingCategoryPic);

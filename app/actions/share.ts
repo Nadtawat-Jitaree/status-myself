@@ -2,19 +2,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-
-// ฟังก์ชันสร้าง Token สุ่มที่มีความยาวปลอดภัยและอ่านง่ายใน URL
-function generateToken(prefix: "n" | "c"): string {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < 16; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return `${prefix}_${result}`;
-}
+import { generateSecureToken, detectTokenVersion } from "@/lib/crypto-hash";
 
 /**
- * สลับสถานะเปิด/ปิดการแชร์ของโน้ตเดี่ยว
+ * สลับสถานะเปิด/ปิดการแชร์ของโน้ตเดี่ยว (พร้อมสร้าง Secure Hashed Token)
  */
 export async function toggleShareNote(noteId: string) {
   const supabase = await createClient();
@@ -37,7 +28,8 @@ export async function toggleShareNote(noteId: string) {
   }
 
   const nextShared = !note.is_shared;
-  const nextToken = nextShared ? (note.share_token || generateToken("n")) : note.share_token;
+  // หากเปิดแชร์และยังไม่มี token ให้สร้าง Secure Token แบบ SHA-256
+  const nextToken = nextShared ? (note.share_token || generateSecureToken("n")) : note.share_token;
 
   const { error: updateError } = await supabase
     .from("notes")
@@ -61,11 +53,12 @@ export async function toggleShareNote(noteId: string) {
     success: true,
     is_shared: nextShared,
     share_token: nextToken,
+    token_version: nextToken ? detectTokenVersion(nextToken) : null,
   };
 }
 
 /**
- * สร้าง Share Token ใหม่สำหรับโน้ต (เพื่อยกเลิกลิงก์เดิม)
+ * Rehashing: สร้างและหมุนเวียน Share Token ใหม่ที่ปลอดภัยขึ้นสำหรับโน้ต (Revoke ลิงก์เดิม)
  */
 export async function regenerateNoteShareToken(noteId: string) {
   const supabase = await createClient();
@@ -75,7 +68,8 @@ export async function regenerateNoteShareToken(noteId: string) {
 
   if (!user) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
 
-  const newToken = generateToken("n");
+  // Rehashing สร้าง Token ใหม่ด้วย SHA-256 + CSPRNG
+  const newToken = generateSecureToken("n");
   const { error } = await supabase
     .from("notes")
     .update({ share_token: newToken, is_shared: true })
@@ -89,7 +83,11 @@ export async function regenerateNoteShareToken(noteId: string) {
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");
 
-  return { success: true, share_token: newToken };
+  return {
+    success: true,
+    share_token: newToken,
+    token_version: detectTokenVersion(newToken),
+  };
 }
 
 /**
@@ -116,7 +114,7 @@ export async function toggleShareCategory(categoryId: string) {
 
   const nextShared = !category.is_shared;
   const nextToken = nextShared
-    ? (category.share_token || generateToken("c"))
+    ? (category.share_token || generateSecureToken("c"))
     : category.share_token;
 
   const { error: updateError } = await supabase
@@ -141,11 +139,12 @@ export async function toggleShareCategory(categoryId: string) {
     success: true,
     is_shared: nextShared,
     share_token: nextToken,
+    token_version: nextToken ? detectTokenVersion(nextToken) : null,
   };
 }
 
 /**
- * สร้าง Share Token ใหม่สำหรับหมวดหมู่
+ * Rehashing: สร้างและหมุนเวียน Share Token ใหม่สำหรับหมวดหมู่
  */
 export async function regenerateCategoryShareToken(categoryId: string) {
   const supabase = await createClient();
@@ -155,7 +154,7 @@ export async function regenerateCategoryShareToken(categoryId: string) {
 
   if (!user) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
 
-  const newToken = generateToken("c");
+  const newToken = generateSecureToken("c");
   const { error } = await supabase
     .from("note_categories")
     .update({ share_token: newToken, is_shared: true })
@@ -169,7 +168,22 @@ export async function regenerateCategoryShareToken(categoryId: string) {
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");
 
-  return { success: true, share_token: newToken };
+  return {
+    success: true,
+    share_token: newToken,
+    token_version: detectTokenVersion(newToken),
+  };
+}
+
+/**
+ * ฟังก์ชัน Rehashing แบบรวมศูนย์สำหรับ Note หรือ Category
+ */
+export async function rehashShareToken(type: "note" | "category", id: string) {
+  if (type === "note") {
+    return await regenerateNoteShareToken(id);
+  } else {
+    return await regenerateCategoryShareToken(id);
+  }
 }
 
 /**

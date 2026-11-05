@@ -11,6 +11,8 @@ import {
   RefreshCw,
   Globe,
   Lock,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Swal from "sweetalert2";
@@ -54,6 +56,7 @@ export default function ShareModal({
 
   const isShared = Boolean(item.is_shared);
   const shareToken = item.share_token;
+  const isV2HashedToken = shareToken ? shareToken.length >= 34 : false;
   const itemName = type === "note" ? item.title || "ไม่มีชื่อ" : item.name || "ไม่มีชื่อ";
 
   const getOrigin = () => {
@@ -283,7 +286,7 @@ export default function ShareModal({
                 </Button>
               </div>
 
-              {/* Action Buttons: Preview & Regenerate */}
+              {/* Action Buttons: Preview & Regenerate / Rehash */}
               <div className="flex items-center justify-between pt-2">
                 <a
                   href={shareUrl}
@@ -300,13 +303,34 @@ export default function ShareModal({
                   onClick={handleRegenerate}
                   disabled={isUpdating}
                   className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium"
-                  title="สร้างลิงก์ใหม่ ลิงก์เดิมจะใช้งานไม่ได้"
+                  title="สร้างลิงก์ใหม่ (Rehash Token) ลิงก์เดิมจะใช้งานไม่ได้"
                 >
                   <RefreshCw
                     className={`w-3.5 h-3.5 ${isUpdating ? "animate-spin" : ""}`}
                   />
-                  รีเซ็ตลิงก์ใหม่
+                  {isV2HashedToken ? "รีเซ็ตลิงก์ (Rehash)" : "อัปเกรดเป็น Secure Token (Rehash)"}
                 </button>
+              </div>
+
+              {/* Token Security Badge */}
+              <div className="mt-2 p-2.5 rounded-xl border bg-muted/40 flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-2">
+                  {isV2HashedToken ? (
+                    <>
+                      <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                        ความปลอดภัยระดับสูง: SHA-256 Hashed Token
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span className="text-amber-700 dark:text-amber-400 font-medium">
+                        Token รุ่นเดิม (v1) แนะนำกด <strong>Rehash</strong> เพื่ออัปเกรดความปลอดภัย
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}

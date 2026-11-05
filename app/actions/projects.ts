@@ -190,12 +190,19 @@ export async function reorderTasks(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
-  // Update order_index
-  const promises = taskOrders.map((task) =>
+  // Hash Map สำหรับตรวจสอบความถูกต้องและ Deduplication ของ Task IDs ใน O(1)
+  const taskMap = new Map<string, number>()
+  taskOrders.forEach((task) => {
+    if (task.id) taskMap.set(task.id, task.order_index)
+  })
+
+  // อัปเดต order_index พร้อมจำกัดขอบเขต project_id เพิ่มความปลอดภัย
+  const promises = Array.from(taskMap.entries()).map(([taskId, orderIndex]) =>
     supabase
       .from('tasks')
-      .update({ order_index: task.order_index })
-      .eq('id', task.id)
+      .update({ order_index: orderIndex })
+      .eq('id', taskId)
+      .eq('project_id', projectId)
   )
 
   await Promise.all(promises)
