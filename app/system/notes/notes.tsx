@@ -41,6 +41,7 @@ import {
   Folder,
   Share2,
   Globe,
+  GraduationCap,
 } from "lucide-react";
 import ShareModal from "@/components/ShareModal";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
@@ -52,6 +53,8 @@ type Category = {
   pic?: string | null;
   is_shared?: boolean;
   share_token?: string | null;
+  year?: number | null;
+  semester?: number | null;
 };
 type Note = {
   id: string;
@@ -64,8 +67,29 @@ type Note = {
   is_pinned?: boolean;
   is_shared?: boolean;
   share_token?: string | null;
-  note_categories?: { name: string; pic?: string | null };
+  note_categories?: {
+    name: string;
+    pic?: string | null;
+    year?: number | null;
+    semester?: number | null;
+  };
   noteToEdit?: boolean;
+};
+
+const formatSemester = (sem?: number | null) => {
+  if (sem === 1) return "เทอม 1";
+  if (sem === 2) return "เทอม 2";
+  if (sem === 3) return "ฤดูร้อน";
+  return "";
+};
+
+const formatYearSemester = (year?: number | null, sem?: number | null) => {
+  const yStr = year ? `ปี ${year}` : "";
+  const sStr = formatSemester(sem);
+  if (yStr && sStr) return `${yStr} · ${sStr}`;
+  if (yStr) return yStr;
+  if (sStr) return sStr;
+  return "";
 };
 type Props = {
   noteType: "normal" | "school";
@@ -309,10 +333,41 @@ export default function NotesPage({ noteType }: Props) {
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryYear, setNewCategoryYear] = useState<number | null>(1);
+  const [newCategorySemester, setNewCategorySemester] = useState<number | null>(1);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
     null,
   );
   const [editingCategoryName, setEditingCategoryName] = useState("");
+  const [editingCategoryYear, setEditingCategoryYear] = useState<number | null>(
+    null,
+  );
+  const [editingCategorySemester, setEditingCategorySemester] = useState<number | null>(
+    null,
+  );
+
+  // การกรองชั้นปี (University Year: "all" | 1 | 2 | 3 | 4 | "none")
+  const [selectedYear, setSelectedYear] = useState<number | "all" | "none">(
+    "all",
+  );
+  // การกรองภาคเรียน (Semester: "all" | 1 | 2 | 3 | "none")
+  const [selectedSemester, setSelectedSemester] = useState<number | "all" | "none">(
+    "all",
+  );
+
+  const [modalFilterYear, setModalFilterYear] = useState<number | "all" | "none">(
+    "all",
+  );
+  const [modalFilterSemester, setModalFilterSemester] = useState<number | "all" | "none">(
+    "all",
+  );
+
+  const [modalSelectYear, setModalSelectYear] = useState<number | "all" | "none">(
+    "all",
+  );
+  const [modalSelectSemester, setModalSelectSemester] = useState<number | "all" | "none">(
+    "all",
+  );
 
   const [filterCategory, setFilterCategory] = useState<string>("all");
   type StatusFilter = "all" | "ทั่วไป" | "สำคัญ" | "งานค้าง" | "เสร็จสิ้น";
@@ -322,7 +377,7 @@ export default function NotesPage({ noteType }: Props) {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterCategory, statusFilter, searchQuery]);
+  }, [filterCategory, statusFilter, searchQuery, selectedYear, selectedSemester]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
@@ -409,8 +464,75 @@ export default function NotesPage({ noteType }: Props) {
     }
   };
 
+  const yearCounts = useMemo(() => {
+    const counts = { all: notes.length, 1: 0, 2: 0, 3: 0, 4: 0, none: 0 };
+    notes.forEach((n) => {
+      const cat = categories.find((c) => c.id === n.category_id);
+      const yr = n.note_categories?.year ?? cat?.year;
+      if (yr === 1 || yr === 2 || yr === 3 || yr === 4) {
+        counts[yr as 1 | 2 | 3 | 4]++;
+      } else {
+        counts.none++;
+      }
+    });
+    return counts;
+  }, [notes, categories]);
+
+  const hasUnassignedYearCats = useMemo(() => {
+    return categories.some((c) => !c.year);
+  }, [categories]);
+
+  const semesterCounts = useMemo(() => {
+    // นับจำนวนโน้ตในแต่ละเทอม (สอดคล้องกับ selectedYear ที่กำลังเลือก)
+    const eligibleNotes = notes.filter((n) => {
+      if (noteType !== "school" || selectedYear === "all") return true;
+      const cat = categories.find((c) => c.id === n.category_id);
+      const yr = n.note_categories?.year ?? cat?.year;
+      if (selectedYear === "none") return !yr;
+      return yr === selectedYear;
+    });
+
+    const counts = { all: eligibleNotes.length, 1: 0, 2: 0, 3: 0, none: 0 };
+    eligibleNotes.forEach((n) => {
+      const cat = categories.find((c) => c.id === n.category_id);
+      const sem = n.note_categories?.semester ?? cat?.semester;
+      if (sem === 1 || sem === 2 || sem === 3) {
+        counts[sem as 1 | 2 | 3]++;
+      } else {
+        counts.none++;
+      }
+    });
+    return counts;
+  }, [notes, categories, selectedYear, noteType]);
+
+  const hasUnassignedSemesterCats = useMemo(() => {
+    return categories.some((c) => !c.semester);
+  }, [categories]);
+
   const statusCounts = useMemo(() => {
     const categoryNotes = notes.filter((note) => {
+      if (noteType === "school") {
+        const cat = categories.find((c) => c.id === note.category_id);
+        const yr = note.note_categories?.year ?? cat?.year;
+        const sem = note.note_categories?.semester ?? cat?.semester;
+
+        if (selectedYear !== "all") {
+          if (selectedYear === "none") {
+            if (yr) return false;
+          } else {
+            if (yr !== selectedYear) return false;
+          }
+        }
+
+        if (selectedSemester !== "all") {
+          if (selectedSemester === "none") {
+            if (sem) return false;
+          } else {
+            if (sem !== selectedSemester) return false;
+          }
+        }
+      }
+
       if (filterCategory !== "all") {
         if (filterCategory === "none" && note.category_id !== null) return false;
         if (filterCategory !== "none" && note.category_id !== filterCategory) return false;
@@ -436,10 +558,32 @@ export default function NotesPage({ noteType }: Props) {
     });
 
     return counts;
-  }, [notes, filterCategory]);
+  }, [notes, filterCategory, selectedYear, selectedSemester, noteType, categories]);
 
   const filteredNotes = useMemo(() => {
     return notes.filter((note) => {
+      if (noteType === "school") {
+        const cat = categories.find((c) => c.id === note.category_id);
+        const yr = note.note_categories?.year ?? cat?.year;
+        const sem = note.note_categories?.semester ?? cat?.semester;
+
+        if (selectedYear !== "all") {
+          if (selectedYear === "none") {
+            if (yr) return false;
+          } else {
+            if (yr !== selectedYear) return false;
+          }
+        }
+
+        if (selectedSemester !== "all") {
+          if (selectedSemester === "none") {
+            if (sem) return false;
+          } else {
+            if (sem !== selectedSemester) return false;
+          }
+        }
+      }
+
       const noteStatus = note.status || "ทั่วไป";
       if (statusFilter !== "all" && noteStatus !== statusFilter) return false;
 
@@ -461,7 +605,7 @@ export default function NotesPage({ noteType }: Props) {
 
       return true;
     });
-  }, [notes, statusFilter, filterCategory, searchQuery]);
+  }, [notes, statusFilter, filterCategory, searchQuery, noteType, selectedYear, selectedSemester, categories]);
 
   const totalPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE);
   const paginatedNotes = useMemo(() => {
@@ -720,10 +864,18 @@ export default function NotesPage({ noteType }: Props) {
         picPath = data.path;
       }
 
-      await createCategory(newCategoryName, noteType, picPath);
+      await createCategory(
+        newCategoryName,
+        noteType,
+        picPath,
+        noteType === "school" ? newCategoryYear : null,
+        noteType === "school" ? newCategorySemester : null,
+      );
       setNewCategoryName("");
       setNewCategoryPic(null);
       setNewCategoryPicPreview(null);
+      setNewCategoryYear(1);
+      setNewCategorySemester(1);
       await loadCategories();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
@@ -754,8 +906,17 @@ export default function NotesPage({ noteType }: Props) {
         picPath = data.path;
       }
 
-      await updateCategory(id, editingCategoryName, picPath);
+      await updateCategory(
+        id,
+        editingCategoryName,
+        picPath,
+        noteType === "school" ? editingCategoryYear : undefined,
+        noteType === "school" ? editingCategorySemester : undefined,
+      );
       setEditingCategoryId(null);
+      setEditingCategoryName("");
+      setEditingCategoryYear(null);
+      setEditingCategorySemester(null);
       setEditingCategoryPic(null);
       setEditingCategoryPicPreview(null);
       await loadCategories();
@@ -868,6 +1029,124 @@ export default function NotesPage({ noteType }: Props) {
       </div>
 
       <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat">
+        {/* University Year Filter Tabs */}
+        {noteType === "school" && (
+          <div className="flex flex-col gap-2.5 p-3.5 sm:p-4 bg-background/85 backdrop-blur-xs border border-indigo-100 dark:border-indigo-950/60 rounded-2xl shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600 text-white shadow-xs">
+                  <GraduationCap className="w-4 h-4" />
+                </span>
+                <span className="text-sm font-bold text-foreground">
+                  ระดับชั้นปี (University Year)
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                เลือกชั้นปีเพื่อแยกหมวดหมู่วิชาและบันทึก
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+              {[
+                { id: "all" as const, label: "ทุกชั้นปี (All)", count: yearCounts.all },
+                { id: 1 as const, label: "ปี 1", count: yearCounts[1] },
+                { id: 2 as const, label: "ปี 2", count: yearCounts[2] },
+                { id: 3 as const, label: "ปี 3", count: yearCounts[3] },
+                { id: 4 as const, label: "ปี 4", count: yearCounts[4] },
+                ...(hasUnassignedYearCats
+                  ? [{ id: "none" as const, label: "ไม่ระบุชั้นปี", count: yearCounts.none }]
+                  : []),
+              ].map((tab) => {
+                const isActive = selectedYear === tab.id;
+                return (
+                  <button
+                    key={String(tab.id)}
+                    type="button"
+                    onClick={() => {
+                      setSelectedYear(tab.id);
+                      if (tab.id !== "all" && filterCategory !== "all") {
+                        const currentCat = categories.find((c) => c.id === filterCategory);
+                        if (tab.id === "none") {
+                          if (currentCat?.year) setFilterCategory("all");
+                        } else if (currentCat?.year !== tab.id) {
+                          setFilterCategory("all");
+                        }
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
+                      isActive
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-500/20"
+                        : "bg-background text-muted-foreground border-border hover:bg-accent hover:text-foreground"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Semester Filter Tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-2 border-t border-indigo-100/70 dark:border-indigo-950/50 scrollbar-thin">
+              <span className="text-xs font-semibold text-muted-foreground mr-1 shrink-0">
+                ภาคเรียน:
+              </span>
+              {[
+                { id: "all" as const, label: "ทุกภาคเรียน (All)", count: semesterCounts.all },
+                { id: 1 as const, label: "เทอม 1", count: semesterCounts[1] },
+                { id: 2 as const, label: "เทอม 2", count: semesterCounts[2] },
+                { id: 3 as const, label: "ฤดูร้อน", count: semesterCounts[3] },
+                ...(hasUnassignedSemesterCats
+                  ? [{ id: "none" as const, label: "ไม่ระบุเทอม", count: semesterCounts.none }]
+                  : []),
+              ].map((tab) => {
+                const isActive = selectedSemester === tab.id;
+                return (
+                  <button
+                    key={String(tab.id)}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSemester(tab.id);
+                      if (tab.id !== "all" && filterCategory !== "all") {
+                        const currentCat = categories.find((c) => c.id === filterCategory);
+                        if (tab.id === "none") {
+                          if (currentCat?.semester) setFilterCategory("all");
+                        } else if (currentCat?.semester !== tab.id) {
+                          setFilterCategory("all");
+                        }
+                      }
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
+                      isActive
+                        ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
+                        : "bg-background/80 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold tracking-tight">รายการบันทึก</h2>
@@ -1225,6 +1504,18 @@ export default function NotesPage({ noteType }: Props) {
 
                     {note.note_categories?.name && (
                       <span className="inline-flex items-center gap-1.5 bg-slate-800 text-white px-2 py-0.5 rounded text-xs">
+                        {noteType === "school" &&
+                          (() => {
+                            const cat = categories.find((c) => c.id === note.category_id);
+                            const yr = note.note_categories?.year ?? cat?.year;
+                            const sem = note.note_categories?.semester ?? cat?.semester;
+                            const badgeText = formatYearSemester(yr, sem);
+                            return badgeText ? (
+                              <span className="bg-indigo-500 text-white px-1.5 py-0.2 rounded text-[10px] font-bold">
+                                {badgeText}
+                              </span>
+                            ) : null;
+                          })()}
                         {note.note_categories.pic && (
                           <img
                             src={getPicUrl(note.note_categories.pic)}
@@ -1386,6 +1677,68 @@ export default function NotesPage({ noteType }: Props) {
               </div>
             </div>
 
+            {/* Year & Semester Filter Tabs inside Category Filter Modal */}
+            {noteType === "school" && (
+              <div className="flex flex-col gap-2 px-5 md:px-6 pt-3 pb-2.5 border-b bg-muted/10">
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
+                  <span className="text-xs font-semibold text-muted-foreground mr-1 shrink-0">
+                    ชั้นปี:
+                  </span>
+                  {[
+                    { id: "all" as const, label: "ทุกชั้นปี" },
+                    { id: 1 as const, label: "ปี 1" },
+                    { id: 2 as const, label: "ปี 2" },
+                    { id: 3 as const, label: "ปี 3" },
+                    { id: 4 as const, label: "ปี 4" },
+                    ...(hasUnassignedYearCats
+                      ? [{ id: "none" as const, label: "ไม่ระบุ" }]
+                      : []),
+                  ].map((yTab) => (
+                    <button
+                      key={String(yTab.id)}
+                      type="button"
+                      onClick={() => setModalFilterYear(yTab.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 transition-colors ${
+                        modalFilterYear === yTab.id
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                          : "bg-background text-muted-foreground border-border hover:bg-muted"
+                      }`}
+                    >
+                      {yTab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin pt-1 border-t border-border/40">
+                  <span className="text-xs font-semibold text-muted-foreground mr-1 shrink-0">
+                    ภาคเรียน:
+                  </span>
+                  {[
+                    { id: "all" as const, label: "ทุกภาคเรียน" },
+                    { id: 1 as const, label: "เทอม 1" },
+                    { id: 2 as const, label: "เทอม 2" },
+                    { id: 3 as const, label: "ฤดูร้อน" },
+                    ...(hasUnassignedSemesterCats
+                      ? [{ id: "none" as const, label: "ไม่ระบุ" }]
+                      : []),
+                  ].map((sTab) => (
+                    <button
+                      key={String(sTab.id)}
+                      type="button"
+                      onClick={() => setModalFilterSemester(sTab.id)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border shrink-0 transition-colors ${
+                        modalFilterSemester === sTab.id
+                          ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
+                          : "bg-background text-muted-foreground border-border hover:bg-muted"
+                      }`}
+                    >
+                      {sTab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Card Grid */}
             <div className="p-5 md:p-6 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {/* Option: ทั้งหมด (All) */}
@@ -1422,11 +1775,27 @@ export default function NotesPage({ noteType }: Props) {
 
               {/* Dynamic Categories */}
               {categories
-                .filter((cat) =>
-                  cat.name
+                .filter((cat) => {
+                  if (noteType === "school") {
+                    if (modalFilterYear !== "all") {
+                      if (modalFilterYear === "none") {
+                        if (cat.year) return false;
+                      } else {
+                        if (cat.year !== modalFilterYear) return false;
+                      }
+                    }
+                    if (modalFilterSemester !== "all") {
+                      if (modalFilterSemester === "none") {
+                        if (cat.semester) return false;
+                      } else {
+                        if (cat.semester !== modalFilterSemester) return false;
+                      }
+                    }
+                  }
+                  return cat.name
                     .toLowerCase()
-                    .includes(categoryFilterSearch.toLowerCase()),
-                )
+                    .includes(categoryFilterSearch.toLowerCase());
+                })
                 .map((cat) => {
                   const isSelected = filterCategory === cat.id;
                   const count = categoryNoteCounts[cat.id] || 0;
@@ -1475,6 +1844,11 @@ export default function NotesPage({ noteType }: Props) {
                       <span className="font-bold text-sm truncate w-full text-foreground">
                         {cat.name}
                       </span>
+                      {noteType === "school" && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 mt-1">
+                          {formatYearSemester(cat.year, cat.semester) || "ไม่ระบุปี/เทอม"}
+                        </span>
+                      )}
                       <span className="text-[11px] font-medium text-muted-foreground mt-0.5">
                         {count} บันทึก
                       </span>
@@ -1559,6 +1933,22 @@ export default function NotesPage({ noteType }: Props) {
                 <div className="flex flex-wrap gap-2 mb-6 items-center text-sm">
                   {readingNote.note_categories?.name && (
                     <span className="flex items-center gap-1.5 bg-slate-800 text-white px-3 py-1 rounded-md">
+                      {noteType === "school" &&
+                        (() => {
+                          const cat = categories.find(
+                            (c) => c.id === readingNote.category_id,
+                          );
+                          const yr =
+                            readingNote.note_categories?.year ?? cat?.year;
+                          const sem =
+                            readingNote.note_categories?.semester ?? cat?.semester;
+                          const badgeText = formatYearSemester(yr, sem);
+                          return badgeText ? (
+                            <span className="bg-indigo-500 text-white px-1.5 py-0.2 rounded text-xs font-bold mr-0.5">
+                              {badgeText}
+                            </span>
+                          ) : null;
+                        })()}
                       {readingNote.note_categories.pic && (
                         <img
                           src={getPicUrl(readingNote.note_categories.pic)}
@@ -1817,6 +2207,11 @@ export default function NotesPage({ noteType }: Props) {
                             );
                             return cat ? (
                               <div className="flex items-center gap-2 truncate">
+                                {noteType === "school" && (cat.year || cat.semester) && (
+                                  <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 px-1.5 py-0.2 rounded text-[10px] font-bold shrink-0">
+                                    {formatYearSemester(cat.year, cat.semester)}
+                                  </span>
+                                )}
                                 {cat.pic ? (
                                   <img
                                     src={getPicUrl(cat.pic)}
@@ -1942,14 +2337,92 @@ export default function NotesPage({ noteType }: Props) {
               </div>
             </div>
 
+            {/* Year & Semester Filter Tabs inside Note Category Modal */}
+            {noteType === "school" && (
+              <div className="flex flex-col gap-2 px-5 md:px-6 pt-3 pb-2.5 border-b bg-muted/10">
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
+                  <span className="text-xs font-semibold text-muted-foreground mr-1 shrink-0">
+                    ชั้นปี:
+                  </span>
+                  {[
+                    { id: "all" as const, label: "ทุกชั้นปี" },
+                    { id: 1 as const, label: "ปี 1" },
+                    { id: 2 as const, label: "ปี 2" },
+                    { id: 3 as const, label: "ปี 3" },
+                    { id: 4 as const, label: "ปี 4" },
+                    ...(hasUnassignedYearCats
+                      ? [{ id: "none" as const, label: "ไม่ระบุ" }]
+                      : []),
+                  ].map((yTab) => (
+                    <button
+                      key={String(yTab.id)}
+                      type="button"
+                      onClick={() => setModalSelectYear(yTab.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 transition-colors ${
+                        modalSelectYear === yTab.id
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                          : "bg-background text-muted-foreground border-border hover:bg-muted"
+                      }`}
+                    >
+                      {yTab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin pt-1 border-t border-border/40">
+                  <span className="text-xs font-semibold text-muted-foreground mr-1 shrink-0">
+                    ภาคเรียน:
+                  </span>
+                  {[
+                    { id: "all" as const, label: "ทุกภาคเรียน" },
+                    { id: 1 as const, label: "เทอม 1" },
+                    { id: 2 as const, label: "เทอม 2" },
+                    { id: 3 as const, label: "ฤดูร้อน" },
+                    ...(hasUnassignedSemesterCats
+                      ? [{ id: "none" as const, label: "ไม่ระบุ" }]
+                      : []),
+                  ].map((sTab) => (
+                    <button
+                      key={String(sTab.id)}
+                      type="button"
+                      onClick={() => setModalSelectSemester(sTab.id)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border shrink-0 transition-colors ${
+                        modalSelectSemester === sTab.id
+                          ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
+                          : "bg-background text-muted-foreground border-border hover:bg-muted"
+                      }`}
+                    >
+                      {sTab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Grid */}
             <div className="p-5 md:p-6 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3.5">
               {categories
-                .filter((cat) =>
-                  cat.name
+                .filter((cat) => {
+                  if (noteType === "school") {
+                    if (modalSelectYear !== "all") {
+                      if (modalSelectYear === "none") {
+                        if (cat.year) return false;
+                      } else {
+                        if (cat.year !== modalSelectYear) return false;
+                      }
+                    }
+                    if (modalSelectSemester !== "all") {
+                      if (modalSelectSemester === "none") {
+                        if (cat.semester) return false;
+                      } else {
+                        if (cat.semester !== modalSelectSemester) return false;
+                      }
+                    }
+                  }
+                  return cat.name
                     .toLowerCase()
-                    .includes(categorySelectSearch.toLowerCase()),
-                )
+                    .includes(categorySelectSearch.toLowerCase());
+                })
                 .map((cat) => {
                   const isSelected = categoryId === cat.id;
                   const count = categoryNoteCounts[cat.id] || 0;
@@ -1989,6 +2462,11 @@ export default function NotesPage({ noteType }: Props) {
                       <span className="font-bold text-sm truncate w-full text-foreground">
                         {cat.name}
                       </span>
+                      {noteType === "school" && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 mt-0.5">
+                          {formatYearSemester(cat.year, cat.semester) || "ไม่ระบุปี/เทอม"}
+                        </span>
+                      )}
                       <span className="text-[11px] font-medium text-muted-foreground mt-0.5">
                         {count} บันทึก
                       </span>
@@ -2059,54 +2537,134 @@ export default function NotesPage({ noteType }: Props) {
               <CardContent className="flex flex-col gap-4 pt-6">
                 <form
                   onSubmit={handleAddCategory}
-                  className="flex gap-2 items-center"
+                  className="flex flex-col gap-2.5"
                 >
-                  <label
-                    className="cursor-pointer border border-dashed border-slate-300 rounded-md flex items-center justify-center w-10 h-10 hover:bg-slate-50 shrink-0 relative overflow-hidden group"
-                    title="อัพโหลดรูป (1x1)"
-                  >
-                    {newCategoryPicPreview ? (
-                      <img
-                        src={newCategoryPicPreview}
-                        className="w-full h-full object-cover"
-                        alt="preview"
-                      />
-                    ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        className="w-5 h-5 text-slate-400 group-hover:text-slate-500"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-2.22-2.219a2.75 2.75 0 0 0-3.885 0l-1.9 1.9a2.75 2.75 0 0 1-3.886 0l-3.11-3.11a2.75 2.75 0 0 0-3.885 0l-.114.114ZM14 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
-                          clipRule="evenodd"
+                  <div className="flex gap-2 items-center">
+                    <label
+                      className="cursor-pointer border border-dashed border-slate-300 rounded-md flex items-center justify-center w-10 h-10 hover:bg-slate-50 shrink-0 relative overflow-hidden group"
+                      title="อัพโหลดรูป (1x1)"
+                    >
+                      {newCategoryPicPreview ? (
+                        <img
+                          src={newCategoryPicPreview}
+                          className="w-full h-full object-cover"
+                          alt="preview"
                         />
-                      </svg>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleNewCategoryPicChange}
+                      ) : (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="w-5 h-5 text-slate-400 group-hover:text-slate-500"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-2.22-2.219a2.75 2.75 0 0 0-3.885 0l-1.9 1.9a2.75 2.75 0 0 1-3.886 0l-3.11-3.11a2.75 2.75 0 0 0-3.885 0l-.114.114ZM14 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleNewCategoryPicChange}
+                        disabled={isSubmittingCategory}
+                      />
+                    </label>
+                    <Input
+                      placeholder={
+                        noteType === "school"
+                          ? "ชื่อวิชา / หมวดหมู่ใหม่..."
+                          : "ชื่อหมวดหมู่ใหม่..."
+                      }
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
                       disabled={isSubmittingCategory}
                     />
-                  </label>
-                  <Input
-                    placeholder="ชื่อหมวดหมู่ใหม่..."
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    disabled={isSubmittingCategory}
-                  />
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    size="icon"
-                    disabled={isSubmittingCategory}
-                  >
-                    +
-                  </Button>
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      size="icon"
+                      disabled={isSubmittingCategory}
+                    >
+                      +
+                    </Button>
+                  </div>
+
+                  {noteType === "school" && (
+                    <div className="flex flex-col gap-2 px-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground font-semibold shrink-0">
+                          กำหนดชั้นปี:
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4].map((y) => (
+                            <button
+                              key={y}
+                              type="button"
+                              onClick={() => setNewCategoryYear(y)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                                newCategoryYear === y
+                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                                  : "bg-background text-muted-foreground border-border hover:bg-muted"
+                              }`}
+                            >
+                              ปี {y}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setNewCategoryYear(null)}
+                            className={`px-2 py-1 rounded-lg text-xs border transition-all ${
+                              newCategoryYear === null
+                                ? "bg-slate-700 text-white border-slate-700"
+                                : "bg-background text-muted-foreground border-border hover:bg-muted"
+                            }`}
+                          >
+                            ไม่ระบุ
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground font-semibold shrink-0">
+                          ภาคเรียน:
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {[
+                            { id: 1, label: "เทอม 1" },
+                            { id: 2, label: "เทอม 2" },
+                            { id: 3, label: "ฤดูร้อน" },
+                          ].map((s) => (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => setNewCategorySemester(s.id)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                                newCategorySemester === s.id
+                                  ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
+                                  : "bg-background text-muted-foreground border-border hover:bg-muted"
+                              }`}
+                            >
+                              {s.label}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setNewCategorySemester(null)}
+                            className={`px-2 py-1 rounded-lg text-xs border transition-all ${
+                              newCategorySemester === null
+                                ? "bg-slate-700 text-white border-slate-700"
+                                : "bg-background text-muted-foreground border-border hover:bg-muted"
+                            }`}
+                          >
+                            ไม่ระบุ
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </form>
 
                 <div className="flex flex-col gap-2 mt-2 max-h-[300px] overflow-y-auto pr-2">
@@ -2121,84 +2679,163 @@ export default function NotesPage({ noteType }: Props) {
                       className="flex items-center justify-between bg-muted/50 p-2.5 rounded-md group"
                     >
                       {editingCategoryId === cat.id ? (
-                        <div className="flex w-full gap-2 items-center">
-                          <label className="cursor-pointer border border-dashed border-slate-300 rounded-md flex items-center justify-center w-8 h-8 hover:bg-slate-50 shrink-0 relative overflow-hidden group">
-                            {editingCategoryPicPreview || cat.pic ? (
-                              <img
-                                src={
-                                  editingCategoryPicPreview ||
-                                  getPicUrl(cat.pic)
-                                }
-                                className="w-full h-full object-cover"
-                                alt="preview"
+                        <div className="flex flex-col w-full gap-2">
+                          <div className="flex w-full gap-2 items-center">
+                            <label className="cursor-pointer border border-dashed border-slate-300 rounded-md flex items-center justify-center w-8 h-8 hover:bg-slate-50 shrink-0 relative overflow-hidden group">
+                              {editingCategoryPicPreview || cat.pic ? (
+                                <img
+                                  src={
+                                    editingCategoryPicPreview ||
+                                    getPicUrl(cat.pic)
+                                  }
+                                  className="w-full h-full object-cover"
+                                  alt="preview"
+                                />
+                              ) : (
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                  className="w-4 h-4 text-slate-400 group-hover:text-slate-500"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-2.22-2.219a2.75 2.75 0 0 0-3.885 0l-1.9 1.9a2.75 2.75 0 0 1-3.886 0l-3.11-3.11a2.75 2.75 0 0 0-3.885 0l-.114.114ZM14 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleEditingCategoryPicChange}
                               />
-                            ) : (
+                            </label>
+                            <Input
+                              value={editingCategoryName}
+                              onChange={(e) =>
+                                setEditingCategoryName(e.target.value)
+                              }
+                              className="h-8"
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdateCategory(cat.id)}
+                              className="px-2"
+                              disabled={isSubmittingCategory}
+                            >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 20 20"
+                                viewBox="0 0 16 16"
                                 fill="currentColor"
-                                className="w-4 h-4 text-slate-400 group-hover:text-slate-500"
+                                className="w-4 h-4"
                               >
                                 <path
                                   fillRule="evenodd"
-                                  d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-2.22-2.219a2.75 2.75 0 0 0-3.885 0l-1.9 1.9a2.75 2.75 0 0 1-3.886 0l-3.11-3.11a2.75 2.75 0 0 0-3.885 0l-.114.114ZM14 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
+                                  d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z"
                                   clipRule="evenodd"
                                 />
                               </svg>
-                            )}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={handleEditingCategoryPicChange}
-                            />
-                          </label>
-                          <Input
-                            value={editingCategoryName}
-                            onChange={(e) =>
-                              setEditingCategoryName(e.target.value)
-                            }
-                            className="h-8"
-                          />
-                          <Button
-                            size="sm"
-                            onClick={() => handleUpdateCategory(cat.id)}
-                            className="px-2"
-                            disabled={isSubmittingCategory}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 16 16"
-                              fill="currentColor"
-                              className="w-4 h-4"
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingCategoryId(null);
+                                setEditingCategoryName("");
+                                setEditingCategoryYear(null);
+                                setEditingCategorySemester(null);
+                                setEditingCategoryPic(null);
+                                setEditingCategoryPicPreview(null);
+                              }}
+                              className="px-2 text-muted-foreground"
+                              disabled={isSubmittingCategory}
                             >
-                              <path
-                                fillRule="evenodd"
-                                d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setEditingCategoryId(null);
-                              setEditingCategoryPic(null);
-                              setEditingCategoryPicPreview(null);
-                            }}
-                            className="px-2 text-muted-foreground"
-                            disabled={isSubmittingCategory}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 16 16"
-                              fill="currentColor"
-                              className="w-4 h-4"
-                            >
-                              <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
-                            </svg>
-                          </Button>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 16 16"
+                                fill="currentColor"
+                                className="w-4 h-4"
+                              >
+                                <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+                              </svg>
+                            </Button>
+                          </div>
+
+                          {noteType === "school" && (
+                            <div className="flex flex-col gap-1.5 pl-10 text-xs">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] text-muted-foreground font-medium">
+                                  ชั้นปี:
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  {[1, 2, 3, 4].map((y) => (
+                                    <button
+                                      key={y}
+                                      type="button"
+                                      onClick={() => setEditingCategoryYear(y)}
+                                      className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all ${
+                                        editingCategoryYear === y
+                                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                                          : "bg-background text-muted-foreground border-border hover:bg-muted"
+                                      }`}
+                                    >
+                                      ปี {y}
+                                    </button>
+                                  ))}
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingCategoryYear(null)}
+                                    className={`px-1.5 py-0.5 rounded text-[11px] border transition-all ${
+                                      editingCategoryYear === null
+                                        ? "bg-slate-700 text-white border-slate-700"
+                                        : "bg-background text-muted-foreground border-border hover:bg-muted"
+                                    }`}
+                                  >
+                                    ไม่ระบุ
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] text-muted-foreground font-medium">
+                                  ภาคเรียน:
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  {[
+                                    { id: 1, label: "เทอม 1" },
+                                    { id: 2, label: "เทอม 2" },
+                                    { id: 3, label: "ฤดูร้อน" },
+                                  ].map((s) => (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      onClick={() => setEditingCategorySemester(s.id)}
+                                      className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all ${
+                                        editingCategorySemester === s.id
+                                          ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
+                                          : "bg-background text-muted-foreground border-border hover:bg-muted"
+                                      }`}
+                                    >
+                                      {s.label}
+                                    </button>
+                                  ))}
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingCategorySemester(null)}
+                                    className={`px-1.5 py-0.5 rounded text-[11px] border transition-all ${
+                                      editingCategorySemester === null
+                                        ? "bg-slate-700 text-white border-slate-700"
+                                        : "bg-background text-muted-foreground border-border hover:bg-muted"
+                                    }`}
+                                  >
+                                    ไม่ระบุ
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <>
@@ -2217,6 +2854,11 @@ export default function NotesPage({ noteType }: Props) {
                             <span className="text-sm font-medium">
                               {cat.name}
                             </span>
+                            {noteType === "school" && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                                {formatYearSemester(cat.year, cat.semester) || "ไม่ระบุปี/เทอม"}
+                              </span>
+                            )}
                             {cat.is_shared && (
                               <span title="กำลังแชร์สาธารณะ" className="inline-flex items-center">
                                 <Globe className="w-3.5 h-3.5 text-sky-500 shrink-0" />
@@ -2247,6 +2889,8 @@ export default function NotesPage({ noteType }: Props) {
                               onClick={() => {
                                 setEditingCategoryId(cat.id);
                                 setEditingCategoryName(cat.name);
+                                setEditingCategoryYear(cat.year ?? null);
+                                setEditingCategorySemester(cat.semester ?? null);
                                 setEditingCategoryPic(null);
                                 setEditingCategoryPicPreview(null);
                               }}

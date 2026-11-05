@@ -23,6 +23,8 @@ CREATE TABLE public.note_categories (
   pic text,
   is_shared boolean DEFAULT false,
   share_token text UNIQUE,
+  year integer DEFAULT NULL,
+  semester integer DEFAULT NULL,
   CONSTRAINT note_categories_pkey PRIMARY KEY (id),
   CONSTRAINT note_categories_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
