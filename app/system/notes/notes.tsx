@@ -42,6 +42,13 @@ import {
   Share2,
   Globe,
   GraduationCap,
+  ChevronDown,
+  RotateCcw,
+  Edit2,
+  Trash2,
+  Eye,
+  Copy,
+  Calendar,
 } from "lucide-react";
 import ShareModal from "@/components/ShareModal";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
@@ -1029,283 +1036,325 @@ export default function NotesPage({ noteType }: Props) {
       </div>
 
       <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat">
-        {/* University Year Filter Tabs */}
+        {/* Compact Year & Semester Bar for University Notes */}
         {noteType === "school" && (
-          <div className="flex flex-col gap-2.5 p-3.5 sm:p-4 bg-background/85 backdrop-blur-xs border border-indigo-100 dark:border-indigo-950/60 rounded-2xl shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-              <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600 text-white shadow-xs">
-                  <GraduationCap className="w-4 h-4" />
+          <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:px-4 sm:py-2.5 bg-background/90 backdrop-blur-xs border border-indigo-100 dark:border-indigo-950/60 rounded-2xl shadow-xs">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {/* Year Selector */}
+              <div className="flex items-center gap-1.5">
+                <span className="flex items-center justify-center w-6 h-6 rounded-md bg-indigo-600 text-white shrink-0">
+                  <GraduationCap className="w-3.5 h-3.5" />
                 </span>
-                <span className="text-sm font-bold text-foreground">
-                  ระดับชั้นปี (University Year)
+                <span className="text-xs font-bold text-foreground mr-1 hidden sm:inline">
+                  ชั้นปี:
                 </span>
+                <div className="flex items-center gap-1">
+                  {[
+                    { id: "all" as const, label: "ทุกปี", count: yearCounts.all },
+                    { id: 1 as const, label: "ปี 1", count: yearCounts[1] },
+                    { id: 2 as const, label: "ปี 2", count: yearCounts[2] },
+                    { id: 3 as const, label: "ปี 3", count: yearCounts[3] },
+                    { id: 4 as const, label: "ปี 4", count: yearCounts[4] },
+                    ...(hasUnassignedYearCats
+                      ? [{ id: "none" as const, label: "ไม่ระบุ", count: yearCounts.none }]
+                      : []),
+                  ].map((tab) => {
+                    const isActive = selectedYear === tab.id;
+                    return (
+                      <button
+                        key={String(tab.id)}
+                        type="button"
+                        onClick={() => {
+                          setSelectedYear(tab.id);
+                          if (tab.id !== "all" && filterCategory !== "all") {
+                            const currentCat = categories.find((c) => c.id === filterCategory);
+                            if (tab.id === "none") {
+                              if (currentCat?.year) setFilterCategory("all");
+                            } else if (currentCat?.year !== tab.id) {
+                              setFilterCategory("all");
+                            }
+                          }
+                        }}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
+                          isActive
+                            ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                            : "bg-background text-muted-foreground border-border hover:bg-accent hover:text-foreground"
+                        }`}
+                      >
+                        <span>{tab.label}</span>
+                        <span
+                          className={`text-[10px] px-1 py-0.2 rounded-full font-bold ${
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <span className="text-xs text-muted-foreground">
-                เลือกชั้นปีเพื่อแยกหมวดหมู่วิชาและบันทึก
-              </span>
-            </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
-              {[
-                { id: "all" as const, label: "ทุกชั้นปี (All)", count: yearCounts.all },
-                { id: 1 as const, label: "ปี 1", count: yearCounts[1] },
-                { id: 2 as const, label: "ปี 2", count: yearCounts[2] },
-                { id: 3 as const, label: "ปี 3", count: yearCounts[3] },
-                { id: 4 as const, label: "ปี 4", count: yearCounts[4] },
-                ...(hasUnassignedYearCats
-                  ? [{ id: "none" as const, label: "ไม่ระบุชั้นปี", count: yearCounts.none }]
-                  : []),
-              ].map((tab) => {
-                const isActive = selectedYear === tab.id;
-                return (
-                  <button
-                    key={String(tab.id)}
-                    type="button"
-                    onClick={() => {
-                      setSelectedYear(tab.id);
-                      if (tab.id !== "all" && filterCategory !== "all") {
-                        const currentCat = categories.find((c) => c.id === filterCategory);
-                        if (tab.id === "none") {
-                          if (currentCat?.year) setFilterCategory("all");
-                        } else if (currentCat?.year !== tab.id) {
-                          setFilterCategory("all");
+              {/* Divider */}
+              <div className="hidden sm:block w-px h-5 bg-border/80 self-center" />
+
+              {/* Semester Selector */}
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-semibold text-muted-foreground mr-1 hidden sm:inline">
+                  เทอม:
+                </span>
+                {[
+                  { id: "all" as const, label: "ทุกเทอม", count: semesterCounts.all },
+                  { id: 1 as const, label: "เทอม 1", count: semesterCounts[1] },
+                  { id: 2 as const, label: "เทอม 2", count: semesterCounts[2] },
+                  { id: 3 as const, label: "ฤดูร้อน", count: semesterCounts[3] },
+                  ...(hasUnassignedSemesterCats
+                    ? [{ id: "none" as const, label: "ไม่ระบุ", count: semesterCounts.none }]
+                    : []),
+                ].map((tab) => {
+                  const isActive = selectedSemester === tab.id;
+                  return (
+                    <button
+                      key={String(tab.id)}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSemester(tab.id);
+                        if (tab.id !== "all" && filterCategory !== "all") {
+                          const currentCat = categories.find((c) => c.id === filterCategory);
+                          if (tab.id === "none") {
+                            if (currentCat?.semester) setFilterCategory("all");
+                          } else if (currentCat?.semester !== tab.id) {
+                            setFilterCategory("all");
+                          }
                         }
-                      }
-                    }}
-                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
-                      isActive
-                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-500/20"
-                        : "bg-background text-muted-foreground border-border hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                    <span
-                      className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
+                      }}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
                         isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-muted text-muted-foreground"
+                          ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
+                          : "bg-background text-muted-foreground border-border hover:bg-accent hover:text-foreground"
                       }`}
                     >
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span>{tab.label}</span>
+                      <span
+                        className={`text-[10px] px-1 py-0.2 rounded-full font-bold ${
+                          isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Semester Filter Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-2 border-t border-indigo-100/70 dark:border-indigo-950/50 scrollbar-thin">
-              <span className="text-xs font-semibold text-muted-foreground mr-1 shrink-0">
-                ภาคเรียน:
-              </span>
-              {[
-                { id: "all" as const, label: "ทุกภาคเรียน (All)", count: semesterCounts.all },
-                { id: 1 as const, label: "เทอม 1", count: semesterCounts[1] },
-                { id: 2 as const, label: "เทอม 2", count: semesterCounts[2] },
-                { id: 3 as const, label: "ฤดูร้อน", count: semesterCounts[3] },
-                ...(hasUnassignedSemesterCats
-                  ? [{ id: "none" as const, label: "ไม่ระบุเทอม", count: semesterCounts.none }]
-                  : []),
-              ].map((tab) => {
-                const isActive = selectedSemester === tab.id;
-                return (
-                  <button
-                    key={String(tab.id)}
-                    type="button"
-                    onClick={() => {
-                      setSelectedSemester(tab.id);
-                      if (tab.id !== "all" && filterCategory !== "all") {
-                        const currentCat = categories.find((c) => c.id === filterCategory);
-                        if (tab.id === "none") {
-                          if (currentCat?.semester) setFilterCategory("all");
-                        } else if (currentCat?.semester !== tab.id) {
-                          setFilterCategory("all");
-                        }
-                      }
-                    }}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
-                      isActive
-                        ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
-                        : "bg-background/80 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                        isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            {/* Reset Year/Semester button if filtered */}
+            {(selectedYear !== "all" || selectedSemester !== "all") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedYear("all");
+                  setSelectedSemester("all");
+                }}
+                className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline px-1.5 py-0.5 rounded cursor-pointer ml-auto"
+              >
+                <span>รีเซ็ตปี/เทอม</span>
+                <span>×</span>
+              </button>
+            )}
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold tracking-tight">รายการบันทึก</h2>
-            <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-background/90 text-muted-foreground border border-border shadow-sm">
-              {filteredNotes.length} รายการ
-            </span>
-          </div>
+        {/* Unified Search, Category & Status Filter Bar */}
+        <div className="flex flex-col gap-3">
+          {/* Top row: Search input + Category dropdown + Counter */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="ค้นหาชื่อหรือเนื้อหาโน้ต..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-8 h-9 bg-background/90 text-xs sm:text-sm"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
 
-          <div className="flex items-center gap-2 relative self-start md:self-auto">
-            <Label htmlFor="filter" className="whitespace-nowrap text-sm text-muted-foreground">
-              หมวดหมู่:
-            </Label>
-            <Button
-              type="button"
-              variant="outline"
-              className="flex h-9 w-[130px] md:w-[180px] justify-between px-3 text-sm bg-background font-normal border-border hover:bg-accent"
-              onClick={() => setIsFilterModalOpen(true)}
-            >
-                {filterCategory === "all"
-                  ? "ทั้งหมด (All)"
-                  : (() => {
-                      const cat = categories.find(
-                        (c) => c.id === filterCategory,
-                      );
-                      return cat ? (
-                        <div className="flex items-center gap-2 truncate">
-                          {cat.pic ? (
-                            <img
-                              src={getPicUrl(cat.pic)}
-                              className="w-5 h-5 rounded object-cover shrink-0"
-                              alt="pic"
-                            />
-                          ) : (
-                            <div className="w-5 h-5 bg-slate-200 rounded shrink-0 flex items-center justify-center text-[10px] text-slate-500">
-                              -
-                            </div>
-                          )}
-                          <span className="truncate">{cat.name}</span>
-                        </div>
-                      ) : (
-                        "ทั้งหมด (All)"
-                      );
-                    })()}
+            {/* Category Filter Button */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex h-9 min-w-[130px] sm:min-w-[160px] max-w-[220px] justify-between px-3 text-xs sm:text-sm bg-background font-normal border-border hover:bg-accent rounded-xl"
+                onClick={() => {
+                  setModalFilterYear(selectedYear);
+                  setModalFilterSemester(selectedSemester);
+                  setIsFilterModalOpen(true);
+                }}
+              >
+                {filterCategory === "all" ? (
+                  <div className="flex items-center gap-2 text-muted-foreground truncate">
+                    <Folder className="w-3.5 h-3.5 shrink-0" />
+                    <span>ทุกหมวดหมู่ (All)</span>
+                  </div>
+                ) : (
+                  (() => {
+                    const cat = categories.find((c) => c.id === filterCategory);
+                    return cat ? (
+                      <div className="flex items-center gap-2 truncate text-foreground font-medium">
+                        {cat.pic ? (
+                          <img
+                            src={getPicUrl(cat.pic)}
+                            className="w-4 h-4 rounded object-cover shrink-0"
+                            alt="pic"
+                          />
+                        ) : (
+                          <Folder className="w-3.5 h-3.5 text-primary shrink-0" />
+                        )}
+                        <span className="truncate">{cat.name}</span>
+                      </div>
+                    ) : (
+                      "ทุกหมวดหมู่ (All)"
+                    );
+                  })()
+                )}
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0 ml-1.5 opacity-60" />
               </Button>
+
+              {/* Total Filtered Count Badge */}
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-background border text-xs font-semibold text-muted-foreground shrink-0 shadow-2xs">
+                <span>พบ</span>
+                <span className="text-foreground font-bold">{filteredNotes.length}</span>
+                <span>โน้ต</span>
+              </div>
             </div>
           </div>
 
-        {/* Status Filter Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
-          {[
-            {
-              id: "all" as const,
-              label: "ทั้งหมด",
-              icon: (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                </svg>
-              ),
-              count: statusCounts.all,
-              activeCls: "bg-slate-900 text-white border-slate-900 shadow-sm",
-              badgeActive: "bg-slate-700 text-white",
-            },
-            {
-              id: "ทั่วไป" as const,
-              label: "ทั่วไป",
-              icon: (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              ),
-              count: statusCounts["ทั่วไป"],
-              activeCls: "bg-sky-50 text-sky-700 border-sky-300 shadow-sm",
-              badgeActive: "bg-sky-200/80 text-sky-800",
-            },
-            {
-              id: "สำคัญ" as const,
-              label: "สำคัญ",
-              icon: (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.527.82-1.124 1.905-1.554 3.033C7.545 8.653 7 11.115 7 13.5A5.5 5.5 0 0012.5 19c3.038 0 5.5-2.462 5.5-5.5 0-2.417-1.12-4.526-2.583-6.223-.591-.685-1.189-1.32-1.722-1.87-.66-.682-1.144-1.295-1.3-1.854z" clipRule="evenodd" />
-                </svg>
-              ),
-              count: statusCounts["สำคัญ"],
-              activeCls: "bg-rose-50 text-rose-700 border-rose-300 shadow-sm",
-              badgeActive: "bg-rose-200/80 text-rose-800",
-            },
-            {
-              id: "งานค้าง" as const,
-              label: "งานค้าง",
-              icon: (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                </svg>
-              ),
-              count: statusCounts["งานค้าง"],
-              activeCls: "bg-amber-50 text-amber-700 border-amber-300 shadow-sm",
-              badgeActive: "bg-amber-200/80 text-amber-800",
-            },
-            {
-              id: "เสร็จสิ้น" as const,
-              label: "เสร็จสิ้น",
-              icon: (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              ),
-              count: statusCounts["เสร็จสิ้น"],
-              activeCls: "bg-emerald-50 text-emerald-700 border-emerald-300 shadow-sm",
-              badgeActive: "bg-emerald-200/80 text-emerald-800",
-            },
-          ].map((tab) => {
-            const isActive = statusFilter === tab.id;
-            return (
+          {/* Bottom row: Status Filter Chips + Active Filter Summary */}
+          <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {[
+                {
+                  id: "all" as const,
+                  label: "ทั้งหมด",
+                  icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                  ),
+                  count: statusCounts.all,
+                  activeCls: "bg-slate-900 text-white border-slate-900 shadow-xs",
+                  badgeActive: "bg-slate-700 text-white",
+                },
+                {
+                  id: "ทั่วไป" as const,
+                  label: "ทั่วไป",
+                  icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  ),
+                  count: statusCounts["ทั่วไป"],
+                  activeCls: "bg-sky-50 text-sky-700 border-sky-300 shadow-xs dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800",
+                  badgeActive: "bg-sky-200/80 text-sky-800 dark:bg-sky-900 dark:text-sky-200",
+                },
+                {
+                  id: "สำคัญ" as const,
+                  label: "สำคัญ",
+                  icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.527.82-1.124 1.905-1.554 3.033C7.545 8.653 7 11.115 7 13.5A5.5 5.5 0 0012.5 19c3.038 0 5.5-2.462 5.5-5.5 0-2.417-1.12-4.526-2.583-6.223-.591-.685-1.189-1.32-1.722-1.87-.66-.682-1.144-1.295-1.3-1.854z" clipRule="evenodd" />
+                    </svg>
+                  ),
+                  count: statusCounts["สำคัญ"],
+                  activeCls: "bg-rose-50 text-rose-700 border-rose-300 shadow-xs dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800",
+                  badgeActive: "bg-rose-200/80 text-rose-800 dark:bg-rose-900 dark:text-rose-200",
+                },
+                {
+                  id: "งานค้าง" as const,
+                  label: "งานค้าง",
+                  icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    </svg>
+                  ),
+                  count: statusCounts["งานค้าง"],
+                  activeCls: "bg-amber-50 text-amber-700 border-amber-300 shadow-xs dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
+                  badgeActive: "bg-amber-200/80 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+                },
+                {
+                  id: "เสร็จสิ้น" as const,
+                  label: "เสร็จสิ้น",
+                  icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ),
+                  count: statusCounts["เสร็จสิ้น"],
+                  activeCls: "bg-emerald-50 text-emerald-700 border-emerald-300 shadow-xs dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800",
+                  badgeActive: "bg-emerald-200/80 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+                },
+              ].map((tab) => {
+                const isActive = statusFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setStatusFilter(tab.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer transition-all ${
+                      isActive
+                        ? tab.activeCls
+                        : "bg-background/90 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
+                    }`}
+                  >
+                    <span>{tab.icon}</span>
+                    <span>{tab.label}</span>
+                    <span
+                      className={`text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-semibold ${
+                        isActive
+                          ? tab.badgeActive
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Clear All Filters Button */}
+            {(selectedYear !== "all" || selectedSemester !== "all" || filterCategory !== "all" || statusFilter !== "all" || searchQuery !== "") && (
               <button
-                key={tab.id}
                 type="button"
-                onClick={() => setStatusFilter(tab.id)}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer ${
-                  isActive
-                    ? tab.activeCls
-                    : "bg-background/90 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
-                }`}
+                onClick={() => {
+                  setSelectedYear("all");
+                  setSelectedSemester("all");
+                  setFilterCategory("all");
+                  setStatusFilter("all");
+                  setSearchQuery("");
+                }}
+                className="flex items-center gap-1 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:underline shrink-0 font-medium px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer ml-auto"
+                title="ล้างตัวกรองทั้งหมด"
               >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-                <span
-                  className={`text-[11px] px-1.5 py-0.2 rounded-full font-semibold ${
-                    isActive
-                      ? tab.badgeActive
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {tab.count}
-                </span>
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">ล้างตัวกรอง</span>
               </button>
-            );
-          })}
-        </div>
-        <div className="flex justify-end text-end w-full">
-          <div className="relative w-full">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 16 16"
-              fill="currentColor"
-              className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <Input
-              type="text"
-              placeholder="ค้นหาชื่อหรือเนื้อหาโน้ต..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 bg-white/80"
-            />
+            )}
           </div>
         </div>
 
@@ -1318,192 +1367,116 @@ export default function NotesPage({ noteType }: Props) {
             paginatedNotes.map((note, index) => (
               <Card
                 key={note.id}
-                className={`flex flex-col h-full relative group overflow-hidden ${getCardStyle(note.status)}`}
+                onClick={() => setReadingNote(note)}
+                className={`flex flex-col h-full relative group overflow-hidden cursor-pointer hover:shadow-md hover:border-primary/40 transition-all duration-150 ${getCardStyle(note.status)}`}
               >
-                <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10 ">
+                {/* Index Number */}
+                <div className="absolute top-0 left-0 bg-foreground/10 text-foreground/70 px-2 py-0.5 rounded-br-lg text-xs font-bold z-10">
                   #{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                 </div>
 
-                {note.is_pinned && (
-                  <div className="absolute top-0 left-12 bg-amber-500 text-white px-2 py-0.5 rounded-b-md text-[10px] font-bold flex items-center gap-1 shadow-sm z-10">
-                    <Pin className="w-3 h-3 fill-white" /> ปักหมุด
-                  </div>
-                )}
+                {/* Top Pinned & Shared Badges */}
+                <div className="absolute top-0 left-12 flex items-center gap-1 z-10">
+                  {note.is_pinned && (
+                    <div className="bg-amber-500 text-white px-2 py-0.5 rounded-b-md text-[10px] font-bold flex items-center gap-1 shadow-xs">
+                      <Pin className="w-2.5 h-2.5 fill-white" /> ปักหมุด
+                    </div>
+                  )}
+                  {note.is_shared && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShareItem({ type: "note", item: note });
+                        setIsShareModalOpen(true);
+                      }}
+                      className="bg-sky-500 hover:bg-sky-600 text-white px-2 py-0.5 rounded-b-md text-[10px] font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+                      title="กำลังแชร์สาธารณะ (คลิกเพื่อดูลิงก์)"
+                    >
+                      <Share2 className="w-2.5 h-2.5" /> แชร์อยู่
+                    </div>
+                  )}
+                </div>
 
-                {note.is_shared && (
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
+                {/* Top Right Quick Actions (Always visible, clean) */}
+                <div
+                  className="flex items-center gap-0.5 absolute top-2 right-2.5 z-10"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePin(note.id, !note.is_pinned)}
+                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                      note.is_pinned
+                        ? "text-amber-500 bg-amber-50 dark:bg-amber-950/50"
+                        : "text-muted-foreground/60 hover:text-amber-500 hover:bg-muted"
+                    }`}
+                    title={note.is_pinned ? "ยกเลิกการปักหมุด" : "ปักหมุด"}
+                  >
+                    <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? "fill-amber-500" : ""}`} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
                       setShareItem({ type: "note", item: note });
                       setIsShareModalOpen(true);
                     }}
-                    className="absolute top-0 right-3 bg-sky-500 hover:bg-sky-600 text-white px-2 py-0.5 rounded-b-md text-[10px] font-bold flex items-center gap-1 shadow-sm z-10 cursor-pointer"
-                    title="กำลังแชร์สาธารณะ (คลิกเพื่อดูลิงก์)"
+                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                      note.is_shared
+                        ? "text-sky-600 bg-sky-50 dark:bg-sky-950/50"
+                        : "text-muted-foreground/60 hover:text-sky-600 hover:bg-muted"
+                    }`}
+                    title="แชร์บันทึก"
                   >
-                    <Share2 className="w-3 h-3" /> แชร์อยู่
-                  </div>
-                )}
+                    <Share2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyContent(note.content)}
+                    className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                    title="คัดลอกข้อความ"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
 
                 <CardHeader className="pb-2 pt-8">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl pr-12">
-                      {note.title}
-                    </CardTitle>
-                    <div className="flex gap-1 absolute top-4 right-3 opacity-0 group-hover:opacity-100">
-                      <button
-                        onClick={() => handleTogglePin(note.id, !note.is_pinned)}
-                        className={`p-1.5 rounded-md ${
-                          note.is_pinned
-                            ? "text-amber-500 hover:bg-amber-100/50 bg-amber-50"
-                            : "text-slate-400 hover:bg-slate-200/50 hover:text-slate-700"
-                        }`}
-                        title={
-                          note.is_pinned
-                            ? "ยกเลิกการปักหมุด"
-                            : "ปักหมุดให้อยู่บนสุด"
-                        }
-                      >
-                        <Pin
-                          className={`w-4 h-4 ${note.is_pinned ? "fill-amber-500" : ""}`}
-                        />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShareItem({ type: "note", item: note });
-                          setIsShareModalOpen(true);
-                        }}
-                        className={`p-1.5 rounded-md ${
-                          note.is_shared
-                            ? "text-sky-600 hover:bg-sky-100/60 bg-sky-50"
-                            : "text-slate-400 hover:bg-slate-200/50 hover:text-slate-700"
-                        }`}
-                        title="แชร์บันทึก"
-                      >
-                        <Share2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setReadingNote(note)}
-                        className="p-1.5 text-emerald-600 hover:bg-emerald-100/50 rounded-md"
-                        title="อ่านแบบเต็มจอ"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 16 16"
-                          fill="currentColor"
-                          className="w-4 h-4"
-                        >
-                          <path d="M2.5 3.5A1.5 1.5 0 0 1 4 2h3.5v9H4a1.5 1.5 0 0 0-1.5 1.5v.385A1.5 1.5 0 0 1 2 11.385V3.5ZM13.5 3.5A1.5 1.5 0 0 0 12 2H8.5v9H12a1.5 1.5 0 0 1 1.5 1.5v.385a1.5 1.5 0 0 0 .5-1.5V3.5Z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleCopyContent(note.content)}
-                        className="p-1.5 text-slate-600 hover:bg-slate-200/50 rounded-md"
-                        title="คัดลอกเนื้อหา"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 16 16"
-                          fill="currentColor"
-                          className="w-4 h-4"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10.986 3H12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.063A2 2 0 0 1 5.5 14h6a2.5 2.5 0 0 0 2.5-2.5V5.5A2 2 0 0 1 10.986 3ZM10.5 4v-.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V4h3Z"
-                            clipRule="evenodd"
-                          />
-                          <path
-                            fillRule="evenodd"
-                            d="M3 1a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H3Zm5.5 2v-.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V3h3Z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleEditNoteClick(note)}
-                        className="p-1.5 text-blue-600 hover:bg-blue-100/50 rounded-md"
-                        title="แก้ไข"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 16 16"
-                          fill="currentColor"
-                          className="w-4 h-4"
-                        >
-                          <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z" />
-                          <path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteNote(note.id)}
-                        className="p-1.5 text-red-600 hover:bg-red-100/50 rounded-md"
-                        title="ลบ"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 16 16"
-                          fill="currentColor"
-                          className="w-4 h-4"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <CardDescription className="flex flex-wrap gap-2 items-center mt-2">
+                  <CardTitle className="text-base sm:text-lg font-bold pr-16 line-clamp-1">
+                    {note.title}
+                  </CardTitle>
+
+                  {/* Category & Status Row */}
+                  <CardDescription
+                    className="flex flex-wrap gap-1.5 items-center mt-1.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Status inline select */}
                     <div className="relative inline-block">
                       <select
                         value={note.status || "ทั่วไป"}
                         onChange={(e) =>
                           handleInlineStatusChange(note, e.target.value)
                         }
-                        className={`appearance-none px-2 pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer outline-none border border-transparent hover:border-current ${getStatusBadgeColor(note.status)}`}
+                        className={`appearance-none px-2 pl-2 pr-5 py-0.5 rounded-md text-xs font-semibold cursor-pointer outline-none border border-transparent hover:border-current ${getStatusBadgeColor(note.status)}`}
                       >
-                        <option
-                          value="ทั่วไป"
-                          className="bg-white text-slate-800"
-                        >
+                        <option value="ทั่วไป" className="bg-background text-foreground">
                           ทั่วไป
                         </option>
-                        <option
-                          value="สำคัญ"
-                          className="bg-white text-slate-800"
-                        >
+                        <option value="สำคัญ" className="bg-background text-foreground">
                           สำคัญ
                         </option>
-                        <option
-                          value="งานค้าง"
-                          className="bg-white text-slate-800"
-                        >
+                        <option value="งานค้าง" className="bg-background text-foreground">
                           งานค้าง
                         </option>
-                        <option
-                          value="เสร็จสิ้น"
-                          className="bg-white text-slate-800"
-                        >
+                        <option value="เสร็จสิ้น" className="bg-background text-foreground">
                           เสร็จสิ้น
                         </option>
                       </select>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 16 16"
-                        fill="currentColor"
-                        className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
+                      <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
                     </div>
 
+                    {/* Category Badge */}
                     {note.note_categories?.name && (
-                      <span className="inline-flex items-center gap-1.5 bg-slate-800 text-white px-2 py-0.5 rounded text-xs">
+                      <span className="inline-flex items-center gap-1 bg-slate-800 text-white px-2 py-0.5 rounded-md text-xs truncate max-w-[160px]">
                         {noteType === "school" &&
                           (() => {
                             const cat = categories.find((c) => c.id === note.category_id);
@@ -1511,7 +1484,7 @@ export default function NotesPage({ noteType }: Props) {
                             const sem = note.note_categories?.semester ?? cat?.semester;
                             const badgeText = formatYearSemester(yr, sem);
                             return badgeText ? (
-                              <span className="bg-indigo-500 text-white px-1.5 py-0.2 rounded text-[10px] font-bold">
+                              <span className="bg-indigo-500 text-white px-1 py-0.2 rounded text-[9px] font-bold shrink-0">
                                 {badgeText}
                               </span>
                             ) : null;
@@ -1519,17 +1492,19 @@ export default function NotesPage({ noteType }: Props) {
                         {note.note_categories.pic && (
                           <img
                             src={getPicUrl(note.note_categories.pic)}
-                            className="w-3.5 h-3.5 rounded object-cover"
+                            className="w-3 h-3 rounded object-cover shrink-0"
                             alt=""
                           />
                         )}
-                        {note.note_categories.name}
+                        <span className="truncate">{note.note_categories.name}</span>
                       </span>
                     )}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-between">
-                  <div className="text-sm line-clamp-4 mb-4 text-foreground/80 overflow-hidden">
+
+                <CardContent className="flex-1 flex flex-col justify-between pt-1">
+                  {/* Content Preview */}
+                  <div className="text-sm line-clamp-3 mb-3 text-foreground/80 overflow-hidden">
                     <NoteContentRenderer
                       content={note.content}
                       isCompact
@@ -1540,22 +1515,20 @@ export default function NotesPage({ noteType }: Props) {
                     />
                   </div>
 
+                  {/* Attachment Preview */}
                   {note.file_path && (
-                    <div className="mb-4">
+                    <div className="mb-3" onClick={(e) => e.stopPropagation()}>
                       {isImageFile(note.file_path) ? (
                         <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPreviewImageUrl(getAttachmentUrl(note.file_path));
-                          }}
-                          className="relative group/img cursor-pointer overflow-hidden rounded-xl border bg-black/5 aspect-video max-h-36 flex items-center justify-center"
+                          onClick={() => setPreviewImageUrl(getAttachmentUrl(note.file_path))}
+                          className="relative group/img cursor-pointer overflow-hidden rounded-xl border bg-black/5 aspect-video max-h-32 flex items-center justify-center"
                         >
                           <img
                             src={getAttachmentUrl(note.file_path)}
                             alt="แนบรูปภาพ"
                             className="w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white text-xs gap-1.5 font-medium">
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white text-xs gap-1.5 font-medium transition-opacity">
                             <Maximize2 className="w-3.5 h-3.5" /> คลิกดูรูปเต็ม
                           </div>
                         </div>
@@ -1564,8 +1537,7 @@ export default function NotesPage({ noteType }: Props) {
                           href={getAttachmentUrl(note.file_path)}
                           target="_blank"
                           rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 text-xs text-red-600 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-100"
+                          className="inline-flex items-center gap-1.5 text-xs text-red-600 bg-red-50 dark:bg-red-950/40 px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900 hover:bg-red-100"
                         >
                           <FileText className="w-3.5 h-3.5" />
                           <span>เอกสารแนบ (PDF)</span>
@@ -1574,24 +1546,57 @@ export default function NotesPage({ noteType }: Props) {
                       )}
                     </div>
                   )}
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-auto pt-4 border-t border-black/5">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 16 16"
-                      fill="currentColor"
-                      className="w-3.5 h-3.5"
-                    >
-                      <path d="M4.75 2.25a.75.75 0 0 0-1.5 0v1.41l-.146.126a1.5 1.5 0 0 0-.604 1.196v6.268a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5V4.982a1.5 1.5 0 0 0-.604-1.196l-.146-.126V2.25a.75.75 0 0 0-1.5 0v1h-5v-1ZM4 5.5h8v5.75a.25.25 0 0 1-.25.25h-7.5a.25.25 0 0 1-.25-.25V5.5Z" />
-                    </svg>
-                    <span>
+
+                  {/* Card Bottom: Date + Always-visible Action Buttons */}
+                  <div className="flex items-center justify-between pt-2.5 mt-auto border-t border-border/50 text-xs">
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1 truncate mr-2">
+                      <Calendar className="w-3 h-3 shrink-0" />
                       {new Date(note.created_at).toLocaleDateString("th-TH", {
                         day: "2-digit",
                         month: "short",
                         year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
                       })}
                     </span>
+
+                    {/* Action Buttons: Read, Edit, Delete */}
+                    <div
+                      className="flex items-center gap-1 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setReadingNote(note)}
+                        className="h-7 px-2 text-xs text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40 gap-1 rounded-md"
+                        title="อ่านบันทึกแบบเต็ม"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>อ่าน</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditNoteClick(note)}
+                        className="h-7 px-2 text-xs text-blue-700 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40 gap-1 rounded-md"
+                        title="แก้ไขบันทึก"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>แก้ไข</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteNote(note.id)}
+                        className="h-7 px-2 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40 gap-1 rounded-md"
+                        title="ลบบันทึก"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>ลบ</span>
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
