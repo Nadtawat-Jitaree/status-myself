@@ -5,6 +5,23 @@ import { revalidatePath } from "next/cache";
 
 export async function removeNoteAttachment(id: string, filePath: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  // ตรวจสอบความเป็นเจ้าของก่อนลบไฟล์
+  const { data: note, error: fetchError } = await supabase
+    .from("notes")
+    .select("id, file_path")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !note) {
+    throw new Error("ไม่พบบันทึกหรือคุณไม่มีสิทธิ์จัดการบันทึกนี้");
+  }
+
   const { error: storageError } = await supabase.storage
     .from("note_attachments")
     .remove([filePath]);
@@ -16,7 +33,8 @@ export async function removeNoteAttachment(id: string, filePath: string) {
   const { error: dbError } = await supabase
     .from("notes")
     .update({ file_path: null })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id);
 
   if (dbError) throw new Error(dbError.message);
 
@@ -29,6 +47,10 @@ export async function removeNoteAttachment(id: string, filePath: string) {
 
 export async function getNotes(noteType: string): Promise<any[]> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
 
   const fetchNotesInternal = async (
     fieldsLevel: "full" | "yearOnly" | "basic",
@@ -44,6 +66,7 @@ export async function getNotes(noteType: string): Promise<any[]> {
 
     let query: any = (supabase.from("notes") as any)
       .select(selectString)
+      .eq("user_id", user.id)
       .eq("note_categories.note_type", noteType);
 
     if (includePinned) {
@@ -144,12 +167,17 @@ export async function updateNote(
   },
 ) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
 
   if (payload.file_path !== undefined) {
     const { data: oldNote } = await supabase
       .from("notes")
       .select("file_path")
       .eq("id", id)
+      .eq("user_id", user.id)
       .single();
 
     if (
@@ -167,7 +195,11 @@ export async function updateNote(
     }
   }
 
-  const { error } = await supabase.from("notes").update(payload).eq("id", id);
+  const { error } = await supabase
+    .from("notes")
+    .update(payload)
+    .eq("id", id)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
@@ -178,18 +210,27 @@ export async function updateNote(
 }
 export async function deleteNote(id: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
 
   const { data: oldNote } = await supabase
     .from("notes")
     .select("file_path")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
 
   if (oldNote?.file_path) {
     await supabase.storage.from("note_attachments").remove([oldNote.file_path]);
   }
 
-  const { error } = await supabase.from("notes").delete().eq("id", id);
+  const { error } = await supabase
+    .from("notes")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
@@ -201,9 +242,15 @@ export async function deleteNote(id: string) {
 
 export async function getCategories(noteType: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
   const { data, error } = await supabase
     .from("note_categories")
     .select("*")
+    .eq("user_id", user.id)
     .eq("note_type", noteType)
     .order("created_at", { ascending: false });
 
@@ -275,12 +322,17 @@ export async function updateCategory(
   semester?: number | null,
 ) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
 
   if (pic !== undefined) {
     const { data: oldCat } = await supabase
       .from("note_categories")
       .select("pic")
       .eq("id", id)
+      .eq("user_id", user.id)
       .single();
     if (oldCat && oldCat.pic && oldCat.pic !== pic) {
       await supabase.storage.from("logo").remove([oldCat.pic]);
@@ -295,18 +347,27 @@ export async function updateCategory(
   let { error } = await supabase
     .from("note_categories")
     .update(updateData)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id);
 
   if (error) {
     if (error.message.includes("semester")) {
       delete updateData.semester;
-      const res = await supabase.from("note_categories").update(updateData).eq("id", id);
+      const res = await supabase
+        .from("note_categories")
+        .update(updateData)
+        .eq("id", id)
+        .eq("user_id", user.id);
       error = res.error;
     }
 
     if (error && error.message.includes("year")) {
       delete updateData.year;
-      const res = await supabase.from("note_categories").update(updateData).eq("id", id);
+      const res = await supabase
+        .from("note_categories")
+        .update(updateData)
+        .eq("id", id)
+        .eq("user_id", user.id);
       error = res.error;
     }
 
@@ -324,11 +385,16 @@ export async function updateCategory(
 
 export async function deleteCategory(id: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
 
   const { data: oldCat } = await supabase
     .from("note_categories")
     .select("pic")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
   if (oldCat?.pic) {
     await supabase.storage.from("logo").remove([oldCat.pic]);
@@ -337,7 +403,8 @@ export async function deleteCategory(id: string) {
   const { error } = await supabase
     .from("note_categories")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");

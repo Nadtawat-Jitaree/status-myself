@@ -45,14 +45,32 @@ export async function createProject(formData: FormData) {
   revalidatePath('/system/projects')
 }
 
+// Helper สำหรับตรวจสอบความเป็นเจ้าของโปรเจกต์ ป้องกัน IDOR/BOLA
+async function verifyProjectOwnership(supabase: any, projectId: string, userId: string) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('id', projectId)
+    .eq('user_id', userId)
+    .single();
+  if (error || !data) {
+    throw new Error('Unauthorized: คุณไม่มีสิทธิ์จัดการโปรเจกต์นี้');
+  }
+}
+
 export async function toggleTaskStatus(taskId: string, currentStatus: string, projectId: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+  await verifyProjectOwnership(supabase, projectId, user.id)
+
   const newStatus = currentStatus === 'done' ? 'todo' : 'done'
 
   const { error } = await supabase
     .from('tasks')
     .update({ status: newStatus })
     .eq('id', taskId)
+    .eq('project_id', projectId)
 
   if (error) throw error
   revalidatePath(`/system/projects/${projectId}`)
@@ -62,6 +80,7 @@ export async function createTask(projectId: string, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
+  await verifyProjectOwnership(supabase, projectId, user.id)
 
   const title = formData.get('title') as string
   const description = (formData.get('description') as string)?.trim() || null
@@ -99,11 +118,15 @@ export async function createTask(projectId: string, formData: FormData) {
 
 export async function updateTaskStatus(taskId: string, newStatus: string, projectId: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+  await verifyProjectOwnership(supabase, projectId, user.id)
 
   const { error } = await supabase
     .from('tasks')
     .update({ status: newStatus })
     .eq('id', taskId)
+    .eq('project_id', projectId)
 
   if (error) throw error
   revalidatePath(`/system/projects/${projectId}`)
@@ -148,7 +171,15 @@ export async function deleteProject(projectId: string) {
 
 export async function deleteTask(taskId: string, projectId: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from('tasks').delete().eq('id', taskId)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+  await verifyProjectOwnership(supabase, projectId, user.id)
+
+  const { error } = await supabase
+    .from('tasks')
+    .delete()
+    .eq('id', taskId)
+    .eq('project_id', projectId)
   
   if (error) throw error
   revalidatePath(`/system/projects/${projectId}`)
@@ -156,11 +187,15 @@ export async function deleteTask(taskId: string, projectId: string) {
 
 export async function updateTaskTitle(taskId: string, newTitle: string, projectId: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+  await verifyProjectOwnership(supabase, projectId, user.id)
 
   const { error } = await supabase
     .from('tasks')
     .update({ title: newTitle })
     .eq('id', taskId)
+    .eq('project_id', projectId)
 
   if (error) throw error
   revalidatePath(`/system/projects/${projectId}`)
@@ -172,11 +207,15 @@ export async function updateTaskDetails(
   payload: { title?: string; description?: string | null; priority?: string; due_date?: string | null }
 ) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+  await verifyProjectOwnership(supabase, projectId, user.id)
 
   const { error } = await supabase
     .from('tasks')
     .update(payload)
     .eq('id', taskId)
+    .eq('project_id', projectId)
 
   if (error) throw error
   revalidatePath(`/system/projects/${projectId}`)
@@ -189,6 +228,7 @@ export async function reorderTasks(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
+  await verifyProjectOwnership(supabase, projectId, user.id)
 
   // Hash Map สำหรับตรวจสอบความถูกต้องและ Deduplication ของ Task IDs ใน O(1)
   const taskMap = new Map<string, number>()
