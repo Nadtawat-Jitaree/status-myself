@@ -2196,12 +2196,12 @@ export default function NotesPage({ noteType }: Props) {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
+                    <div className="grid min-w-0 gap-2">
                       <Label>หมวดหมู่</Label>
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full justify-between h-10 px-3 bg-background font-normal"
+                        className="w-full min-w-0 justify-between overflow-hidden h-10 px-3 bg-background font-normal"
                         onClick={() => setIsNoteCategoryModalOpen(true)}
                         disabled={isSubmittingNote}
                       >
@@ -2211,7 +2211,7 @@ export default function NotesPage({ noteType }: Props) {
                               (c) => c.id === categoryId,
                             );
                             return cat ? (
-                              <div className="flex items-center gap-2 truncate">
+                              <div className="flex w-0 min-w-0 flex-1 items-center gap-2 overflow-hidden">
                                 {noteType === "school" && (cat.year || cat.semester) && (
                                   <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 px-1.5 py-0.2 rounded text-[10px] font-bold shrink-0">
                                     {formatYearSemester(cat.year, cat.semester)}
@@ -2228,7 +2228,9 @@ export default function NotesPage({ noteType }: Props) {
                                     -
                                   </div>
                                 )}
-                                <span className="truncate">{cat.name}</span>
+                                <span className="block min-w-0 flex-1 truncate" title={cat.name}>
+                                  {cat.name}
+                                </span>
                               </div>
                             ) : (
                               <span className="text-muted-foreground">
@@ -2681,7 +2683,7 @@ export default function NotesPage({ noteType }: Props) {
                   {categories.map((cat) => (
                     <div
                       key={cat.id}
-                      className="flex items-center justify-between bg-muted/50 p-2.5 rounded-md group"
+                      className="flex min-w-0 items-center justify-between bg-muted/50 p-2.5 rounded-md group"
                     >
                       {editingCategoryId === cat.id ? (
                         <div className="flex flex-col w-full gap-2">
@@ -2844,33 +2846,36 @@ export default function NotesPage({ noteType }: Props) {
                         </div>
                       ) : (
                         <>
-                          <div className="flex items-center gap-2">
+                          <div className="flex min-w-0 flex-1 items-center gap-2">
                             {cat.pic ? (
                               <img
                                 src={getPicUrl(cat.pic)}
-                                className="w-6 h-6 object-cover rounded-md"
+                                className="w-6 h-6 shrink-0 object-cover rounded-md"
                                 alt="pic"
                               />
                             ) : (
-                              <div className="w-6 h-6 bg-slate-200 rounded-md flex items-center justify-center text-[10px] text-slate-500">
+                              <div className="w-6 h-6 shrink-0 bg-slate-200 rounded-md flex items-center justify-center text-[10px] text-slate-500">
                                 -
                               </div>
                             )}
-                            <span className="text-sm font-medium">
+                            <span
+                              className="min-w-0 flex-1 truncate text-sm font-medium"
+                              title={cat.name}
+                            >
                               {cat.name}
                             </span>
                             {noteType === "school" && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                              <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                                 {formatYearSemester(cat.year, cat.semester) || "ไม่ระบุปี/เทอม"}
                               </span>
                             )}
                             {cat.is_shared && (
-                              <span title="กำลังแชร์สาธารณะ" className="inline-flex items-center">
+                              <span title="กำลังแชร์สาธารณะ" className="inline-flex shrink-0 items-center">
                                 <Globe className="w-3.5 h-3.5 text-sky-500 shrink-0" />
                               </span>
                             )}
                           </div>
-                          <div className="flex gap-1">
+                          <div className="flex shrink-0 gap-1">
                             <Button
                               size="icon"
                               variant="ghost"
