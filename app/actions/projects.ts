@@ -25,10 +25,21 @@ export async function createProject(formData: FormData) {
 
   const name = formData.get('name') as string
   const description = formData.get('description') as string
+  const targetLabel = (formData.get('target_label') as string)?.trim() || null
+  const targetCountStr = formData.get('target_count') as string
+  const targetCount = targetCountStr && !isNaN(Number(targetCountStr)) && Number(targetCountStr) > 0
+    ? Math.floor(Number(targetCountStr))
+    : null
 
   const { error } = await supabase
     .from('projects')
-    .insert([{ user_id: user.id, name, description }])
+    .insert([{
+      user_id: user.id,
+      name,
+      description,
+      target_label: targetCount ? (targetLabel || 'ชิ้น') : null,
+      target_count: targetCount
+    }])
 
   if (error) throw error
   revalidatePath('/system/projects')
@@ -53,6 +64,7 @@ export async function createTask(projectId: string, formData: FormData) {
   if (!user) throw new Error('Unauthorized')
 
   const title = formData.get('title') as string
+  const description = (formData.get('description') as string)?.trim() || null
   const priority = (formData.get('priority') as string) || 'medium'
   const dueDateStr = formData.get('due_date') as string
   const due_date = dueDateStr && dueDateStr.trim() !== '' ? new Date(dueDateStr).toISOString() : null
@@ -74,6 +86,7 @@ export async function createTask(projectId: string, formData: FormData) {
       {
         project_id: projectId,
         title,
+        description,
         priority,
         due_date,
         order_index: nextOrder,
@@ -156,7 +169,7 @@ export async function updateTaskTitle(taskId: string, newTitle: string, projectI
 export async function updateTaskDetails(
   taskId: string,
   projectId: string,
-  payload: { title?: string; priority?: string; due_date?: string | null }
+  payload: { title?: string; description?: string | null; priority?: string; due_date?: string | null }
 ) {
   const supabase = await createClient()
 
@@ -187,4 +200,28 @@ export async function reorderTasks(
 
   await Promise.all(promises)
   revalidatePath(`/system/projects/${projectId}`)
+}
+
+export async function updateProjectTarget(
+  projectId: string,
+  payload: { target_count: number | null; target_label?: string | null }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const updateData: any = {
+    target_count: payload.target_count,
+    target_label: payload.target_label ?? null,
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update(updateData)
+    .eq('id', projectId)
+    .eq('user_id', user.id)
+
+  if (error) throw error
+  revalidatePath(`/system/projects/${projectId}`)
+  revalidatePath('/system/projects')
 }

@@ -10,6 +10,7 @@ import {
   Clock,
   Layers,
   Sparkles,
+  Target,
 } from "lucide-react";
 
 interface Task {
@@ -25,6 +26,8 @@ interface Project {
   created_at: string;
   due_date?: string | null;
   tasks?: Task[];
+  target_count?: number | null;
+  target_label?: string | null;
 }
 
 interface ProjectListClientProps {
@@ -177,6 +180,15 @@ export default function ProjectListClient({
                       <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
                         {project.description || "ไม่มีคำอธิบายเพิ่มเติม"}
                       </p>
+
+                      {project.target_count && project.target_count > 0 && (
+                        <div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-semibold">
+                          <Target className="w-3.5 h-3.5" />
+                          <span>
+                            เป้าหมาย: {doneTasks} / {project.target_count} {project.target_label || "งาน"}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 

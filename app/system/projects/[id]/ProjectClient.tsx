@@ -8,7 +8,9 @@ import {
   createTask,
   deleteTask,
   updateTaskTitle,
+  updateTaskDetails,
   reorderTasks,
+  updateProjectTarget,
 } from "@/app/actions/projects";
 
 import {
@@ -31,6 +33,12 @@ import {
   SlidersHorizontal,
   ChevronDown,
   Check,
+  Target,
+  Settings2,
+  FileText,
+  AlignLeft,
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
 
 import {
@@ -63,13 +71,37 @@ export default function ProjectClient({ project }: { project: any }) {
     "all" | "todo" | "in_progress" | "done"
   >("all");
 
+  // Project Target States (derive progress directly from tasks done)
+  const [targetCount, setTargetCount] = useState<number | null>(
+    project.target_count ?? null
+  );
+  const [targetLabel, setTargetLabel] = useState<string>(
+    project.target_label || "คลิป"
+  );
+  const [isEditingTarget, setIsEditingTarget] = useState(false);
+  const [targetFormCount, setTargetFormCount] = useState<string>(
+    project.target_count ? String(project.target_count) : ""
+  );
+  const [targetFormLabel, setTargetFormLabel] = useState<string>(
+    project.target_label || "คลิป"
+  );
+  const [isUpdatingTarget, setIsUpdatingTarget] = useState(false);
+
+  // Selected Task for Detail Modal / Drawer
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [isSavingTaskDetail, setIsSavingTaskDetail] = useState(false);
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
     setTasks(project.tasks || []);
-  }, [project.tasks]);
+    setTargetCount(project.target_count ?? null);
+    setTargetLabel(project.target_label || "คลิป");
+    setTargetFormCount(project.target_count ? String(project.target_count) : "");
+    setTargetFormLabel(project.target_label || "คลิป");
+  }, [project.tasks, project.target_count, project.target_label]);
 
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter((t: any) => t.status === "done").length;
@@ -197,6 +229,99 @@ export default function ProjectClient({ project }: { project: any }) {
   const handleUpdateProject = async (formData: FormData) => {
     await updateProject(project.id, formData);
     setIsEditing(false);
+  };
+
+  const handleSaveTargetSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const countNum = targetFormCount.trim() ? Number(targetFormCount) : null;
+    if (countNum !== null && (isNaN(countNum) || countNum <= 0)) {
+      Swal.fire({
+        icon: "warning",
+        title: "ข้อมูลไม่ถูกต้อง",
+        text: "จำนวนเป้าหมายต้องเป็นตัวเลขที่มากกว่า 0",
+      });
+      return;
+    }
+
+    setIsUpdatingTarget(true);
+    try {
+      await updateProjectTarget(project.id, {
+        target_count: countNum,
+        target_label: targetFormLabel.trim() || "คลิป",
+      });
+      setTargetCount(countNum);
+      setTargetLabel(targetFormLabel.trim() || "คลิป");
+      setIsEditingTarget(false);
+      Swal.fire({
+        icon: "success",
+        title: countNum ? "บันทึกเป้าหมายสำเร็จ" : "ลบเป้าหมายสำเร็จ",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error("Failed to update target:", error);
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: "ไม่สามารถบันทึกเป้าหมายได้ กรุณาลองใหม่อีกครั้ง",
+      });
+    } finally {
+      setIsUpdatingTarget(false);
+    }
+  };
+
+  const handleSaveTaskDetailModal = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedTask || isSavingTaskDetail) return;
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const title = (formData.get("title") as string)?.trim();
+    const description = (formData.get("description") as string)?.trim() || null;
+    const priority = (formData.get("priority") as string) || "medium";
+    const dueDateStr = formData.get("due_date") as string;
+    const due_date = dueDateStr && dueDateStr.trim() !== "" ? new Date(dueDateStr).toISOString() : null;
+
+    if (!title) return;
+
+    setIsSavingTaskDetail(true);
+    try {
+      await updateTaskDetails(selectedTask.id, project.id, {
+        title,
+        description,
+        priority,
+        due_date,
+      });
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === selectedTask.id
+            ? { ...t, title, description, priority, due_date }
+            : t
+        )
+      );
+
+      setSelectedTask((prev: any) =>
+        prev ? { ...prev, title, description, priority, due_date } : null
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "บันทึกรายละเอียดงานแล้ว",
+        timer: 1200,
+        showConfirmButton: false,
+      });
+      setSelectedTask(null);
+    } catch (error) {
+      console.error("Failed to update task details:", error);
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: "ไม่สามารถบันทึกรายละเอียดงานได้",
+      });
+    } finally {
+      setIsSavingTaskDetail(false);
+    }
   };
 
   const handleUpdateTaskTitle = async (
@@ -455,6 +580,173 @@ export default function ProjectClient({ project }: { project: any }) {
                   </div>
                 </div>
               </div>
+
+              {/* Target Tracker Section (Optional per project) */}
+              <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.04] to-transparent p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                      <Target className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold flex items-center gap-2">
+                        เป้าหมายเชิงจำนวน (Target Tracker)
+                        {targetCount ? (
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            เปิดใช้งาน
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            ไม่ได้ตั้งเป้าหมาย
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {targetCount
+                          ? `ติดตามจำนวนความสำเร็จเป้าหมาย เช่น ทำคลิป, บทความ`
+                          : `สามารถกำหนดเป้าหมายเชิงปริมาณสำหรับโปรเจกต์นี้ได้`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingTarget(!isEditingTarget)}
+                    className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-background text-xs font-semibold hover:bg-muted shadow-sm"
+                  >
+                    <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>{targetCount ? "ปรับแก้เป้าหมาย" : "ตั้งค่าเป้าหมาย"}</span>
+                  </button>
+                </div>
+
+                {/* Edit Target Form Modal/Collapse */}
+                {isEditingTarget && (
+                  <form
+                    onSubmit={handleSaveTargetSettings}
+                    className="mb-4 p-4 rounded-xl border bg-card space-y-3 animate-in fade-in duration-150"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground block mb-1">
+                          จำนวนเป้าหมายรวม (เว้นว่างหากต้องการปิดการใช้งาน)
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={targetFormCount}
+                          onChange={(e) => setTargetFormCount(e.target.value)}
+                          placeholder="เช่น 100"
+                          className="w-full h-9 rounded-lg border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground block mb-1">
+                          หน่วย / สิ่งที่นับ
+                        </label>
+                        <input
+                          type="text"
+                          value={targetFormLabel}
+                          onChange={(e) => setTargetFormLabel(e.target.value)}
+                          placeholder="เช่น คลิป, ตอน, บทความ"
+                          className="w-full h-9 rounded-lg border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      {targetCount && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTargetFormCount("");
+                          }}
+                          className="text-xs text-destructive hover:underline"
+                        >
+                          ล้างค่าเพื่อปิดใช้งาน Target
+                        </button>
+                      )}
+                      <div className="flex gap-2 ml-auto">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingTarget(false)}
+                          className="px-3 py-1.5 rounded-lg border text-xs font-medium hover:bg-muted"
+                        >
+                          ยกเลิก
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isUpdatingTarget}
+                          className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-60 inline-flex items-center gap-1.5"
+                        >
+                          {isUpdatingTarget && <Loader2 className="w-3 h-3 animate-spin" />}
+                          บันทึกเป้าหมาย
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+
+                {/* Target Progress Display - Derived directly from completed tasks */}
+                {targetCount && targetCount > 0 ? (
+                  <div className="space-y-4 pt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+                            {doneTasks}
+                          </span>
+                          <span className="text-lg sm:text-xl font-bold text-muted-foreground">
+                            / {targetCount} {targetLabel}
+                          </span>
+                          <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                            {Math.round((doneTasks / targetCount) * 100)}%
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                          <span>
+                            สร้างงานแล้วทั้งหมด {totalTasks} {targetLabel} (ทำสำเร็จ {doneTasks} / {targetCount})
+                          </span>
+                        </p>
+                        {doneTasks >= targetCount && (
+                          <p className="text-xs font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> บรรลุเป้าหมายครบ {targetCount} {targetLabel} แล้ว! 🎉
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <div className="text-xs text-muted-foreground bg-background px-3 py-1.5 rounded-xl border">
+                          ⚡ อัปเดตอัตโนมัติตามสถานะงานเสร็จ
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Target Progress Bar */}
+                    <div className="h-3 w-full overflow-hidden rounded-full bg-secondary/80">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          doneTasks >= targetCount
+                            ? "bg-emerald-500"
+                            : "bg-gradient-to-r from-primary to-indigo-500"
+                        }`}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.round((doneTasks / targetCount) * 100)
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  !isEditingTarget && (
+                    <div className="py-2 text-xs text-muted-foreground">
+                      โปรเจกต์นี้ยังไม่ได้กำหนดเป้าหมายเชิงจำนวน (สามารถกดปุ่ม <strong>ตั้งค่าเป้าหมาย</strong> ด้านบนเพื่อเปิดใช้งาน เช่น 100 คลิป)
+                    </div>
+                  )
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -647,7 +939,7 @@ export default function ProjectClient({ project }: { project: any }) {
                 name="title"
                 required
                 disabled={isAddingTask}
-                placeholder="เพิ่มขั้นตอนใหม่ของโปรเจกต์..."
+                placeholder="เพิ่มขั้นตอนใหม่ / รายการเป้าหมาย..."
                 className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
               />
             </div>
@@ -693,6 +985,16 @@ export default function ProjectClient({ project }: { project: any }) {
                 )}
               </button>
             </div>
+          </div>
+
+          <div>
+            <textarea
+              name="description"
+              disabled={isAddingTask}
+              rows={2}
+              placeholder="เพิ่มรายละเอียด/โน้ตของงานนี้ (ไม่บังคับ - สามารถเปิดอ่านและแก้ไขได้ตลอดเวลา)..."
+              className="w-full rounded-xl border bg-background p-3 text-xs outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20 disabled:opacity-60 resize-none"
+            />
           </div>
         </form>
 
@@ -819,25 +1121,48 @@ export default function ProjectClient({ project }: { project: any }) {
                                       </div>
                                     </form>
                                   ) : (
-                                    <div>
+                                    <div className="space-y-1.5">
                                       <p
-                                        className={`break-words text-sm font-semibold leading-relaxed sm:text-base ${
+                                        className={`break-words text-sm font-semibold leading-relaxed sm:text-base cursor-pointer hover:text-primary transition-colors ${
                                           task.status === "done"
                                             ? "text-emerald-700/70 line-through"
                                             : "text-foreground"
                                         }`}
+                                        onClick={() => setSelectedTask(task)}
+                                        title="คลิกเพื่อเปิดดูรายละเอียดและแก้ไข"
                                       >
                                         {task.title}
                                       </p>
 
+                                      {/* Task Description Preview */}
+                                      {task.description && (
+                                        <p
+                                          onClick={() => setSelectedTask(task)}
+                                          className="text-xs text-muted-foreground line-clamp-2 cursor-pointer hover:text-foreground bg-muted/30 hover:bg-muted/50 p-2 rounded-lg border border-border/50 transition-colors"
+                                          title="คลิกเพื่อเปิดดูรายละเอียดฉบับเต็ม"
+                                        >
+                                          {task.description}
+                                        </p>
+                                      )}
+
                                       {/* Priority, Due Date & Created Date Badges */}
-                                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                                      <div className="flex flex-wrap items-center gap-2 pt-1">
                                         {renderPriorityBadge(task.priority)}
                                         {renderDueDateBadge(
                                            task.due_date,
                                            task.status
                                          )}
                                         {renderCreatedDateBadge(task.created_at)}
+                                        <button
+                                          type="button"
+                                          onClick={() => setSelectedTask(task)}
+                                          className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium ml-1"
+                                        >
+                                          <FileText className="w-3 h-3" />
+                                          <span>
+                                            {task.description ? "ดู/แก้รายละเอียด" : "+ รายละเอียด"}
+                                          </span>
+                                        </button>
                                       </div>
                                     </div>
                                   )}
@@ -967,6 +1292,136 @@ export default function ProjectClient({ project }: { project: any }) {
           </div>
         )}
       </section>
+    
+      {/* Task Detail Modal */}
+      {selectedTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg rounded-2xl border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between gap-3 border-b pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">
+                    รายละเอียดงาน (Task Details)
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    ดูและแก้ไขข้อมูลรายละเอียดขั้นตอนงาน
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTask(null)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTaskDetailModal} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  ชื่องาน / หัวข้อ <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  defaultValue={selectedTask.title}
+                  required
+                  disabled={isSavingTaskDetail}
+                  className="w-full h-10 rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1.5">
+                  รายละเอียดเชิงลึก / บันทึก (Notes)
+                </label>
+                <textarea
+                  name="description"
+                  defaultValue={selectedTask.description || ""}
+                  rows={5}
+                  disabled={isSavingTaskDetail}
+                  placeholder="เขียนสรุป ข้อมูลอ้างอิง ลิงก์ สิ่งที่ต้องระวัง หรือขั้นตอนย่อย..."
+                  className="w-full rounded-xl border bg-background p-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    ความสำคัญ
+                  </label>
+                  <select
+                    name="priority"
+                    defaultValue={selectedTask.priority || "medium"}
+                    disabled={isSavingTaskDetail}
+                    className="w-full h-10 rounded-xl border bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="low">ทั่วไป</option>
+                    <option value="medium">ปานกลาง</option>
+                    <option value="high">ด่วนมาก 🔥</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    วันครบกำหนด
+                  </label>
+                  <input
+                    type="date"
+                    name="due_date"
+                    defaultValue={
+                      selectedTask.due_date
+                        ? new Date(selectedTask.due_date).toISOString().split("T")[0]
+                        : ""
+                    }
+                    disabled={isSavingTaskDetail}
+                    className="w-full h-10 rounded-xl border bg-background px-3 text-xs text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t">
+                <span className="text-[11px] text-muted-foreground">
+                  สร้างเมื่อ: {selectedTask.created_at ? new Date(selectedTask.created_at).toLocaleDateString("th-TH") : "-"}
+                </span>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTask(null)}
+                    disabled={isSavingTaskDetail}
+                    className="px-4 py-2 rounded-xl border bg-background text-xs font-medium hover:bg-muted"
+                  >
+                    ปิด
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingTaskDetail}
+                    className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-60 inline-flex items-center gap-1.5"
+                  >
+                    {isSavingTaskDetail ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>กำลังบันทึก...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>บันทึกการเปลี่ยนแปลง</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

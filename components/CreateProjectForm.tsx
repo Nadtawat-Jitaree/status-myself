@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Target, ChevronDown, ChevronUp } from "lucide-react";
 import { createProject } from "@/app/actions/projects";
 import Swal from "sweetalert2";
 
 export default function CreateProjectForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTargetInput, setShowTargetInput] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -21,6 +22,7 @@ export default function CreateProjectForm() {
     try {
       await createProject(formData);
       form.reset();
+      setShowTargetInput(false);
     } catch (error) {
       console.error("Failed to create project:", error);
       Swal.fire({
@@ -34,40 +36,111 @@ export default function CreateProjectForm() {
   };
 
   return (
-    <div className="bg-card border rounded-xl p-6">
-      <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <Plus className="w-5 h-5 text-primary" />
-        สร้างโปรเจคใหม่
-      </h2>
-      <form onSubmit={handleSubmit} className="lg:flex gap-4 items-end">
-        <div className="lg:flex-1 space-y-2">
-          <label className="text-sm font-medium">ชื่อโปรเจค</label>
-          <input
-            type="text"
-            name="name"
-            required
-            disabled={isSubmitting}
-            className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-            placeholder="เช่น พัฒนาระบบ CRM..."
-          />
+    <div className="bg-card border rounded-2xl p-5 sm:p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+          <Plus className="w-5 h-5 text-primary" />
+          สร้างโปรเจคใหม่
+        </h2>
+        <button
+          type="button"
+          onClick={() => setShowTargetInput(!showTargetInput)}
+          className={`text-xs inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors ${
+            showTargetInput
+              ? "bg-primary/10 border-primary/30 text-primary font-medium"
+              : "bg-muted/50 hover:bg-muted text-muted-foreground"
+          }`}
+        >
+          <Target className="w-3.5 h-3.5" />
+          <span>{showTargetInput ? "ซ่อนเป้าหมาย" : "+ กำหนดเป้าหมาย (Target)"}</span>
+          {showTargetInput ? (
+            <ChevronUp className="w-3 h-3 ml-0.5" />
+          ) : (
+            <ChevronDown className="w-3 h-3 ml-0.5" />
+          )}
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs sm:text-sm font-medium">ชื่อโปรเจค <span className="text-destructive">*</span></label>
+            <input
+              type="text"
+              name="name"
+              required
+              disabled={isSubmitting}
+              className="w-full flex h-10 rounded-xl border border-input bg-background px-3.5 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+              placeholder="เช่น สร้างคลิป Short, วิจัยระบบ..."
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs sm:text-sm font-medium">
+              รายละเอียด (ไม่บังคับ)
+            </label>
+            <input
+              type="text"
+              name="description"
+              disabled={isSubmitting}
+              className="w-full flex h-10 rounded-xl border border-input bg-background px-3.5 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+              placeholder="เป้าหมายหรือคำอธิบายสั้นๆ..."
+            />
+          </div>
         </div>
-        <div className="lg:flex-1 space-y-2">
-          <label className="text-sm font-medium">
-            รายละเอียด (ไม่บังคับ)
-          </label>
-          <input
-            type="text"
-            name="description"
-            disabled={isSubmitting}
-            className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-            placeholder="เป้าหมายของโปรเจค..."
-          />
-        </div>
-        <div className="flex justify-end lg:block lg:justify-start">
+
+        {/* Collapsible Target Fields */}
+        {showTargetInput && (
+          <div className="p-4 rounded-xl border border-primary/20 bg-primary/[0.03] animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="w-4 h-4 text-primary" />
+              <span className="text-xs font-semibold text-foreground">
+                การตั้งเป้าหมายเชิงจำนวน (Target Tracker)
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                (ไม่บังคับ - แยกตามประเภทของโปรเจค)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  จำนวนเป้าหมายรวม
+                </label>
+                <input
+                  type="number"
+                  name="target_count"
+                  min="1"
+                  step="1"
+                  disabled={isSubmitting}
+                  placeholder="เช่น 100"
+                  className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  หน่วย / สิ่งที่นับ
+                </label>
+                <input
+                  type="text"
+                  name="target_label"
+                  disabled={isSubmitting}
+                  placeholder="เช่น คลิป, ตอน, บทความ, เล่ม"
+                  defaultValue="คลิป"
+                  className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              💡 ตัวเลขนับจะคำนวณอัตโนมัติจากงานย่อย (Tasks) ที่ทำสำเร็จ (เช่น ทำเสร็จ 1 งาน ก็นับเป็น 1/100 ทันที)
+            </p>
+          </div>
+        )}
+
+        <div className="flex justify-end pt-1">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-2 lg:mt-0 h-10 px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed rounded-md font-medium inline-flex items-center justify-center gap-2 shrink-0"
+            className="h-10 px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed rounded-xl font-medium inline-flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -75,7 +148,7 @@ export default function CreateProjectForm() {
                 <span>กำลังบันทึก...</span>
               </>
             ) : (
-              "บันทึก"
+              "บันทึกโปรเจค"
             )}
           </button>
         </div>
