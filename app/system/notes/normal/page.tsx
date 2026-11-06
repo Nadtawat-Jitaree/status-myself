@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Notes from "../notes";
+import { getNotesPageData } from "@/app/actions/notes";
 
 export const metadata = {
   title: "Notes | ปัวเอนเจ PUANJ",
@@ -34,10 +35,15 @@ function NotesSkeleton() {
   );
 }
 
+async function NormalNotesContent() {
+  const initialData = await getNotesPageData("normal").catch(() => null);
+  return <Notes noteType="normal" initialData={initialData} />;
+}
+
 export default function NormalNotesPage() {
   return (
     <Suspense fallback={<NotesSkeleton />}>
-      <Notes noteType="normal" />
+      <NormalNotesContent />
     </Suspense>
   );
 }

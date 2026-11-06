@@ -407,7 +407,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
   }, [filterCategory, statusFilter, searchQuery, selectedYear, selectedSemester]);
 
   const [isLoading, setIsLoading] = useState<boolean>(() => {
-    if (initialData && (initialData.notes.length > 0 || initialData.categories.length > 0)) return false;
+    if (initialData !== undefined && initialData !== null) return false;
     if (getCachedNotes(noteType)) return false;
     return true;
   });
@@ -440,7 +440,10 @@ export default function NotesPage({ noteType, initialData }: Props) {
 
   useEffect(() => {
     if (initialData) {
+      setNotes(initialData.notes || []);
+      setCategories(initialData.categories || []);
       setCachedNotes(noteType, initialData);
+      setIsLoading(false);
     } else {
       initData();
     }

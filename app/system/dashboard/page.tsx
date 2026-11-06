@@ -54,25 +54,28 @@ async function DashboardData() {
     );
   }
 
-  // 1. ดึงข้อมูลโน้ตทั้งหมดของผู้ใช้
-  const { data: notes } = await supabase
-    .from("notes")
-    .select("id, title, content, status, created_at, category_id, note_categories(name)")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  // ดึงข้อมูลโน้ต, หมวดหมู่ และโปรเจกต์พร้อมกันแบบ Parallel (ลด Roundtrips ด้วย Promise.all)
+  // ตัดคอลัมน์ content ออกเพื่อลดขนาด Payload เพราะแดชบอร์ดใช้เพียงตัวเลขสรุปและหัวข้อ
+  const [notesRes, categoriesRes, projectsRes] = await Promise.all([
+    supabase
+      .from("notes")
+      .select("id, title, status, created_at, category_id, note_categories(name)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("note_categories")
+      .select("id, name")
+      .eq("user_id", user.id),
+    supabase
+      .from("projects")
+      .select("id, name, status, created_at, tasks(id, status, title)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  // 2. ดึงข้อมูลหมวดหมู่
-  const { data: categories } = await supabase
-    .from("note_categories")
-    .select("id, name")
-    .eq("user_id", user.id);
-
-  // 3. ดึงข้อมูลโปรเจกต์และงานย่อย
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("id, name, status, created_at, tasks(id, status, title)")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const notes = notesRes.data;
+  const categories = categoriesRes.data;
+  const projects = projectsRes.data;
 
   // สรุปสถานะโน้ต
   const statusCounts = {

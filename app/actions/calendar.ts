@@ -63,18 +63,16 @@ export async function getCalendarMonthData(
   const startDateStr = startDate.toISOString().split('T')[0]
   const endDateStr = endDate.toISOString().split('T')[0]
 
-  // Query Daily Logs
-  const { data: dailyLogsData, error: logsError } = await supabase
+  // 1. เตรียม Query Daily Logs
+  const logsQuery = supabase
     .from('daily_logs')
     .select('*')
     .eq('user_id', user.id)
     .gte('date', startDateStr)
     .lte('date', endDateStr)
 
-  if (logsError) throw logsError
-
-  // Query Log Items พร้อม filter
-  let query = supabase
+  // 2. เตรียม Query Log Items พร้อม filter
+  let itemsQuery = supabase
     .from('log_items')
     .select('*')
     .eq('user_id', user.id)
@@ -83,23 +81,29 @@ export async function getCalendarMonthData(
     .order('created_at', { ascending: true })
 
   if (filters?.category && filters.category !== 'all') {
-    query = query.eq('category', filters.category)
+    itemsQuery = itemsQuery.eq('category', filters.category)
   }
 
   if (filters?.status && filters.status !== 'all') {
-    query = query.eq('status', filters.status)
+    itemsQuery = itemsQuery.eq('status', filters.status)
   }
 
   if (filters?.tag && filters.tag !== 'all') {
-    query = query.contains('tags', [filters.tag])
+    itemsQuery = itemsQuery.contains('tags', [filters.tag])
   }
 
   if (filters?.search && filters.search.trim() !== '') {
-    query = query.ilike('title', `%${filters.search.trim()}%`)
+    itemsQuery = itemsQuery.ilike('title', `%${filters.search.trim()}%`)
   }
 
-  const { data: itemsData, error: itemsError } = await query
-  if (itemsError) throw itemsError
+  // ดึงข้อมูลพร้อมกันแบบ Parallel ด้วย Promise.all (ประหยัด Network Roundtrip)
+  const [logsRes, itemsRes] = await Promise.all([logsQuery, itemsQuery])
+
+  if (logsRes.error) throw logsRes.error
+  if (itemsRes.error) throw itemsRes.error
+
+  const dailyLogsData = logsRes.data
+  const itemsData = itemsRes.data
 
   // จัดกลุ่มข้อมูลตาม Date
   const dailyLogs: Record<string, DailyLog> = {}
