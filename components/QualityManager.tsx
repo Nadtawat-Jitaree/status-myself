@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Quality,
   QualityTransaction,
@@ -10,6 +10,7 @@ import {
 } from "@/app/actions/qualities";
 import { QualityIconRenderer } from "@/lib/lucide-icons";
 import { QualityFormModal } from "./QualityFormModal";
+import { QualityExportModal } from "./QualityExportModal";
 import {
   Plus,
   Pencil,
@@ -21,9 +22,21 @@ import {
   Calendar,
   FileText,
   ChevronRight,
+  Cpu,
+  Flame,
+  Zap,
+  Radio,
+  BarChart2,
+  Share2,
+  Download,
 } from "lucide-react";
 import Swal from "sweetalert2";
-import { getLevelInfo, getLevelProgress, getPointsToNextLevel, QUALITY_LEVELS } from "@/lib/quality-levels";
+import {
+  getLevelInfo,
+  getLevelProgress,
+  getPointsToNextLevel,
+  QUALITY_LEVELS,
+} from "@/lib/quality-levels";
 
 interface QualityManagerProps {
   initialQualities: Quality[];
@@ -39,13 +52,53 @@ export function QualityManager({
     useState<QualityTransaction[]>(initialTransactions);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuality, setEditingQuality] = useState<Quality | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"qualities" | "transactions">(
+  const [activeTab, setActiveTab] = useState<"qualities" | "tech_cards" | "transactions">(
     "qualities"
   );
 
   // คำนวณแต้มรวมทั้งหมด
   const totalPoints = qualities.reduce((acc, q) => acc + (q.points || 0), 0);
+
+  // คำนวณ Telemetry Stats ของแต่ละ Quality จาก Transactions
+  const qualityStatsMap = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        count: number;
+        lastDate: string | null;
+        level1Count: number;
+        level3Count: number;
+        level5Count: number;
+      }
+    >();
+
+    qualities.forEach((q) => {
+      map.set(q.id, {
+        count: 0,
+        lastDate: null,
+        level1Count: 0,
+        level3Count: 0,
+        level5Count: 0,
+      });
+    });
+
+    transactions.forEach((tx) => {
+      const stat = map.get(tx.quality_id);
+      if (stat) {
+        stat.count += 1;
+        if (!stat.lastDate) {
+          stat.lastDate = tx.created_at;
+        }
+        if (tx.points_delta === 1) stat.level1Count += 1;
+        else if (tx.points_delta === 3) stat.level3Count += 1;
+        else if (tx.points_delta === 5) stat.level5Count += 1;
+      }
+    });
+
+    return map;
+  }, [qualities, transactions]);
 
   const handleCreateOrUpdate = async (data: {
     name: string;
@@ -163,7 +216,7 @@ export function QualityManager({
 
       {/* Level Reference Table */}
       <details className="group border border-border rounded-xl overflow-hidden">
-        <summary className="flex items-center justify-between cursor-pointer p-3.5 bg-muted/30 hover:bg-muted/50 transition-colors list-none">
+        <summary className="flex items-center justify-between cursor-pointer p-3 bg-muted/30 hover:bg-muted/50 transition-colors list-none">
           <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
             <Trophy className="w-3.5 h-3.5 text-amber-500" />
             ตารางระดับทั้งหมด — 10 Level
@@ -175,7 +228,7 @@ export function QualityManager({
             {QUALITY_LEVELS.map((lvl) => (
               <div
                 key={lvl.level}
-                className={`flex items-center gap-2 p-2 rounded-lg border border-border text-xs`}
+                className="flex items-center gap-2 p-2 rounded-lg border border-border text-xs"
               >
                 <span className="text-base">{lvl.emoji}</span>
                 <div className="min-w-0">
@@ -183,7 +236,8 @@ export function QualityManager({
                     Lv.{lvl.level} {lvl.name}
                   </div>
                   <div className="text-muted-foreground">
-                    {lvl.minPoints}{lvl.maxPoints === -1 ? "+" : `–${lvl.maxPoints}`} แต้ม
+                    {lvl.minPoints}
+                    {lvl.maxPoints === -1 ? "+" : `–${lvl.maxPoints}`} แต้ม
                   </div>
                 </div>
               </div>
@@ -194,10 +248,11 @@ export function QualityManager({
 
       {/* Tabs & Action bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto">
+          {/* Tab 1: รายการทั่วไป */}
           <button
             onClick={() => setActiveTab("qualities")}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0 ${
               activeTab === "qualities"
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -206,9 +261,24 @@ export function QualityManager({
             <Layers className="w-4 h-4" />
             รายการคุณสมบัติ ({qualities.length})
           </button>
+
+          {/* Tab 2: Cyberpunk / Tech Cards (สไตล์ที่ 3) */}
+          <button
+            onClick={() => setActiveTab("tech_cards")}
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0 ${
+              activeTab === "tech_cards"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Cpu className="w-4 h-4" />
+            การ์ดสถานะ Sci-Fi (HUD)
+          </button>
+
+          {/* Tab 3: ประวัติแต้ม */}
           <button
             onClick={() => setActiveTab("transactions")}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0 ${
               activeTab === "transactions"
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -219,22 +289,35 @@ export function QualityManager({
           </button>
         </div>
 
-        {activeTab === "qualities" && (
-          <button
-            onClick={() => {
-              setEditingQuality(null);
-              setIsModalOpen(true);
-            }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl text-xs sm:text-sm font-semibold transition-colors self-start sm:self-auto"
-          >
-            <Plus className="w-4 h-4" />
-            สร้างคุณสมบัติใหม่
-          </button>
-        )}
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
+          {qualities.length > 0 && (
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-muted hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs sm:text-sm font-semibold transition-colors"
+              title="ส่งออกรูปภาพสำหรับแชร์ (สัดส่วน 16:9)"
+            >
+              <Download className="w-4 h-4 text-primary" />
+              บันทึกรูปภาพ (16:9)
+            </button>
+          )}
+
+          {activeTab !== "transactions" && (
+            <button
+              onClick={() => {
+                setEditingQuality(null);
+                setIsModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              สร้างคุณสมบัติใหม่
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Content Section */}
-      {activeTab === "qualities" ? (
+      {/* Content Section 1: Standard List View */}
+      {activeTab === "qualities" && (
         <div>
           {qualities.length === 0 ? (
             <div className="text-center py-12 bg-card border border-dashed border-border rounded-2xl p-6 space-y-3">
@@ -271,7 +354,7 @@ export function QualityManager({
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0"
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0"
                           style={{ backgroundColor: item.color || "#2563eb" }}
                         >
                           <QualityIconRenderer
@@ -327,11 +410,15 @@ export function QualityManager({
                       return (
                         <>
                           <div className="flex items-center justify-between text-[11px]">
-                            <span className={`inline-flex items-center gap-1 font-semibold px-1.5 py-0.5 rounded-md ${lvl.bgColor} ${lvl.color}`}>
+                            <span
+                              className={`inline-flex items-center gap-1 font-semibold px-1.5 py-0.5 rounded-md ${lvl.bgColor} ${lvl.color}`}
+                            >
                               {lvl.emoji} Lv.{lvl.level} {lvl.name}
                             </span>
                             <span className="text-muted-foreground">
-                              {toNext !== null ? `อีก ${toNext} แต้ม` : "ระดับสูงสุด! 🔥"}
+                              {toNext !== null
+                                ? `อีก ${toNext} แต้ม`
+                                : "ระดับสูงสุด! 🔥"}
                             </span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
@@ -349,8 +436,203 @@ export function QualityManager({
             </div>
           )}
         </div>
-      ) : (
-        /* Transactions Table */
+      )}
+
+      {/* Content Section 2: Cyberpunk / Tech Stats HUD (สไตล์ที่ 3) */}
+      {activeTab === "tech_cards" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 font-mono">
+              <Radio className="w-3.5 h-3.5 text-primary animate-pulse" />
+              STATUS TELEMETRY MATRIX // REAL-TIME ACTIVE HUD
+            </span>
+            <span className="font-mono">ONLINE UNITS: {qualities.length}</span>
+          </div>
+
+          {qualities.length === 0 ? (
+            <div className="text-center py-16 bg-card border border-dashed border-border rounded-2xl p-6 font-mono text-sm text-muted-foreground">
+              [SYSTEM WARNING: NO ACTIVE ATTRIBUTE MODULE DETECTED]
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {qualities.map((item, index) => {
+                const lvl = getLevelInfo(item.points);
+                const progress = getLevelProgress(item.points);
+                const toNext = getPointsToNextLevel(item.points);
+                const stats = qualityStatsMap.get(item.id) || {
+                  count: 0,
+                  lastDate: null,
+                  level1Count: 0,
+                  level3Count: 0,
+                  level5Count: 0,
+                };
+
+                // คำนวณ segmented blocks เช่น 10 segments
+                const totalBlocks = 10;
+                const filledBlocks = Math.round((progress / 100) * totalBlocks);
+
+                return (
+                  <div
+                    key={item.id}
+                    className="relative bg-card rounded-2xl border border-border/80 hover:border-primary/50 transition-colors p-4 flex flex-col justify-between font-mono overflow-hidden group shadow-xs"
+                  >
+                    {/* Corner Tech Decorative Accents */}
+                    <div className="absolute top-0 right-0 w-8 h-8 pointer-events-none overflow-hidden">
+                      <div
+                        className="w-16 h-2 transform rotate-45 translate-x-3 -translate-y-2 opacity-60"
+                        style={{ backgroundColor: item.color || "#2563eb" }}
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      {/* Top HUD Line */}
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground border-b border-border/50 pb-2">
+                        <span className="tracking-widest flex items-center gap-1.5">
+                          <span
+                            className="w-1.5 h-1.5 rounded-full inline-block"
+                            style={{ backgroundColor: item.color || "#2563eb" }}
+                          />
+                          SYS.ATTR // {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <span className="font-semibold text-foreground">
+                          TIER-{lvl.level}
+                        </span>
+                      </div>
+
+                      {/* Header Module (Icon + Name + Rank) */}
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 border border-black/10 relative"
+                          style={{ backgroundColor: item.color || "#2563eb" }}
+                        >
+                          <QualityIconRenderer
+                            iconName={item.icon}
+                            className="w-6 h-6"
+                          />
+                          <span className="absolute -bottom-1 -right-1 text-xs">
+                            {lvl.emoji}
+                          </span>
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-foreground text-base tracking-tight truncate font-sans">
+                              {item.name}
+                            </h3>
+                          </div>
+                          <span className="text-[11px] text-muted-foreground block truncate">
+                            LV.{lvl.level} {lvl.name.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Power Level Display */}
+                      <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            POWER LEVEL
+                          </span>
+                          <span className="text-xl font-black text-foreground">
+                            {item.points.toLocaleString()}
+                            <span className="text-xs font-normal text-muted-foreground ml-1">
+                              PTS
+                            </span>
+                          </span>
+                        </div>
+
+                        {/* Segmented Progress Blocks (■■■■□□□□) */}
+                        <div className="mt-2 space-y-1">
+                          <div className="flex gap-1 h-1.5 w-full">
+                            {Array.from({ length: totalBlocks }).map((_, bIdx) => (
+                              <div
+                                key={bIdx}
+                                className={`flex-1 rounded-xs transition-colors ${
+                                  bIdx < filledBlocks
+                                    ? "bg-primary"
+                                    : "bg-muted-foreground/20"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <div className="flex justify-between text-[10px] text-muted-foreground pt-0.5">
+                            <span>SYNC {progress}%</span>
+                            <span>
+                              {toNext !== null
+                                ? `REQ +${toNext} PTS`
+                                : "OVERDRIVE MAX"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Description (if any) */}
+                      {item.description && (
+                        <p className="text-[11px] text-muted-foreground line-clamp-1 italic font-sans">
+                          &quot;{item.description}&quot;
+                        </p>
+                      )}
+
+                      {/* Telemetry Stats Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
+                        <div className="p-2 rounded-lg bg-background border border-border/70">
+                          <span className="text-muted-foreground block flex items-center gap-1">
+                            <Zap className="w-3 h-3 text-amber-500" />
+                            SESSIONS
+                          </span>
+                          <span className="text-xs font-bold text-foreground">
+                            {stats.count} ครั้ง
+                          </span>
+                        </div>
+
+                        <div className="p-2 rounded-lg bg-background border border-border/70">
+                          <span className="text-muted-foreground block flex items-center gap-1">
+                            <BarChart2 className="w-3 h-3 text-blue-500" />
+                            PEAK BOOST
+                          </span>
+                          <span className="text-xs font-bold text-foreground">
+                            {stats.level5Count > 0
+                              ? "+5 แต้ม (มาก)"
+                              : stats.level3Count > 0
+                              ? "+3 แต้ม (กลาง)"
+                              : stats.level1Count > 0
+                              ? "+1 แต้ม (ปกติ)"
+                              : "READY"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Footer HUD */}
+                    <div className="pt-3 mt-3 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>
+                        LAST SYNC:{" "}
+                        {stats.lastDate
+                          ? new Date(stats.lastDate).toLocaleDateString("th-TH", {
+                              day: "numeric",
+                              month: "short",
+                            })
+                          : "NONE"}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setEditingQuality(item);
+                          setIsModalOpen(true);
+                        }}
+                        className="text-primary hover:underline font-semibold"
+                      >
+                        [CONFIG]
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Content Section 3: Transactions Table */}
+      {activeTab === "transactions" && (
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="p-4 border-b border-border flex items-center justify-between">
             <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
@@ -449,6 +731,14 @@ export function QualityManager({
         onSubmit={handleCreateOrUpdate}
         initialData={editingQuality}
         loading={loading}
+      />
+
+      {/* Modal ส่งออกรูปภาพ 16:9 */}
+      <QualityExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        qualities={qualities}
+        transactions={transactions}
       />
     </div>
   );
