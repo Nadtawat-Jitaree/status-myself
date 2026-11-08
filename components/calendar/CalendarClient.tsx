@@ -11,6 +11,7 @@ import {
   BatteryLow,
   Flame,
   FileText,
+  GraduationCap,
   CheckCircle2,
   Circle,
   Plus,
@@ -19,12 +20,17 @@ import {
 import CalendarFilters, { getCategoryStyle } from './CalendarFilters'
 import DayDetailModal from './DayDetailModal'
 import CalendarStats from './CalendarStats'
+import CalendarNoteModal from './CalendarNoteModal'
 import {
   DailyLog,
   LogItem,
   getCalendarMonthData,
   CalendarMonthResponse,
 } from '@/app/actions/calendar'
+import {
+  CalendarNote,
+  getCalendarNotes,
+} from '@/app/actions/notes'
 
 const MOOD_ICONS: Record<string, { icon: any; color: string }> = {
   happy: { icon: Smile, color: 'text-amber-500' },
@@ -66,28 +72,61 @@ export default function CalendarClient() {
   const [loading, setLoading] = useState(true)
   const [dailyLogs, setDailyLogs] = useState<Record<string, DailyLog>>({})
   const [logItems, setLogItems] = useState<Record<string, LogItem[]>>({})
+  const [notesByDate, setNotesByDate] = useState<Record<string, CalendarNote[]>>({})
   const [availableCategories, setAvailableCategories] = useState<string[]>([])
   const [availableTags, setAvailableTags] = useState<string[]>([])
 
-  // Modal State
+  // Modal States
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Fetch month data
+  // Note Modal States
+  const [noteModalDate, setNoteModalDate] = useState<string | null>(null)
+  const [noteModalType, setNoteModalType] = useState<'all' | 'normal' | 'school'>('all')
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+
+  // Fetch month data + Notes data
   const loadMonthData = useCallback(async () => {
     if (!mounted) return
     try {
       setLoading(true)
-      const data: CalendarMonthResponse = await getCalendarMonthData(currentYear, currentMonth, {
-        category,
-        status,
-        tag: selectedTag,
-        search,
+
+      // คำนวณช่วงวันที่ครอบคลุม 42 ช่องปฏิทิน
+      const startDate = new Date(Date.UTC(currentYear, currentMonth - 1, 1))
+      startDate.setDate(startDate.getDate() - 7)
+      const endDate = new Date(Date.UTC(currentYear, currentMonth, 0))
+      endDate.setDate(endDate.getDate() + 7)
+
+      const startDateStr = startDate.toISOString().split('T')[0]
+      const endDateStr = endDate.toISOString().split('T')[0]
+
+      // ดึงทั้ง Daily Log Items และ Notes พร้อมกันแบบ Parallel
+      const [calendarData, notesData] = await Promise.all([
+        getCalendarMonthData(currentYear, currentMonth, {
+          category,
+          status,
+          tag: selectedTag,
+          search,
+        }),
+        getCalendarNotes(startDateStr, endDateStr),
+      ])
+
+      setDailyLogs(calendarData.dailyLogs)
+      setLogItems(calendarData.logItems)
+      setAvailableCategories(calendarData.allCategories)
+      setAvailableTags(calendarData.allTags)
+
+      // จัดกลุ่ม Notes ตามวันที่ Local Time ของผู้ใช้
+      const notesMap: Record<string, CalendarNote[]> = {}
+      notesData.forEach((note) => {
+        const d = new Date(note.created_at)
+        const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        if (!notesMap[dateKey]) {
+          notesMap[dateKey] = []
+        }
+        notesMap[dateKey].push(note)
       })
-      setDailyLogs(data.dailyLogs)
-      setLogItems(data.logItems)
-      setAvailableCategories(data.allCategories)
-      setAvailableTags(data.allTags)
+      setNotesByDate(notesMap)
     } catch (err) {
       console.error('Failed to load calendar data', err)
     } finally {
@@ -133,10 +172,22 @@ export default function CalendarClient() {
     setSearch('')
   }
 
-  // Open modal for a date
+  // Open Daily Tasks/Workspace modal
   const handleCellClick = (dateStr: string) => {
     setSelectedDate(dateStr)
     setIsModalOpen(true)
+  }
+
+  // Open Notes modal
+  const handleOpenNoteModal = (
+    e: React.MouseEvent,
+    dateStr: string,
+    type: 'all' | 'normal' | 'school' = 'all'
+  ) => {
+    e.stopPropagation() // ป้องกันไม่ให้ trigger handleCellClick
+    setNoteModalDate(dateStr)
+    setNoteModalType(type)
+    setIsNoteModalOpen(true)
   }
 
   // Build Calendar Matrix (42 cells: 6 weeks x 7 days)
@@ -293,6 +344,7 @@ export default function CalendarClient() {
             </div>
           </div>
         )}
+
         {/* Days of Week Header */}
         <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-1.5 sm:mb-2">
           {DAY_NAMES.map((name, idx) => (
@@ -316,17 +368,26 @@ export default function CalendarClient() {
           {calendarDays.map((cell) => {
             const dayItems = logItems[cell.dateStr] || []
             const dayLog = dailyLogs[cell.dateStr]
+            const dayNotes = notesByDate[cell.dateStr] || []
             const moodInfo = dayLog?.mood ? MOOD_ICONS[dayLog.mood] : null
             const hasNote = Boolean(dayLog?.summary && dayLog.summary.trim() !== '')
 
             const completedTasks = dayItems.filter((i) => i.status === 'completed').length
             const totalTasks = dayItems.length
 
+            // คำนวณจำนวน Note ทั่วไป (normal) และเรียน (school)
+            const normalNotesCount = dayNotes.filter(
+              (n) => (n.note_categories?.note_type || 'normal') === 'normal'
+            ).length
+            const schoolNotesCount = dayNotes.filter(
+              (n) => n.note_categories?.note_type === 'school'
+            ).length
+
             return (
               <div
                 key={cell.dateStr}
                 onClick={() => handleCellClick(cell.dateStr)}
-                className={`group relative flex flex-col justify-between min-h-[68px] sm:min-h-[110px] md:min-h-[125px] rounded-xl sm:rounded-2xl border p-1 sm:p-2 md:p-2.5 cursor-pointer ${
+                className={`group relative flex flex-col justify-between min-h-[72px] sm:min-h-[115px] md:min-h-[130px] rounded-xl sm:rounded-2xl border p-1 sm:p-2 md:p-2.5 cursor-pointer transition-all ${
                   cell.isCurrentMonth
                     ? 'bg-card hover:border-primary/50 hover:shadow-md'
                     : 'bg-muted/20 opacity-40 hover:opacity-80'
@@ -376,7 +437,7 @@ export default function CalendarClient() {
                 {/* Middle: Items preview */}
                 {/* 1. Mobile Compact Dots (screens < 640px) */}
                 <div className="sm:hidden flex flex-wrap items-center gap-1 my-1 px-0.5 min-h-[14px]">
-                  {dayItems.slice(0, 3).map((item) => {
+                  {dayItems.slice(0, 2).map((item) => {
                     const isDone = item.status === 'completed'
                     const catStyle = getCategoryStyle(item.category)
                     return (
@@ -389,9 +450,9 @@ export default function CalendarClient() {
                       />
                     )
                   })}
-                  {dayItems.length > 3 && (
+                  {dayItems.length > 2 && (
                     <span className="text-[9px] font-bold text-muted-foreground/80 leading-none">
-                      +{dayItems.length - 3}
+                      +{dayItems.length - 2}
                     </span>
                   )}
                 </div>
@@ -423,6 +484,37 @@ export default function CalendarClient() {
                   )}
                 </div>
 
+                {/* NOTE COUNT BADGES (Normal & School) */}
+                {(normalNotesCount > 0 || schoolNotesCount > 0) && (
+                  <div className="flex flex-wrap items-center gap-1 my-0.5">
+                    {/* Normal Notes Badge */}
+                    {normalNotesCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenNoteModal(e, cell.dateStr, 'normal')}
+                        className="group/btn inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-all shadow-xs"
+                        title={`Note ทั่วไป ${normalNotesCount} รายการ (คลิกเพื่อดู)`}
+                      >
+                        <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-blue-600 dark:text-blue-400 group-hover/btn:scale-110 transition-transform" />
+                        <span>{normalNotesCount}</span>
+                      </button>
+                    )}
+
+                    {/* School Notes Badge */}
+                    {schoolNotesCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenNoteModal(e, cell.dateStr, 'school')}
+                        className="group/btn inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all shadow-xs"
+                        title={`Note เรียน ${schoolNotesCount} รายการ (คลิกเพื่อดู)`}
+                      >
+                        <GraduationCap className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-purple-600 dark:text-purple-400 group-hover/btn:scale-110 transition-transform" />
+                        <span>{schoolNotesCount}</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {/* Bottom Row: Quick completion pill & Add hover */}
                 <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-muted-foreground pt-0.5 sm:pt-1 border-t border-border/40">
                   {totalTasks > 0 ? (
@@ -432,7 +524,7 @@ export default function CalendarClient() {
                     </span>
                   ) : (
                     <span className="text-[9px] sm:text-[10px] text-muted-foreground/50">
-                      {hasNote ? <span className="text-amber-600 font-medium">โน้ต</span> : '-'}
+                      {hasNote ? <span className="text-amber-600 font-medium">บันทึก</span> : '-'}
                     </span>
                   )}
 
@@ -446,7 +538,7 @@ export default function CalendarClient() {
         </div>
       </div>
 
-      {/* Day Detail Modal */}
+      {/* 1. Day Detail Modal (Tasks, Mood, Summary) */}
       {selectedDate && (
         <DayDetailModal
           isOpen={isModalOpen}
@@ -454,6 +546,18 @@ export default function CalendarClient() {
           dailyLog={dailyLogs[selectedDate] || null}
           items={logItems[selectedDate] || []}
           onClose={() => setIsModalOpen(false)}
+          onRefresh={loadMonthData}
+        />
+      )}
+
+      {/* 2. Calendar Note Modal (Normal & School Notes Viewer / CRUD) */}
+      {noteModalDate && (
+        <CalendarNoteModal
+          isOpen={isNoteModalOpen}
+          dateStr={noteModalDate}
+          initialType={noteModalType}
+          notes={notesByDate[noteModalDate] || []}
+          onClose={() => setIsNoteModalOpen(false)}
           onRefresh={loadMonthData}
         />
       )}

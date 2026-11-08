@@ -44,7 +44,7 @@ export const AVAILABLE_ICONS: IconItem[] = [
   { name: "PenTool", label: "เขียนบทความ / งานเขียน", category: "การเรียนรู้" },
   { name: "Highlighter", label: "เน้นข้อความ / ประเด็นสำคัญ", category: "การเรียนรู้" },
   { name: "Bookmark", label: "บุ๊กมาร์ก / บันทึกหน้าสำคัญ", category: "การเรียนรู้" },
-  { name: "Compass", label: "การค้นพบ / นำทางความรู้", category: "การเรียนรู้" },
+  { name: "Navigation", label: "การค้นพบ / นำทางความรู้", category: "การเรียนรู้" },
   { name: "Microscope", label: "วิทยาศาสตร์ / วิจัย", category: "การเรียนรู้" },
   { name: "Calculator", label: "คำนวณ / ตัวเลข / คณิตศาสตร์", category: "การเรียนรู้" },
   { name: "Shapes", label: "ตรรกะ / เรขาคณิต", category: "การเรียนรู้" },

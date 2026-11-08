@@ -106,11 +106,11 @@ export function IconPickerModal({
 
         {/* Grid List */}
         <div className="p-3 sm:p-4 overflow-y-auto flex-1 grid grid-cols-4 sm:grid-cols-6 gap-2">
-          {filteredIcons.map((item) => {
+          {filteredIcons.map((item, index) => {
             const isSelected = selectedIcon === item.name;
             return (
               <button
-                key={item.name}
+                key={`${item.name}-${item.category || index}`}
                 type="button"
                 onClick={() => {
                   onSelectIcon(item.name);

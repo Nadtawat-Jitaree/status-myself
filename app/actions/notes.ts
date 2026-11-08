@@ -490,3 +490,58 @@ export async function deleteCategory(id: string) {
   revalidatePath("/system/notes/school");
   return { success: true };
 }
+
+
+export interface CalendarNote {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  category_id?: string | null;
+  status: string;
+  file_path?: string | null;
+  is_pinned?: boolean;
+  is_shared?: boolean;
+  share_token?: string | null;
+  note_categories?: {
+    name: string;
+    note_type: "normal" | "school";
+    pic?: string | null;
+    year?: number | null;
+    semester?: number | null;
+  } | null;
+}
+
+export async function getCalendarNotes(
+  startDate: string,
+  endDate: string,
+): Promise<CalendarNote[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const start = new Date(startDate);
+  start.setDate(start.getDate() - 1);
+  const end = new Date(endDate);
+  end.setDate(end.getDate() + 2);
+
+  const startISO = start.toISOString();
+  const endISO = end.toISOString();
+
+  const { data, error } = await (supabase.from("notes") as any)
+    .select("*, note_categories(name, note_type, pic, year, semester)")
+    .eq("user_id", user.id)
+    .gte("created_at", startISO)
+    .lte("created_at", endISO)
+    .order("is_pinned", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch calendar notes:", error.message);
+    throw new Error(error.message);
+  }
+
+  return (data || []) as CalendarNote[];
+}
