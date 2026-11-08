@@ -207,16 +207,18 @@ export async function createNote(payload: {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("notes")
-    .insert([{ user_id: user.id, ...payload }]);
+    .insert([{ user_id: user.id, ...payload }])
+    .select("id")
+    .single();
   if (error) throw new Error(error.message);
 
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");
-  return { success: true };
+  return { success: true, id: data?.id };
 }
 
 export async function updateNote(
@@ -290,6 +292,16 @@ export async function deleteNote(id: string) {
     await supabase.storage.from("note_attachments").remove([oldNote.file_path]);
   }
 
+  // ลบ quality_transactions ที่ผูกกับ note นี้ก่อนลบ note
+  // เพื่อให้ DB trigger คำนวณหักแต้มออกจาก qualities.points โดยอัตโนมัติ
+  await supabase
+    .from("quality_transactions")
+    .delete()
+    .eq("note_id", id)
+    .eq("user_id", user.id);
+
+  // note_qualities จะถูกลบอัตโนมัติโดย ON DELETE CASCADE
+
   const { error } = await supabase
     .from("notes")
     .delete()
@@ -301,6 +313,7 @@ export async function deleteNote(id: string) {
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
   revalidatePath("/system/notes/school");
+  revalidatePath("/system/qualities");
   return { success: true };
 }
 

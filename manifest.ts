@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'NJ System',
     short_name: 'NJ System',
     description: 'ระบบ NJ System',
-    start_url: '/system/notes', 
+    start_url: '/system/dashboard', 
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#000000',

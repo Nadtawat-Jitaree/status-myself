@@ -1,0 +1,217 @@
+import React from "react";
+import * as Icons from "lucide-react";
+
+export interface IconItem {
+  name: string;
+  label: string;
+  category?: string;
+}
+
+// รายการไอคอนยอดนิยมและครอบคลุมทุกหมวดหมู่ (กว่า 220+ ไอคอน)
+export const AVAILABLE_ICONS: IconItem[] = [
+  // 🏋️‍♂️ สุขภาพ / กีฬา / ฟิตเนส
+  { name: "Dumbbell", label: "ออกกำลังกาย / เวทเทรนนิ่ง", category: "สุขภาพและกีฬา" },
+  { name: "HeartPulse", label: "สุขภาพ / คาร์ดิโอ / ชีพจร", category: "สุขภาพและกีฬา" },
+  { name: "Activity", label: "กิจกรรม / เคลื่อนไหว", category: "สุขภาพและกีฬา" },
+  { name: "Bike", label: "ปั่นจักรยาน", category: "สุขภาพและกีฬา" },
+  { name: "Footprints", label: "เดิน / ก้าวเดิน / เดินป่า", category: "สุขภาพและกีฬา" },
+  { name: "Flame", label: "เผาผลาญ / แคลอรี่ / พลังไฟ", category: "สุขภาพและกีฬา" },
+  { name: "Zap", label: "ความเร็ว / พลังงาน / สปีด", category: "สุขภาพและกีฬา" },
+  { name: "Apple", label: "ผลไม้ / สุขภาพดี", category: "สุขภาพและกีฬา" },
+  { name: "Salad", label: "กินผัก / อาหารคลีน", category: "สุขภาพและกีฬา" },
+  { name: "Utensils", label: "การกินอาหาร / โภชนาการ", category: "สุขภาพและกีฬา" },
+  { name: "Bed", label: "การนอนหลับ / พักผ่อน", category: "สุขภาพและกีฬา" },
+  { name: "GlassWater", label: "ดื่มน้ำเปล่า / ไฮเดรชั่น", category: "สุขภาพและกีฬา" },
+  { name: "Scale", label: "คุมน้ำหนัก / ความสมดุล", category: "สุขภาพและกีฬา" },
+  { name: "Timer", label: "จับเวลาออกกำลังกาย", category: "สุขภาพและกีฬา" },
+  { name: "Bath", label: "อาบน้ำ / ผ่อนคลายกล้ามเนื้อ", category: "สุขภาพและกีฬา" },
+  { name: "Fish", label: "กินปลา / โปรตีนดี", category: "สุขภาพและกีฬา" },
+  { name: "Carrot", label: "ผักสด / วิตามิน", category: "สุขภาพและกีฬา" },
+  { name: "Pill", label: "ทานยา / อาหารเสริม", category: "สุขภาพและกีฬา" },
+  { name: "Stethoscope", label: "ตรวจสุขภาพประจำปี", category: "สุขภาพและกีฬา" },
+  { name: "Eye", label: "พักสายตา / ดูแลดวงตา", category: "สุขภาพและกีฬา" },
+
+  // 📚 การเรียนรู้ / การศึกษา / ภาษา
+  { name: "BookOpen", label: "อ่านหนังสือ / ศึกษา", category: "การเรียนรู้" },
+  { name: "BookMarked", label: "จดจำ / ไฮไลต์หนังสือ", category: "การเรียนรู้" },
+  { name: "GraduationCap", label: "การศึกษา / ปริญญา / ความรู้", category: "การเรียนรู้" },
+  { name: "Brain", label: "พัฒนาสมอง / ความคิดเชิงลึก", category: "การเรียนรู้" },
+  { name: "Lightbulb", label: "ไอเดียใหม่ / ความคิดสร้างสรรค์", category: "การเรียนรู้" },
+  { name: "Library", label: "ห้องสมุด / คลังความรู้", category: "การเรียนรู้" },
+  { name: "School", label: "โรงเรียน / มหาวิทยาลัย", category: "การเรียนรู้" },
+  { name: "Languages", label: "ฝึกภาษาต่างประเทศ", category: "การเรียนรู้" },
+  { name: "Pencil", label: "จดบันทึก / ขีดเขียน", category: "การเรียนรู้" },
+  { name: "PenTool", label: "เขียนบทความ / งานเขียน", category: "การเรียนรู้" },
+  { name: "Highlighter", label: "เน้นข้อความ / ประเด็นสำคัญ", category: "การเรียนรู้" },
+  { name: "Bookmark", label: "บุ๊กมาร์ก / บันทึกหน้าสำคัญ", category: "การเรียนรู้" },
+  { name: "Compass", label: "การค้นพบ / นำทางความรู้", category: "การเรียนรู้" },
+  { name: "Microscope", label: "วิทยาศาสตร์ / วิจัย", category: "การเรียนรู้" },
+  { name: "Calculator", label: "คำนวณ / ตัวเลข / คณิตศาสตร์", category: "การเรียนรู้" },
+  { name: "Shapes", label: "ตรรกะ / เรขาคณิต", category: "การเรียนรู้" },
+  { name: "Glasses", label: "สมาธิอ่านหนังสือ", category: "การเรียนรู้" },
+  { name: "FlaskConical", label: "การทดลอง / พิสูจน์", category: "การเรียนรู้" },
+  { name: "Atom", label: "ฟิสิกส์ / วิทยาศาสตร์ขั้นสูง", category: "การเรียนรู้" },
+  { name: "Binary", label: "ตรรกะคอมพิวเตอร์", category: "การเรียนรู้" },
+
+  // 💻 เทคโนโลยี / เขียนโค้ด / นวัตกรรม
+  { name: "Code", label: "เขียนโค้ด / โปรแกรมมิ่ง", category: "เทคโนโลยี" },
+  { name: "Terminal", label: "คอมมานด์ไลน์ / พัฒนาระบบ", category: "เทคโนโลยี" },
+  { name: "Cpu", label: "ฮาร์ดแวร์ / สเปคเครื่อง", category: "เทคโนโลยี" },
+  { name: "Database", label: "ฐานข้อมูล / จัดการข้อมูล", category: "เทคโนโลยี" },
+  { name: "Server", label: "เซิร์ฟเวอร์ / ระบบหลังบ้าน", category: "เทคโนโลยี" },
+  { name: "Laptop", label: "การทำงานผ่านแล็ปท็อป", category: "เทคโนโลยี" },
+  { name: "Smartphone", label: "โมบายล์แอป / สมาร์ตโฟน", category: "เทคโนโลยี" },
+  { name: "Monitor", label: "หน้าจอคอม / สเตชั่นทำงาน", category: "เทคโนโลยี" },
+  { name: "Bug", label: "แก้บั๊ก / ดีบักโค้ด", category: "เทคโนโลยี" },
+  { name: "GitBranch", label: "Git / ควบคุมเวอร์ชัน", category: "เทคโนโลยี" },
+  { name: "Cloud", label: "คลาวด์คอมพิวติ้ง", category: "เทคโนโลยี" },
+  { name: "Network", label: "เครือข่าย / เชื่อมต่อระบบ", category: "เทคโนโลยี" },
+  { name: "Wifi", label: "อินเทอร์เน็ต / การออนไลน์", category: "เทคโนโลยี" },
+  { name: "Bot", label: "AI / บอท / ออโตเมชั่น", category: "เทคโนโลยี" },
+  { name: "Keyboard", label: "ฝึกพิมพ์สัมผัส / คีย์บอร์ด", category: "เทคโนโลยี" },
+  { name: "Layers", label: "โครงสร้างสถาปัตยกรรมระบบ", category: "เทคโนโลยี" },
+
+  // 💼 การงาน / ธุรกิจ / ความสำเร็จ
+  { name: "Briefcase", label: "การงาน / ธุรกิจ / อาชีพ", category: "การงานและธุรกิจ" },
+  { name: "Trophy", label: "ความสำเร็จ / ชัยชนะ / รางวัลใหญ่", category: "การงานและธุรกิจ" },
+  { name: "Award", label: "เกียรติบัตร / รางวัล", category: "การงานและธุรกิจ" },
+  { name: "Medal", label: "เหรียญรางวัล / ผลงานดีเด่น", category: "การงานและธุรกิจ" },
+  { name: "Crown", label: "ความเป็นเลิศ / ผู้นำ", category: "การงานและธุรกิจ" },
+  { name: "Target", label: "เป้าหมาย / ตรงเป้า", category: "การงานและธุรกิจ" },
+  { name: "TrendingUp", label: "การเติบโต / พัฒนาต่อเนื่อง", category: "การงานและธุรกิจ" },
+  { name: "Rocket", label: "เติบโตก้าวกระโดด / สตาร์ตอัป", category: "การงานและธุรกิจ" },
+  { name: "Clock", label: "ตรงต่อเวลา / จัดการเวลา", category: "การงานและธุรกิจ" },
+  { name: "Calendar", label: "วางแผนล่วงหน้า / ตารางงาน", category: "การงานและธุรกิจ" },
+  { name: "CheckCircle", label: "ทำงานเสร็จตามนัด", category: "การงานและธุรกิจ" },
+  { name: "CheckSquare", label: "เคลียร์ To-do list", category: "การงานและธุรกิจ" },
+  { name: "Building2", label: "องค์กร / บริษัท / ออฟฟิศ", category: "การงานและธุรกิจ" },
+  { name: "Presentation", label: "พรีเซนต์งาน / นำเสนอไอเดีย", category: "การงานและธุรกิจ" },
+  { name: "Kanban", label: "จัดการโปรเจกต์แบบ Agile", category: "การงานและธุรกิจ" },
+  { name: "ClipboardCheck", label: "ตรวจสอบความเรียบร้อย", category: "การงานและธุรกิจ" },
+  { name: "FileSpreadsheet", label: "รายงานตัวเลข / Excel", category: "การงานและธุรกิจ" },
+  { name: "PieChart", label: "วิเคราะห์สถิติ / แดชบอร์ด", category: "การงานและธุรกิจ" },
+  { name: "BarChart3", label: "วิเคราะห์แนวโน้มธุรกิจ", category: "การงานและธุรกิจ" },
+  { name: "LineChart", label: "ยอดขาย / การวัดผล", category: "การงานและธุรกิจ" },
+  { name: "Goal", label: "บรรลุเป้าหมายหลัก", category: "การงานและธุรกิจ" },
+
+  // 💰 การเงิน / การออม / ทรัพย์สิน
+  { name: "Wallet", label: "กระเป๋าเงิน / วางแผนการเงิน", category: "การเงิน" },
+  { name: "Coins", label: "เหรียญ / เงินเก็บ", category: "การเงิน" },
+  { name: "PiggyBank", label: "กระปุกออมสิน / เก็บเงินออม", category: "การเงิน" },
+  { name: "DollarSign", label: "เงินตรา / รายได้", category: "การเงิน" },
+  { name: "CreditCard", label: "บัตรเครดิต / คุมค่าใช้จ่าย", category: "การเงิน" },
+  { name: "Banknote", label: "ธนบัตร / กระแสเงินสด", category: "การเงิน" },
+  { name: "Gem", label: "ทรัพย์สินมีค่า / อัญมณี", category: "การเงิน" },
+  { name: "Landmark", label: "ธนาคาร / การลงทุนสถาบัน", category: "การเงิน" },
+  { name: "Receipt", label: "ทำบัญชีรายรับ-รายจ่าย", category: "การเงิน" },
+  { name: "Percent", label: "ดอกเบี้ย / ผลตอบแทน", category: "การเงิน" },
+  { name: "Vault", label: "ความปลอดภัยทางการเงิน", category: "การเงิน" },
+  { name: "ShoppingBag", label: "ซื้อของใช้จำเป็น", category: "การเงิน" },
+  { name: "Tag", label: "ส่วนลด / ประหยัดเงิน", category: "การเงิน" },
+
+  // 🧘 จิตใจ / อารมณ์ / สมาธิ / การพักผ่อน
+  { name: "Smile", label: "อารมณ์ดี / รอยยิ้ม / สุขภาพจิต", category: "สมาธิและอารมณ์" },
+  { name: "Heart", label: "ความรัก / ความเมตตา / ใจดี", category: "สมาธิและอารมณ์" },
+  { name: "Sparkles", label: "แรงบันดาลใจ / สดชื่นสดใส", category: "สมาธิและอารมณ์" },
+  { name: "Sun", label: "มองโลกแง่ดี / พลังยามเช้า", category: "สมาธิและอารมณ์" },
+  { name: "Moon", label: "สงบยามค่ำคืน / ผ่อนคลาย", category: "สมาธิและอารมณ์" },
+  { name: "Sunrise", label: "ตื่นเช้า / เริ่มต้นวันใหม่", category: "สมาธิและอารมณ์" },
+  { name: "Sunset", label: "พักผ่อนยามเย็น / ทบทวนตนเอง", category: "สมาธิและอารมณ์" },
+  { name: "Shield", label: "ความเข้มแข็ง / ป้องกันใจ", category: "สมาธิและอารมณ์" },
+  { name: "ShieldCheck", label: "ปลอดภัย / สบายใจ", category: "สมาธิและอารมณ์" },
+  { name: "Coffee", label: "จิบกาแฟ / พักผ่อนระหว่างวัน", category: "สมาธิและอารมณ์" },
+  { name: "CupSoda", label: "เครื่องดื่มสดชื่น", category: "สมาธิและอารมณ์" },
+  { name: "Leaf", label: "ธรรมชาติ / รักษ์โลก / ความสงบ", category: "สมาธิและอารมณ์" },
+  { name: "Trees", label: "เดินป่า / อาบป่า / พลังธรรมชาติ", category: "สมาธิและอารมณ์" },
+  { name: "Flower2", label: "ความงดงาม / ดอกไม้บาน", category: "สมาธิและอารมณ์" },
+  { name: "Sprout", label: "การเติบโตของเมล็ดพันธุ์", category: "สมาธิและอารมณ์" },
+  { name: "CloudSun", label: "วันที่อากาศแจ่มใส", category: "สมาธิและอารมณ์" },
+  { name: "Feather", label: "ความเบาสบาย / ใจสงบ", category: "สมาธิและอารมณ์" },
+
+  // 🎨 ศิลปะ / บันเทิง / งานอดิเรก
+  { name: "Palette", label: "วาดรูป / ศิลปะ / ระบายสี", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Music", label: "ฟังเพลง / ดนตรีบำบัด", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Headphones", label: "ฟังพอดแคสต์ / ออดิโอบุ๊ก", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Camera", label: "ถ่ายภาพ / เก็บความทรงจำ", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Video", label: "ถ่ายวิดีโอ / บล็อกเกอร์", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Film", label: "ชมภาพยนตร์ / สารคดี", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Gamepad2", label: "เล่นเกมคลายเครียด", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Dices", label: "บอร์ดเกม / สังสรรค์", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Guitar", label: "เล่นกีตาร์ / เครื่องดนตรี", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Mic", label: "ฝึกพูด / ร้องเพลง / พูดในที่สาธารณะ", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Radio", label: "ฟังรายการวิทยุ", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Wand2", label: "จินตนาการ / ความมหัศจรรย์", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Scissors", label: "งานประดิษฐ์ / DIY", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+  { name: "Origami", label: "พับกระดาษ / สมาธิงานฝีมือ", category: "งานอดิเรกและความคิดสร้างสรรค์" },
+
+  // 👥 สังคม / ความสัมพันธ์ / ครอบครัว
+  { name: "Users", label: "เพื่อนฝูง / กลุ่มคน / มิตรภาพ", category: "สังคมและความสัมพันธ์" },
+  { name: "UserCheck", label: "รักษาคำพูด / น่าเชื่อถือ", category: "สังคมและความสัมพันธ์" },
+  { name: "UserPlus", label: "พบปะเพื่อนใหม่", category: "สังคมและความสัมพันธ์" },
+  { name: "MessageCircle", label: "พูดคุย / รับฟังความเห็น", category: "สังคมและความสัมพันธ์" },
+  { name: "MessagesSquare", label: "แลกเปลี่ยนความคิดเห็น", category: "สังคมและความสัมพันธ์" },
+  { name: "Handshake", label: "ความร่วมมือ / ประนีประนอม", category: "สังคมและความสัมพันธ์" },
+  { name: "HeartHandshake", label: "จิตอาสา / ช่วยเหลือผู้อื่น", category: "สังคมและความสัมพันธ์" },
+  { name: "Share2", label: "การแบ่งปันความรู้", category: "สังคมและความสัมพันธ์" },
+  { name: "Globe", label: "มุมมองกว้างไกล / ผู้คนทั่วโลก", category: "สังคมและความสัมพันธ์" },
+  { name: "Home", label: "ครอบครัว / ดูแลบ้าน", category: "สังคมและความสัมพันธ์" },
+  { name: "PhoneCall", label: "โทรหาครอบครัวหรือเพื่อน", category: "สังคมและความสัมพันธ์" },
+  { name: "Mail", label: "เขียนอีเมล / สื่อสารอย่างมืออาชีพ", category: "สังคมและความสัมพันธ์" },
+  { name: "Gift", label: "ให้ของขวัญ / ตอบแทนคุณ", category: "สังคมและความสัมพันธ์" },
+  { name: "PartyPopper", label: "เฉลิมฉลอง / ยินดีกับผู้อื่น", category: "สังคมและความสัมพันธ์" },
+
+  // ✈️ การเดินทาง / ไลฟ์สไตล์ / ผจญภัย
+  { name: "Plane", label: "การเดินทาง / ขึ้นเครื่องบิน", category: "การเดินทางและไลฟ์สไตล์" },
+  { name: "MapPin", label: "เช็กอิน / ไปสถานที่ใหม่", category: "การเดินทางและไลฟ์สไตล์" },
+  { name: "Map", label: "วางแผนการเดินทาง / ออกสำรวจ", category: "การเดินทางและไลฟ์สไตล์" },
+  { name: "Compass", label: "ออกค้นหาทิศทางชีวิต", category: "การเดินทางและไลฟ์สไตล์" },
+  { name: "Mountain", label: "พิชิตยอดเขา / เอาชนะอุปสรรค", category: "การเดินทางและไลฟ์สไตล์" },
+  { name: "Car", label: "ขับรถท่องเที่ยว / เดินทางปลอดภัย", category: "การเดินทางและไลฟ์สไตล์" },
+  { name: "Luggage", label: "จัดกระเป๋า / ทริปวันหยุด", category: "การเดินทางและไลฟ์สไตล์" },
+  { name: "Tent", label: "แคมป์ปิ้ง / พักผ่อนกลางแจ้ง", category: "การเดินทางและไลฟ์สไตล์" },
+  { name: "Ship", label: "ล่องเรือ / การเดินทางทางน้ำ", category: "การเดินทางและไลฟ์สไตล์" },
+  { name: "Umbrella", label: "พร้อมรับมือทุกสถานการณ์", category: "การเดินทางและไลฟ์สไตล์" },
+
+  // 🛠️ วินัย / ซ่อมแซม / แก้ปัญหา
+  { name: "Wrench", label: "แก้ไขปัญหา / ทักษะช่าง", category: "วินัยและทักษะ" },
+  { name: "Hammer", label: "สร้างสรรค์ / ลงมือทำ", category: "วินัยและทักษะ" },
+  { name: "Nut", label: "ความละเอียดรอบคอบ", category: "วินัยและทักษะ" },
+  { name: "Key", label: "กุญแจสู่ความสำเร็จ", category: "วินัยและทักษะ" },
+  { name: "Lock", label: "การรักษาความลับ / วินัย", category: "วินัยและทักษะ" },
+  { name: "Unlock", label: "ปลดล็อกศักยภาพ", category: "วินัยและทักษะ" },
+  { name: "Search", label: "ช่างสังเกต / ค้นหาความจริง", category: "วินัยและทักษะ" },
+  { name: "Crosshair", label: "ความแม่นยำ / โฟกัสสูง", category: "วินัยและทักษะ" },
+  { name: "ListChecks", label: "ตรวจสอบรายการอย่างครบถ้วน", category: "วินัยและทักษะ" },
+  { name: "Sliders", label: "ปรับจูนพฤติกรรม", category: "วินัยและทักษะ" },
+  { name: "RefreshCw", label: "การทำซ้ำสร้างนิสัยที่ดี", category: "วินัยและทักษะ" },
+  { name: "Repeat", label: "ความสม่ำเสมอทุกวัน", category: "วินัยและทักษะ" },
+  { name: "History", label: "ทบทวนประวัติและข้อผิดพลาด", category: "วินัยและทักษะ" },
+
+  // 🌟 สัญลักษณ์ / อื่นๆ
+  { name: "Star", label: "ดาว / ความโดดเด่น", category: "สัญลักษณ์ทั่วไป" },
+  { name: "Sparkle", label: "ประกายไฟ / ปิ๊งแวบ", category: "สัญลักษณ์ทั่วไป" },
+  { name: "BookmarkCheck", label: "ความจำดีเยี่ยม", category: "สัญลักษณ์ทั่วไป" },
+  { name: "Bell", label: "การเตือนสติ / สติสัมปชัญญะ", category: "สัญลักษณ์ทั่วไป" },
+  { name: "Megaphone", label: "กล้าแสดงออก", category: "สัญลักษณ์ทั่วไป" },
+  { name: "Pin", label: "ปักหมุดความสำคัญ", category: "สัญลักษณ์ทั่วไป" },
+  { name: "Info", label: "การใส่ใจข้อมูล", category: "สัญลักษณ์ทั่วไป" },
+  { name: "HelpCircle", label: "ความใฝ่รู้ / ตั้งคำถาม", category: "สัญลักษณ์ทั่วไป" },
+  { name: "ThumbsUp", label: "การชื่นชมตนเองและคนอื่น", category: "สัญลักษณ์ทั่วไป" },
+  { name: "Infinity", label: "การเรียนรู้ตลอดชีวิต", category: "สัญลักษณ์ทั่วไป" },
+];
+
+/**
+ * Component สำหรับเรนเดอร์ไอคอน Lucide จากชื่อ string แบบยืดหยุ่น ปลอดภัย
+ */
+export function QualityIconRenderer({
+  iconName,
+  className = "w-5 h-5",
+  color,
+}: {
+  iconName: string;
+  className?: string;
+  color?: string;
+}) {
+  const IconComponent = (Icons as unknown as Record<string, React.ElementType>)[iconName] || Icons.Star;
+  return <IconComponent className={className} style={color ? { color } : undefined} />;
+}

@@ -2,7 +2,7 @@
   "name": "NJ Notes",
   "short_name": "NJ Notes",
   "description": "แอปพลิเคชันของฉัน NJ Notes",
-  "start_url": "/",
+  "start_url": "/system/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CalendarDays, BarChart3, LayoutGrid } from "lucide-react";
+import { CalendarDays, BarChart3, LayoutGrid, Award } from "lucide-react";
 import NoteTypeModal from "./NoteTypeModal";
 
 export function NavbarLeft() {
@@ -21,14 +21,21 @@ export function NavbarLeft() {
       </Link>
       <Link
         href="/system/dashboard"
-        className="mr-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 hover:bg-blue-500/20"
+        className="mr-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 hover:bg-blue-500/20"
         title="แดชบอร์ด"
       >
         <BarChart3 className="h-5 w-5" />
       </Link>
       <Link
+        href="/system/qualities"
+        className="mr-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20"
+        title="คุณสมบัติ & แต้มสะสม"
+      >
+        <Award className="h-5 w-5" />
+      </Link>
+      <Link
         href="/system/calendar"
-        className="mr-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
+        className="mr-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
         title="ปฏิทิน & บันทึกรายวัน"
       >
         <CalendarDays className="h-5 w-5" />

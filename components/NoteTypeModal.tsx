@@ -72,6 +72,18 @@ export default function NoteTypeModal({
       iconBg: "bg-amber-100/80 text-amber-600",
       tagColor: "bg-amber-50 text-amber-700 border-amber-200/60",
     },
+    {
+      title: "คุณสมบัติ & แต้มสะสม",
+      description: "จัดการคุณสมบัติ ทักษะ และดูสถิติแต้มพัฒนาการของตนเอง",
+      href: "/system/qualities",
+      image: "/dashboard.png",
+      tag: "Skills & Points",
+      color: "indigo",
+      borderHover: "hover:border-indigo-500/50 hover:shadow-indigo-500/5",
+      bgHover: "hover:bg-indigo-50/50",
+      iconBg: "bg-indigo-100/80 text-indigo-600",
+      tagColor: "bg-indigo-50 text-indigo-700 border-indigo-200/60",
+    },
   ];
 
   return createPortal(

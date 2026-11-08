@@ -60,6 +60,14 @@ import {
 import ShareModal from "@/components/ShareModal";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
 import RichNoteEditor from "@/components/RichNoteEditor";
+import { QualityPicker } from "@/components/QualityPicker";
+import {
+  getQualities,
+  getNoteQualities,
+  syncNoteQualities,
+  Quality,
+  SelectedQualityInput,
+} from "@/app/actions/qualities";
 
 type Category = {
   id: string;
@@ -358,6 +366,17 @@ export default function NotesPage({ noteType, initialData }: Props) {
   const [categoryId, setCategoryId] = useState("");
   const [status, setStatus] = useState("ทั่วไป");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+
+  // คุณสมบัติ & แต้ม
+  const [availableQualities, setAvailableQualities] = useState<Quality[]>([]);
+  const [selectedQualities, setSelectedQualities] = useState<SelectedQualityInput[]>([]);
+
+  // โหลดรายการคุณสมบัติของผู้ใช้เมื่อเข้าหน้านี้
+  useEffect(() => {
+    getQualities()
+      .then((data) => setAvailableQualities(data.filter((q) => q.is_active)))
+      .catch((err) => console.error("Error loading qualities in notes:", err));
+  }, []);
 
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryYear, setNewCategoryYear] = useState<number | null>(1);
@@ -766,23 +785,26 @@ export default function NotesPage({ noteType, initialData }: Props) {
         ...(uploadedFilePath && { file_path: uploadedFilePath }),
       };
 
+      let savedNoteId = editingNoteId;
+
       if (editingNoteId) {
         await updateNote(editingNoteId, notePayload);
-        Swal.fire({
-          icon: "success",
-          title: "อัปเดตสำเร็จ!",
-          timer: 1500,
-          showConfirmButton: false,
-        });
       } else {
-        await createNote(notePayload);
-        Swal.fire({
-          icon: "success",
-          title: "บันทึกสำเร็จ!",
-          timer: 1500,
-          showConfirmButton: false,
-        });
+        const createRes = await createNote(notePayload);
+        savedNoteId = createRes?.id || null;
       }
+
+      // บันทึกและซิงค์คุณสมบัติ + transactions
+      if (savedNoteId) {
+        await syncNoteQualities(savedNoteId, title, selectedQualities);
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: editingNoteId ? "อัปเดตสำเร็จ!" : "บันทึกสำเร็จ!",
+        timer: 1500,
+        showConfirmButton: false,
+      });
 
       closeNoteModal();
       setFile(null);
@@ -806,6 +828,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
     setContent("");
     setCategoryId("");
     setStatus("ทั่วไป");
+    setSelectedQualities([]);
     setIsNoteModalOpen(true);
   };
 
@@ -816,7 +839,13 @@ export default function NotesPage({ noteType, initialData }: Props) {
     setContent(note.content || "");
     setCategoryId(note.category_id || "");
     setStatus(note.status || "ทั่วไป");
+    setSelectedQualities([]);
     setIsNoteModalOpen(true);
+
+    // ดึงคุณสมบัติที่ผูกกับ note นี้ไว้
+    getNoteQualities(note.id)
+      .then((data) => setSelectedQualities(data))
+      .catch((err) => console.error("Error loading note qualities:", err));
   };
 
   const closeNoteModal = () => {
@@ -826,6 +855,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
     setContent("");
     setCategoryId("");
     setStatus("ทั่วไป");
+    setSelectedQualities([]);
   };
 
   const handleInlineStatusChange = async (note: Note, newStatus: string) => {
@@ -2252,6 +2282,15 @@ export default function NotesPage({ noteType, initialData }: Props) {
                     onChange={setContent}
                     disabled={isSubmittingNote}
                   />
+
+                  {/* Quality Picker */}
+                  {availableQualities.length > 0 && (
+                    <QualityPicker
+                      qualities={availableQualities}
+                      value={selectedQualities}
+                      onChange={setSelectedQualities}
+                    />
+                  )}
 
                   <div className="grid gap-2">
                     <Label htmlFor="file">แนบไฟล์ (PDF หรือ รูปภาพ - ทางเลือก)</Label>
