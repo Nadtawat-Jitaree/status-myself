@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Quality, QualityTransaction } from "@/app/actions/qualities";
 import { QualityIconRenderer } from "@/lib/lucide-icons";
 import {
@@ -45,10 +46,15 @@ export function QualityExportModal({
   );
   const [title, setTitle] = useState("MY SKILL MATRIX // STATUS TELEMETRY");
   const [isExporting, setIsExporting] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   // กรองคุณสมบัติที่ถูกเลือก
   const displayedQualities = qualities.filter((q) => selectedIds.includes(q.id));
@@ -117,8 +123,8 @@ export function QualityExportModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75">
+  return createPortal(
+    <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] m-0 flex items-center justify-center p-3 sm:p-4 bg-black/80">
       <div className="bg-card text-card-foreground rounded-2xl shadow-2xl border border-border w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
@@ -404,6 +410,7 @@ export function QualityExportModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

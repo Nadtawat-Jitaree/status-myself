@@ -76,7 +76,7 @@ export default function NoteTypeModal({
       title: "คุณสมบัติ & แต้มสะสม",
       description: "จัดการคุณสมบัติ ทักษะ และดูสถิติแต้มพัฒนาการของตนเอง",
       href: "/system/qualities",
-      image: "/dashboard.png",
+      image: "/skills.png",
       tag: "Skills & Points",
       color: "indigo",
       borderHover: "hover:border-indigo-500/50 hover:shadow-indigo-500/5",

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Quality } from "@/app/actions/qualities";
 import { QualityIconRenderer } from "@/lib/lucide-icons";
 import { IconPickerModal } from "./IconPickerModal";
@@ -49,6 +50,11 @@ export function QualityFormModal({
   const [description, setDescription] = useState("");
   const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -65,7 +71,7 @@ export function QualityFormModal({
     setError("");
   }, [initialData, isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,9 +88,9 @@ export function QualityFormModal({
     });
   };
 
-  return (
+  return createPortal(
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+      <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] m-0 flex items-center justify-center p-4 bg-black/70">
         <div className="bg-card text-card-foreground rounded-2xl shadow-lg border border-border w-full max-w-md overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border">
@@ -245,6 +251,7 @@ export function QualityFormModal({
         onSelectIcon={(selected) => setIcon(selected)}
         selectedIcon={icon}
       />
-    </>
+    </>,
+    document.body
   );
 }
