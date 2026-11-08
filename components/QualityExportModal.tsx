@@ -134,7 +134,7 @@ export function QualityExportModal({
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-foreground">
-                ส่งออกรูปภาพทักษะ & คุณสมบัติ (16:9)
+                ส่งออกรูปภาพทักษะ & ทักษะ (16:9)
               </h3>
               <p className="text-xs text-muted-foreground">
                 บันทึกเป็นรูปภาพความละเอียดสูงสำหรับแชร์ หรือตั้งเป็นภาพหน้าจอ
@@ -200,7 +200,7 @@ export function QualityExportModal({
               />
             </div>
 
-            {/* 3. เลือกคุณสมบัติที่จะแสดง */}
+            {/* 3. เลือกทักษะที่จะแสดง */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="font-semibold text-foreground uppercase tracking-wider">

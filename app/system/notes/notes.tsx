@@ -367,11 +367,11 @@ export default function NotesPage({ noteType, initialData }: Props) {
   const [status, setStatus] = useState("ทั่วไป");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
-  // คุณสมบัติ & แต้ม
+  // ทักษะ & แต้ม
   const [availableQualities, setAvailableQualities] = useState<Quality[]>([]);
   const [selectedQualities, setSelectedQualities] = useState<SelectedQualityInput[]>([]);
 
-  // โหลดรายการคุณสมบัติของผู้ใช้เมื่อเข้าหน้านี้
+  // โหลดรายการทักษะของผู้ใช้เมื่อเข้าหน้านี้
   useEffect(() => {
     getQualities()
       .then((data) => setAvailableQualities(data.filter((q) => q.is_active)))
@@ -794,7 +794,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
         savedNoteId = createRes?.id || null;
       }
 
-      // บันทึกและซิงค์คุณสมบัติ + transactions
+      // บันทึกและซิงค์ทักษะ + transactions
       if (savedNoteId) {
         await syncNoteQualities(savedNoteId, title, selectedQualities);
       }

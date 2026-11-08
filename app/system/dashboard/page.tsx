@@ -6,7 +6,7 @@ import DashboardCharts from "@/components/DashboardCharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   FileText,
-  AlertTriangle,
+  Star,
   Clock,
   CheckCircle2,
   FolderKanban,
@@ -156,7 +156,7 @@ async function DashboardData() {
         {/* สำคัญ */}
         <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border sm:gap-4 sm:p-5">
           <div className="shrink-0 rounded-xl bg-red-50 p-2 text-red-600 sm:p-3">
-            <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6" />
+            <Star className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
           <div className="min-w-0">
             <span className="text-xs text-red-500 font-medium block">
@@ -208,7 +208,7 @@ async function DashboardData() {
       {/* 3. เซกชันความคืบหน้าโปรเจกต์ & บันทึกล่าสุด */}
       <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Project Progress */}
-        <Card className="min-w-0 rounded-2xl border shadow-sm">
+        <Card className="min-w-0 rounded-2xl border">
           <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
             <div className="min-w-0">
               <CardTitle className="flex items-center gap-2 text-base font-semibold sm:text-lg">
@@ -266,7 +266,7 @@ async function DashboardData() {
         </Card>
 
         {/* Recent Notes */}
-        <Card className="min-w-0 rounded-2xl border shadow-sm">
+        <Card className="min-w-0 rounded-2xl border">
           <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
             <div className="min-w-0">
               <CardTitle className="flex items-center gap-2 text-base font-semibold sm:text-lg">
@@ -401,7 +401,7 @@ export default function Dashboard() {
         <div className="flex min-w-0 flex-col justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
           <div className="min-w-0 space-y-1">
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              แดชบอร์ดภาพรวม (Dashboard)
+              Dashboard
             </h1>
             <p className="text-sm text-muted-foreground">
               สรุปข้อมูลสถิติการบันทึก ความคืบหน้าโปรเจกต์ และสถานะภารกิจทั้งหมด
@@ -416,7 +416,7 @@ export default function Dashboard() {
             </Link>
             <Link
               href="/system/projects"
-              className="inline-flex h-9 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 sm:flex-none"
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:flex-none"
             >
               ดูโปรเจกต์
             </Link>

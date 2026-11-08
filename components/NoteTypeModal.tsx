@@ -73,8 +73,8 @@ export default function NoteTypeModal({
       tagColor: "bg-amber-50 text-amber-700 border-amber-200/60",
     },
     {
-      title: "คุณสมบัติ & แต้มสะสม",
-      description: "จัดการคุณสมบัติ ทักษะ และดูสถิติแต้มพัฒนาการของตนเอง",
+      title: "ทักษะ & แต้มสะสม",
+      description: "จัดการทักษะ ทักษะ และดูสถิติแต้มพัฒนาการของตนเอง",
       href: "/system/qualities",
       image: "/skills.png",
       tag: "Skills & Points",

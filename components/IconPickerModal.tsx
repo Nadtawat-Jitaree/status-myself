@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AVAILABLE_ICONS, QualityIconRenderer } from "@/lib/lucide-icons";
 import { Search, X, Tag } from "lucide-react";
 
@@ -19,6 +20,11 @@ export function IconPickerModal({
 }: IconPickerModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ทั้งหมด");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // ดึงหมวดหมู่ทั้งหมด
   const categories = useMemo(() => {
@@ -47,11 +53,11 @@ export function IconPickerModal({
     );
   }, [searchTerm, selectedCategory]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60">
-      <div className="bg-card text-card-foreground rounded-2xl shadow-lg border border-border w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[120] m-0 flex items-center justify-center p-3 sm:p-4 bg-black/80">
+      <div className="bg-card text-card-foreground rounded-2xl shadow-2xl border border-border w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border">
           <div>
@@ -76,7 +82,7 @@ export function IconPickerModal({
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="ค้นหาไอคอน (เช่น dumbbell, book, วิ่ง, ทำงาน, โค้ด, นอน, กาแฟ)..."
+              placeholder="ค้นหาไอคอน (เช่น ไอเดีย, lightbulb, โค้ด, วิ่ง, ทำงาน, สมอง, กาแฟ)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-input bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -152,6 +158,7 @@ export function IconPickerModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

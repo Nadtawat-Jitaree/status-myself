@@ -4,8 +4,8 @@ import { QualityManager } from "@/components/QualityManager";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "คุณสมบัติ & แต้มสะสม | ระบบจัดการ",
-  description: "จัดการคุณสมบัติและดูประวัติการสะสมแต้ม",
+  title: "ทักษะ & แต้มสะสม | ระบบจัดการ",
+  description: "จัดการทักษะและดูประวัติการสะสมแต้ม",
 };
 
 function QualityLoading() {
@@ -13,7 +13,7 @@ function QualityLoading() {
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
       <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
       <p className="text-sm font-semibold text-muted-foreground animate-pulse">
-        กำลังโหลดข้อมูลคุณสมบัติและประวัติแต้ม...
+        กำลังโหลดข้อมูลทักษะและประวัติแต้ม...
       </p>
     </div>
   );

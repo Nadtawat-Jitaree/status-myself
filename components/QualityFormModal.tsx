@@ -194,10 +194,10 @@ export function QualityFormModal({
               </div>
             </div>
 
-            {/* ชื่อคุณสมบัติ */}
+            {/* ชื่อทักษะ */}
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                ชื่อคุณสมบัติ <span className="text-destructive">*</span>
+                ชื่อทักษะ <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"

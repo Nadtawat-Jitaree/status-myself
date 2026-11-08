@@ -126,7 +126,7 @@ export function QualityManager({
         }
         Swal.fire({
           icon: "success",
-          title: "สร้างคุณสมบัติสำเร็จ",
+          title: "สร้างทักษะสำเร็จ",
           timer: 1500,
           showConfirmButton: false,
         });
@@ -147,13 +147,13 @@ export function QualityManager({
 
   const handleDelete = async (quality: Quality) => {
     const result = await Swal.fire({
-      title: `ลบคุณสมบัติ "${quality.name}"?`,
-      text: "ประวัติแต้มและสถิติของคุณสมบัตินี้จะถูกลบออกด้วย",
+      title: `ลบทักษะ "${quality.name}"?`,
+      text: "ประวัติแต้มและสถิติของทักษะนี้จะถูกลบออกด้วย",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
       cancelButtonColor: "#6b7280",
-      confirmButtonText: "ลบคุณสมบัติ",
+      confirmButtonText: "ลบทักษะ",
       cancelButtonText: "ยกเลิก",
     });
 
@@ -190,10 +190,10 @@ export function QualityManager({
             <Sparkles className="w-3.5 h-3.5" /> ระบบพัฒนาตนเอง & แต้มทักษะ
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            คุณสมบัติ & สถิติแต้ม
+            ทักษะ & สถิติแต้ม
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-xl">
-            ตั้งค่าคุณสมบัติที่ต้องการฝึกฝน แล้วเลือกรับแต้มตอนเขียนโน้ตเพื่อบันทึกการเติบโต
+            ตั้งค่าทักษะที่ต้องการฝึกฝน แล้วเลือกรับแต้มตอนเขียนโน้ตเพื่อบันทึกการเติบโต
           </p>
         </div>
 
@@ -259,7 +259,7 @@ export function QualityManager({
             }`}
           >
             <Layers className="w-4 h-4" />
-            รายการคุณสมบัติ ({qualities.length})
+            รายการทักษะ ({qualities.length})
           </button>
 
           {/* Tab 2: Cyberpunk / Tech Cards (สไตล์ที่ 3) */}
@@ -310,7 +310,7 @@ export function QualityManager({
               className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0"
             >
               <Plus className="w-4 h-4" />
-              สร้างคุณสมบัติใหม่
+              สร้างทักษะใหม่
             </button>
           )}
         </div>
@@ -326,10 +326,10 @@ export function QualityManager({
               </div>
               <div className="space-y-1">
                 <h3 className="text-sm font-bold text-foreground">
-                  ยังไม่มีคุณสมบัติในระบบ
+                  ยังไม่มีทักษะในระบบ
                 </h3>
                 <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  เริ่มต้นโดยการสร้างคุณสมบัติ เช่น ออกกำลังกาย, การอ่านหนังสือ หรือสมาธิ
+                  เริ่มต้นโดยการสร้างทักษะ เช่น ออกกำลังกาย, การอ่านหนังสือ หรือสมาธิ
                 </p>
               </div>
               <button
@@ -340,7 +340,7 @@ export function QualityManager({
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl text-xs font-medium transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                สร้างคุณสมบัติแรก
+                สร้างทักษะแรก
               </button>
             </div>
           ) : (
@@ -637,7 +637,7 @@ export function QualityManager({
           <div className="p-4 border-b border-border flex items-center justify-between">
             <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
               <History className="w-4 h-4 text-primary" />
-              ประวัติการได้รับแต้มคุณสมบัติ
+              ประวัติการได้รับแต้มทักษะ
             </h3>
             <span className="text-xs text-muted-foreground">
               {transactions.length} รายการล่าสุด
@@ -646,7 +646,7 @@ export function QualityManager({
 
           {transactions.length === 0 ? (
             <div className="p-8 text-center text-xs sm:text-sm text-muted-foreground">
-              ยังไม่มีประวัติการได้รับแต้ม เขียนโน้ตและเลือกคุณสมบัติเพื่อรับแต้ม
+              ยังไม่มีประวัติการได้รับแต้ม เขียนโน้ตและเลือกทักษะเพื่อรับแต้ม
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -654,7 +654,7 @@ export function QualityManager({
                 <thead>
                   <tr className="bg-muted/40 text-muted-foreground text-xs font-medium border-b border-border">
                     <th className="py-2.5 px-4 font-medium">วันและเวลา</th>
-                    <th className="py-2.5 px-4 font-medium">คุณสมบัติ</th>
+                    <th className="py-2.5 px-4 font-medium">ทักษะ</th>
                     <th className="py-2.5 px-4 font-medium">จากบันทึก Note</th>
                     <th className="py-2.5 px-4 font-medium">ระดับ</th>
                     <th className="py-2.5 px-4 font-medium text-right">แต้ม</th>
@@ -721,7 +721,7 @@ export function QualityManager({
         </div>
       )}
 
-      {/* Modal จัดการคุณสมบัติ */}
+      {/* Modal จัดการทักษะ */}
       <QualityFormModal
         isOpen={isModalOpen}
         onClose={() => {
