@@ -139,7 +139,7 @@ async function DashboardData() {
       {/* 1. สรุปตัวเลข 4 การ์ด (Stat Cards) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         {/* ทั่วไป */}
-        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm hover:shadow-md sm:gap-4 sm:p-5">
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border sm:gap-4 sm:p-5">
           <div className="shrink-0 rounded-xl bg-slate-100 p-2 text-slate-600 sm:p-3">
             <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
@@ -154,7 +154,7 @@ async function DashboardData() {
         </div>
 
         {/* สำคัญ */}
-        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm hover:shadow-md sm:gap-4 sm:p-5">
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border sm:gap-4 sm:p-5">
           <div className="shrink-0 rounded-xl bg-red-50 p-2 text-red-600 sm:p-3">
             <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
@@ -169,7 +169,7 @@ async function DashboardData() {
         </div>
 
         {/* งานค้าง */}
-        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm hover:shadow-md sm:gap-4 sm:p-5">
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border sm:gap-4 sm:p-5">
           <div className="shrink-0 rounded-xl bg-orange-50 p-2 text-orange-600 sm:p-3">
             <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
@@ -184,7 +184,7 @@ async function DashboardData() {
         </div>
 
         {/* เสร็จสิ้น */}
-        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border shadow-sm hover:shadow-md sm:gap-4 sm:p-5">
+        <div className="flex min-w-0 items-center gap-2 p-3 rounded-2xl bg-card border sm:gap-4 sm:p-5">
           <div className="shrink-0 rounded-xl bg-emerald-50 p-2 text-emerald-600 sm:p-3">
             <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
