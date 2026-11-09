@@ -274,11 +274,11 @@ export default function CalendarNoteModal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 sm:p-6 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 sm:p-6"
       onClick={onClose}
     >
       <div
-        className="relative flex flex-col max-h-[92vh] w-full max-w-2xl rounded-3xl border bg-card shadow-2xl overflow-hidden"
+        className="relative flex flex-col max-h-[92vh] w-full max-w-2xl rounded-3xl border bg-card shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -551,7 +551,7 @@ export default function CalendarNoteModal({
               <div className="flex items-center rounded-xl border bg-muted/40 p-1">
                 <button
                   onClick={() => setActiveTab('all')}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
                     activeTab === 'all'
                       ? 'bg-background text-foreground shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -565,7 +565,7 @@ export default function CalendarNoteModal({
 
                 <button
                   onClick={() => setActiveTab('normal')}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
                     activeTab === 'normal'
                       ? 'bg-blue-500 text-white shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -573,14 +573,14 @@ export default function CalendarNoteModal({
                 >
                   <FileText className="h-3 w-3" />
                   <span>ทั่วไป</span>
-                  <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-200 px-1.5 py-0.2 text-[10px]">
+                  <span className="rounded-full bg-blue-100 text-blue-700 px-1.5 py-0.2 text-[10px]">
                     {normalNotes.length}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('school')}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
                     activeTab === 'school'
                       ? 'bg-purple-600 text-white shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -588,7 +588,7 @@ export default function CalendarNoteModal({
                 >
                   <GraduationCap className="h-3 w-3" />
                   <span>เรียน</span>
-                  <span className="rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-200 px-1.5 py-0.2 text-[10px]">
+                  <span className="rounded-full bg-purple-100 text-purple-700 px-1.5 py-0.2 text-[10px]">
                     {schoolNotes.length}
                   </span>
                 </button>
@@ -638,7 +638,7 @@ export default function CalendarNoteModal({
                   return (
                     <div
                       key={note.id}
-                      className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border bg-card/80 p-3 sm:p-4 shadow-xs hover:border-primary/40 hover:shadow-sm transition-all"
+                      className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border bg-card/80 p-3 sm:p-4 shadow-xs hover:border-primary/40 hover:shadow-sm transition-colors"
                     >
                       {/* Left: Icon & Title & Meta */}
                       <div className="flex items-start gap-3 min-w-0 flex-1">

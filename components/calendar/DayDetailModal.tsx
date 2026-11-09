@@ -297,7 +297,7 @@ export default function DayDetailModal({
       onClick={onClose}
     >
       <div
-        className="relative flex flex-col max-h-[90vh] w-full max-w-2xl rounded-3xl border bg-card shadow-2xl overflow-hidden"
+        className="relative flex flex-col max-h-[90vh] w-full max-w-2xl rounded-3xl border bg-card shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}

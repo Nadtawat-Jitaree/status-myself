@@ -23,7 +23,8 @@ export function NavbarLeft() {
       title: "Dashboard",
       href: "/system/dashboard",
       icon: BarChart3,
-      color: "text-blue-600 bg-blue-500/10 hover:bg-blue-500/20 border-blue-200/50",
+      color:
+        "text-blue-600 bg-blue-500/10 hover:bg-blue-500/20 border-blue-200/50",
       activeColor: "bg-blue-600 text-white shadow-sm shadow-blue-500/30",
       isActive: pathname.startsWith("/system/dashboard"),
     },
@@ -31,7 +32,8 @@ export function NavbarLeft() {
       title: "Board",
       href: "/board",
       icon: MessagesSquare,
-      color: "text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border-rose-200/50",
+      color:
+        "text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border-rose-200/50",
       activeColor: "bg-rose-600 text-white shadow-sm shadow-rose-500/30",
       isActive: pathname.startsWith("/board"),
     },
@@ -70,6 +72,26 @@ export function NavbarLeft() {
       {/* เมนูนำทาง (Menus, Dashboard, Board) */}
       <nav className="flex items-center gap-1.5 sm:gap-2">
         {/* ปุ่มเมนูพื้นที่ทำงาน (เปิด Modal) */}
+
+        {/* เมนูนำทางตามเส้นทางหลัก (Dashboard, Board) */}
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              title={item.title}
+              className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+                item.isActive
+                  ? `${item.activeColor} border border-transparent`
+                  : `${item.color} border`
+              }`}
+            >
+              <Icon className="h-[18px] w-[18px]" />
+              <span className="hidden md:inline-block">{item.title}</span>
+            </Link>
+          );
+        })}
         <button
           type="button"
           onClick={() => setOpenModalNavbar(true)}
@@ -95,26 +117,6 @@ export function NavbarLeft() {
             />
           </span>
         </button>
-
-        {/* เมนูนำทางตามเส้นทางหลัก (Dashboard, Board) */}
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={item.title}
-              className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 ${
-                item.isActive
-                  ? `${item.activeColor} border border-transparent`
-                  : `${item.color} border`
-              }`}
-            >
-              <Icon className="h-[18px] w-[18px]" />
-              <span className="hidden md:inline-block">{item.title}</span>
-            </Link>
-          );
-        })}
       </nav>
 
       {/* Modal เลือกพื้นที่ทำงาน */}

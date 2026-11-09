@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   getBoardNotes,
   getTopBoardNotes,
@@ -10,8 +9,11 @@ import {
 import { TopBoardSection } from "@/components/TopBoardSection";
 import { BoardNoteCard } from "@/components/BoardNoteCard";
 import { BoardFilterBar } from "@/components/BoardFilterBar";
+import { NavbarLeft } from "@/components/navbar-left";
 import { NavbarRight } from "@/components/navbar-right";
+import { EnvVarWarning } from "@/components/env-var-warning";
 import { Footer } from "@/components/footer";
+import { hasEnvVars } from "@/lib/utils";
 import {
   MessagesSquare,
   ChevronLeft,
@@ -267,57 +269,31 @@ export default function BoardPage({ searchParams }: BoardPageProps) {
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-slate-50 p-1 border border-slate-200">
-              <Image
-                src="/logo.png"
-                alt="NJ Notes"
-                width={32}
-                height={32}
-                className="object-contain"
-                priority
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-tight text-slate-900 leading-none">
-                NJ Notes
-              </span>
-              <span className="text-[10px] font-semibold text-indigo-600 leading-tight mt-0.5">
-                กระดานสนทนา
-              </span>
-            </div>
-          </Link>
-
-          {/* Quick links to Workspace & Menus */}
-          <nav className="hidden md:flex items-center gap-1.5 ml-4 pl-4 border-l border-slate-200">
-            <Link
-              href="/board"
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-700"
+      <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white sticky top-0 z-40">
+        <div className="w-full max-w-7xl flex justify-between items-center p-2 sm:p-3 sm:px-5 text-sm">
+          <div className="flex gap-2 sm:gap-5 items-center font-semibold">
+            <Suspense
+              fallback={
+                <div className="w-10 h-10 animate-pulse bg-gray-200 rounded-xl"></div>
+              }
             >
-              กระดานสนทนา
-            </Link>
-            <Link
-              href="/system/dashboard"
-              className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-            >
-              Workspace
-            </Link>
-          </nav>
-        </div>
+              <NavbarLeft />
+            </Suspense>
+          </div>
 
-        {/* User profile / Login button */}
-        <div className="flex items-center gap-3">
-          <Suspense
-            fallback={
-              <div className="w-16 h-8 animate-pulse bg-slate-200 rounded-xl" />
-            }
-          >
-            <NavbarRight />
-          </Suspense>
+          {!hasEnvVars ? (
+            <EnvVarWarning />
+          ) : (
+            <Suspense
+              fallback={
+                <div className="w-20 h-8 animate-pulse bg-gray-200 rounded-md"></div>
+              }
+            >
+              <NavbarRight />
+            </Suspense>
+          )}
         </div>
-      </header>
+      </nav>
 
       {/* Hero Banner */}
       <section className="bg-white border-b border-slate-200 py-10 sm:py-14 px-4 sm:px-6">

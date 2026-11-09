@@ -334,7 +334,7 @@ export default function CalendarClient() {
       >
         {loading && (
           <div
-            className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl sm:rounded-3xl bg-background/70 backdrop-blur-[2px]"
+            className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl sm:rounded-3xl bg-background/80"
             role="status"
             aria-live="polite"
           >
@@ -387,7 +387,7 @@ export default function CalendarClient() {
               <div
                 key={cell.dateStr}
                 onClick={() => handleCellClick(cell.dateStr)}
-                className={`group relative flex flex-col justify-between min-h-[72px] sm:min-h-[115px] md:min-h-[130px] rounded-xl sm:rounded-2xl border p-1 sm:p-2 md:p-2.5 cursor-pointer transition-all ${
+                className={`group relative flex flex-col justify-between min-h-[72px] sm:min-h-[115px] md:min-h-[130px] rounded-xl sm:rounded-2xl border p-1 sm:p-2 md:p-2.5 cursor-pointer transition-colors ${
                   cell.isCurrentMonth
                     ? 'bg-card hover:border-primary/50 hover:shadow-md'
                     : 'bg-muted/20 opacity-40 hover:opacity-80'
@@ -492,10 +492,10 @@ export default function CalendarClient() {
                       <button
                         type="button"
                         onClick={(e) => handleOpenNoteModal(e, cell.dateStr, 'normal')}
-                        className="group/btn inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-all shadow-xs"
+                        className="group/btn inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 hover:bg-blue-100 transition-colors shadow-xs"
                         title={`Note ทั่วไป ${normalNotesCount} รายการ (คลิกเพื่อดู)`}
                       >
-                        <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-blue-600 dark:text-blue-400 group-hover/btn:scale-110 transition-transform" />
+                        <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-blue-600" />
                         <span>{normalNotesCount}</span>
                       </button>
                     )}
@@ -505,10 +505,10 @@ export default function CalendarClient() {
                       <button
                         type="button"
                         onClick={(e) => handleOpenNoteModal(e, cell.dateStr, 'school')}
-                        className="group/btn inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all shadow-xs"
+                        className="group/btn inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80 hover:bg-purple-100 transition-colors shadow-xs"
                         title={`Note เรียน ${schoolNotesCount} รายการ (คลิกเพื่อดู)`}
                       >
-                        <GraduationCap className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-purple-600 dark:text-purple-400 group-hover/btn:scale-110 transition-transform" />
+                        <GraduationCap className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-purple-600" />
                         <span>{schoolNotesCount}</span>
                       </button>
                     )}

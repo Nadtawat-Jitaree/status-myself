@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
 
@@ -14,7 +12,7 @@ export function Footer({ variant = "default", className = "" }: FooterProps) {
   if (variant === "compact") {
     return (
       <footer
-        className={`w-full border-t border-slate-200/80 bg-white/90 backdrop-blur-sm py-5 px-4 transition-colors ${className}`}
+        className={`w-full border-t border-slate-200 bg-white py-5 px-4 ${className}`}
       >
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <div className="flex items-center gap-2.5">
@@ -45,7 +43,7 @@ export function Footer({ variant = "default", className = "" }: FooterProps) {
 
   return (
     <footer
-      className={`w-full border-t border-slate-200/80 bg-white/80 backdrop-blur-md mt-auto transition-colors ${className}`}
+      className={`w-full border-t border-slate-200 bg-white mt-auto ${className}`}
     >
       <div
         className={`mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 ${
@@ -57,9 +55,9 @@ export function Footer({ variant = "default", className = "" }: FooterProps) {
           <div className="md:col-span-6 flex flex-col items-start gap-3">
             <Link
               href="/"
-              className="group flex items-center gap-2.5 transition-opacity hover:opacity-90"
+              className="group flex items-center gap-2.5 hover:opacity-85 transition-opacity"
             >
-              <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-slate-50 p-1 border border-slate-200/80 shadow-xs transition-transform duration-200 group-hover:scale-105">
+              <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-slate-50 p-1 border border-slate-200 shadow-xs">
                 <Image
                   src="/logo.png"
                   alt="NJ Notes"
