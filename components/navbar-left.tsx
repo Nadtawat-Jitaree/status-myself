@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { CalendarDays, BarChart3, LayoutGrid, Award } from "lucide-react";
+import { CalendarDays, BarChart3, LayoutGrid, Award, MessagesSquare } from "lucide-react";
 import NoteTypeModal from "./NoteTypeModal";
 
 export function NavbarLeft() {
@@ -39,6 +39,14 @@ export function NavbarLeft() {
       color: "text-indigo-600 bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-200/50",
       activeColor: "bg-indigo-600 text-white shadow-sm shadow-indigo-500/30",
       isActive: pathname.startsWith("/system/qualities"),
+    },
+    {
+      title: "Board",
+      href: "/board",
+      icon: MessagesSquare,
+      color: "text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border-rose-200/50",
+      activeColor: "bg-rose-600 text-white shadow-sm shadow-rose-500/30",
+      isActive: pathname.startsWith("/board"),
     },
   ];
 

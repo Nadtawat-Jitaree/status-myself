@@ -8,6 +8,14 @@ CREATE TABLE public.profiles (
   lname text,
   tel text,
   address text,
+  display_name text,
+  avatar_type text DEFAULT 'icon'::text,
+  avatar_icon text DEFAULT 'User'::text,
+  avatar_url text,
+  instagram_url text,
+  facebook_url text,
+  youtube_url text,
+  tiktok_url text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
@@ -132,6 +140,29 @@ CREATE TABLE public.note_qualities (
   CONSTRAINT note_qualities_quality_fk FOREIGN KEY (quality_id) REFERENCES public.qualities(id),
   CONSTRAINT note_qualities_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.quality_transactions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  quality_id uuid NOT NULL,
+  note_id uuid,
+  note_title text,
+  quality_name text,
+  quality_icon text,
+  points_delta integer NOT NULL,
+  level_label text,
+  source text NOT NULL DEFAULT 'note'::text,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  task_id uuid,
+  task_title text,
+  project_id uuid,
+  project_name text,
+  CONSTRAINT quality_transactions_pkey PRIMARY KEY (id),
+  CONSTRAINT quality_transactions_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT quality_transactions_quality_fk FOREIGN KEY (quality_id) REFERENCES public.qualities(id),
+  CONSTRAINT quality_transactions_note_fk FOREIGN KEY (note_id) REFERENCES public.notes(id),
+  CONSTRAINT quality_transactions_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id),
+  CONSTRAINT quality_transactions_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id)
+);
 CREATE TABLE public.task_qualities (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   task_id uuid NOT NULL,
@@ -140,31 +171,29 @@ CREATE TABLE public.task_qualities (
   level integer NOT NULL CHECK (level = ANY (ARRAY[1, 3, 5])),
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   CONSTRAINT task_qualities_pkey PRIMARY KEY (id),
-  CONSTRAINT task_qualities_task_fk FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE CASCADE,
-  CONSTRAINT task_qualities_quality_fk FOREIGN KEY (quality_id) REFERENCES public.qualities(id) ON DELETE CASCADE,
-  CONSTRAINT task_qualities_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
-  CONSTRAINT task_qualities_task_quality_unique UNIQUE (task_id, quality_id)
+  CONSTRAINT task_qualities_task_fk FOREIGN KEY (task_id) REFERENCES public.tasks(id),
+  CONSTRAINT task_qualities_quality_fk FOREIGN KEY (quality_id) REFERENCES public.qualities(id),
+  CONSTRAINT task_qualities_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
-CREATE TABLE public.quality_transactions (
+CREATE TABLE public.note_reactions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
+  note_id uuid NOT NULL,
   user_id uuid NOT NULL,
-  quality_id uuid NOT NULL,
-  note_id uuid,
-  task_id uuid,
-  project_id uuid,
-  note_title text,
-  task_title text,
-  project_name text,
-  quality_name text,
-  quality_icon text,
-  points_delta integer NOT NULL,
-  level_label text,
-  source text NOT NULL DEFAULT 'note'::text,
-  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-  CONSTRAINT quality_transactions_pkey PRIMARY KEY (id),
-  CONSTRAINT quality_transactions_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT quality_transactions_quality_fk FOREIGN KEY (quality_id) REFERENCES public.qualities(id),
-  CONSTRAINT quality_transactions_note_fk FOREIGN KEY (note_id) REFERENCES public.notes(id),
-  CONSTRAINT quality_transactions_task_fk FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE CASCADE,
-  CONSTRAINT quality_transactions_project_fk FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE
+  type text NOT NULL CHECK (type = ANY (ARRAY['like'::text, 'dislike'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT note_reactions_pkey PRIMARY KEY (id),
+  CONSTRAINT note_reactions_note_fk FOREIGN KEY (note_id) REFERENCES public.notes(id) ON DELETE CASCADE,
+  CONSTRAINT note_reactions_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
+  CONSTRAINT note_reactions_user_note_unique UNIQUE (note_id, user_id)
+);
+CREATE TABLE public.note_comments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  note_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  content text NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT note_comments_pkey PRIMARY KEY (id),
+  CONSTRAINT note_comments_note_fk FOREIGN KEY (note_id) REFERENCES public.notes(id) ON DELETE CASCADE,
+  CONSTRAINT note_comments_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 );

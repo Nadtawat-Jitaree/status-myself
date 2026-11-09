@@ -1,5 +1,8 @@
 import { Suspense } from "react";
 import { getSharedNote } from "@/app/actions/share";
+import { getUserProfile } from "@/app/actions/profile";
+import { createClient } from "@/lib/supabase/server";
+import { SharedNoteInteractions } from "./SharedNoteInteractions";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -8,6 +11,7 @@ import {
   Download,
   Calendar,
   Lock,
+  MessagesSquare,
 } from "lucide-react";
 import CopyButton from "./CopyButton";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
@@ -127,6 +131,20 @@ async function SharedNoteContent({ params }: PageProps) {
     );
   }
 
+  // ดึงข้อมูลผู้เขียนและ Reactions & Comments
+  const supabase = await createClient();
+  const [{ data: { user } }, { data: reactions }, authorProfile] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from("note_reactions").select("type, user_id").eq("note_id", note.id),
+    getUserProfile(note.user_id),
+  ]);
+
+  const likeCount = (reactions || []).filter((r) => r.type === "like").length;
+  const dislikeCount = (reactions || []).filter((r) => r.type === "dislike").length;
+  const currentUserReaction = user
+    ? ((reactions || []).find((r) => r.user_id === user.id)?.type as "like" | "dislike" | null)
+    : null;
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const getAttachmentUrl = (filePath: string) => {
     return `${supabaseUrl}/storage/v1/object/public/note_attachments/${filePath}`;
@@ -186,28 +204,57 @@ async function SharedNoteContent({ params }: PageProps) {
       />
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b px-6 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/note.webp"
-            alt="Logo"
-            width={32}
-            height={32}
-            className="object-contain"
-            unoptimized
-          />
-          <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-            NJ Notes
-          </span>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 font-medium ml-1">
-            แชร์สาธารณะ
-          </span>
-        </Link>
-        <Link
-          href="/auth/login"
-          className="text-xs text-muted-foreground hover:text-foreground font-medium transition"
-        >
-          เข้าสู่ระบบ
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/note.webp"
+              alt="Logo"
+              width={32}
+              height={32}
+              className="object-contain"
+              unoptimized
+            />
+            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              NJ Notes
+            </span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 font-medium ml-1">
+              แชร์สาธารณะ
+            </span>
+          </Link>
+
+          <Link
+            href="/board"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition ml-3"
+          >
+            <MessagesSquare className="w-3.5 h-3.5" />
+            <span>กระดานสนทนา</span>
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/board"
+            className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-semibold"
+          >
+            <MessagesSquare className="w-3.5 h-3.5" />
+            <span>บอร์ด</span>
+          </Link>
+          {user ? (
+            <Link
+              href="/system/dashboard"
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition"
+            >
+              Workspace
+            </Link>
+          ) : (
+            <Link
+              href="/auth/login"
+              className="text-xs text-muted-foreground hover:text-foreground font-medium transition"
+            >
+              เข้าสู่ระบบ
+            </Link>
+          )}
+        </div>
       </header>
 
       {/* Main Container */}
@@ -331,6 +378,17 @@ async function SharedNoteContent({ params }: PageProps) {
               )}
             </div>
           )}
+
+          {/* User Reactions, Author Profile and Comments */}
+          <SharedNoteInteractions
+            noteId={note.id}
+            shareToken={token}
+            initialLikeCount={likeCount}
+            initialDislikeCount={dislikeCount}
+            initialUserReaction={currentUserReaction}
+            author={authorProfile}
+            isLoggedIn={Boolean(user)}
+          />
         </div>
       </main>
 
