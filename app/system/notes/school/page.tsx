@@ -3,7 +3,7 @@ import Notes from "../notes";
 import { getNotesPageData } from "@/app/actions/notes";
 
 export const metadata = {
-  title: "School Notes | ปัวเอนเจ PUANJ",
+  title: "School Notes | NJ Notes",
   description: "ระบบบันทึกการเรียนมหาวิทยาลัย",
 };
 

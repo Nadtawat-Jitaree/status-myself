@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps) {
 
   if (!result || !result.category) {
     return {
-      title: "ไม่พบหมวดหมู่ที่แชร์ | PUANJ Notes",
+      title: "ไม่พบหมวดหมู่ที่แชร์ | NJ Notes",
       robots: { index: false, follow: false },
     };
   }
@@ -26,10 +26,10 @@ export async function generateMetadata({ params }: PageProps) {
   const noteCount = notes.length;
   const description =
     category.description ||
-    `รวม ${noteCount} บันทึกในหมวดหมู่ "${category.name}" — แชร์ผ่าน PUANJ Notes`;
+    `รวม ${noteCount} บันทึกในหมวดหมู่ "${category.name}" — แชร์ผ่าน NJ Notes`;
 
   return {
-    title: `${category.name} | PUANJ Notes`,
+    title: `${category.name} | NJ Notes`,
     description,
     // ─── Canonical ──────────────────────────────────────────────────
     alternates: { canonical: pageUrl },
@@ -39,15 +39,15 @@ export async function generateMetadata({ params }: PageProps) {
       url: pageUrl,
       title: `${category.name} — หมวดหมู่บันทึก`,
       description,
-      siteName: "PUANJ Notes",
+      siteName: "NJ Notes",
       locale: "th_TH",
     },
     // ─── Twitter Card ───────────────────────────────────────────────
     twitter: {
       card: "summary",
-      title: `${category.name} — หมวดหมู่บันทึก | PUANJ Notes`,
+      title: `${category.name} — หมวดหมู่บันทึก | NJ Notes`,
       description,
-      site: "@puanj",
+      site: "@nj",
     },
     // ─── Robots ─────────────────────────────────────────────────────
     robots: {

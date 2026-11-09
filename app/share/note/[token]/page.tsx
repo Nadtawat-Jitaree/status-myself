@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps) {
 
   if (!note) {
     return {
-      title: "ไม่พบบันทึกที่แชร์ | PUANJ Notes",
+      title: "ไม่พบบันทึกที่แชร์ | NJ Notes",
       robots: { index: false, follow: false },
     };
   }
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps) {
     .replace(/<[^>]*>/g, "")
     .replace(/[#*`>\-_~]/g, "")
     .trim();
-  const description = plainText.slice(0, 155) || "บันทึกที่แชร์ผ่าน PUANJ Notes";
+  const description = plainText.slice(0, 155) || "บันทึกที่แชร์ผ่าน NJ Notes";
   const category = note.note_categories?.name ?? "บันทึก";
   const dateStr = new Date(note.created_at).toLocaleDateString("th-TH", {
     day: "numeric",
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps) {
   });
 
   return {
-    title: `${note.title} | PUANJ Notes`,
+    title: `${note.title} | NJ Notes`,
     description,
     // ─── Canonical ──────────────────────────────────────────────────
     alternates: { canonical: pageUrl },
@@ -55,18 +55,18 @@ export async function generateMetadata({ params }: PageProps) {
       url: pageUrl,
       title: note.title,
       description,
-      siteName: "PUANJ Notes",
+      siteName: "NJ Notes",
       locale: "th_TH",
       publishedTime: note.created_at,
       modifiedTime: note.updated_at,
-      tags: [category, "บันทึก", "PUANJ"],
+      tags: [category, "บันทึก", "NJ"],
     },
     // ─── Twitter Card ───────────────────────────────────────────────
     twitter: {
       card: "summary",
       title: note.title,
       description,
-      site: "@puanj",
+      site: "@nj",
     },
     // ─── Robots ─────────────────────────────────────────────────────
     robots: {
@@ -168,7 +168,7 @@ async function SharedNoteContent({ params }: PageProps) {
     dateModified: note.updated_at,
     publisher: {
       "@type": "Organization",
-      name: "PUANJ Notes",
+      name: "NJ Notes",
       url: "https://notes.puanj.com",
     },
     url: `https://notes.puanj.com/share/note/${token}`,
@@ -196,7 +196,7 @@ async function SharedNoteContent({ params }: PageProps) {
             unoptimized
           />
           <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-            PUANJ Notes
+            NJ Notes
           </span>
           <span className="text-[11px] px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 font-medium ml-1">
             แชร์สาธารณะ

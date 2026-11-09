@@ -3,14 +3,14 @@ import Notes from "../notes";
 import { getNotesPageData } from "@/app/actions/notes";
 
 export const metadata = {
-  title: "Notes | ปัวเอนเจ PUANJ",
+  title: "Notes | NJ Notes",
   description: "ระบบบันทึกข้อมูลใช้งานส่วนตัว",
   keywords: "Note บันทึกข้อมูล",
   openGraph: {
-    title: "Notes | ปัวเอนเจ PUANJ",
+    title: "Notes | NJ Notes",
     description: "ระบบบันทึกข้อมูลใช้งานส่วนตัว",
     url: "https://puanj.com/notes/normal",
-    siteName: "Notes | ปัวเอนเจ PUANJ",
+    siteName: "Notes | NJ Notes",
     images: [
       {
         url: "",

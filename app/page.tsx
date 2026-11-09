@@ -1,4 +1,30 @@
+import type { Metadata } from "next";
 import InstallPWAButton from "@/components/InstallPWAButton.js";
+
+// ─── Page-level Metadata (overrides root layout's title template) ──
+export const metadata: Metadata = {
+  title: "NJ Notes — จดบันทึก จัดระเบียบความคิด ใช้ได้ทุกที่",
+  description:
+    "NJ Notes แอปจดบันทึกส่วนตัวที่เรียบง่ายและทรงพลัง จัดระเบียบความคิด บันทึกงาน โปรเจกต์ และตารางเรียน — ติดตั้งเป็น PWA ได้ทันที ใช้ได้บนมือถือและเดสก์ท็อป",
+  alternates: {
+    canonical: "https://notes.puanj.com",
+  },
+  openGraph: {
+    type: "website",
+    url: "https://notes.puanj.com",
+    title: "NJ Notes — จดบันทึก จัดระเบียบความคิด",
+    description:
+      "แอปจดบันทึกส่วนตัวที่เรียบง่ายและทรงพลัง จัดระเบียบความคิด บันทึกงาน โปรเจกต์ และตารางเรียน",
+    images: [
+      {
+        url: "/all.webp",
+        width: 1200,
+        height: 630,
+        alt: "NJ Notes — หน้าหลัก",
+      },
+    ],
+  },
+};
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
