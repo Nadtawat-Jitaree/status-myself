@@ -3,6 +3,14 @@ import { stripe, PLANS } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import Stripe from "stripe";
 
+// บังคับให้ route นี้เป็น Dynamic เสมอ (ไม่ถูก Cache)
+export const dynamic = "force-dynamic";
+
+// GET handler สำหรับ Stripe Dashboard ตรวจสอบ ("ping") ว่า endpoint ยังมีชีวิตอยู่
+export async function GET() {
+  return NextResponse.json({ ok: true, service: "stripe-webhook" });
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
