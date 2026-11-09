@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 };
 
 import { Button } from "@/components/ui/button";
+import { Footer } from "@/components/footer";
 import { Input } from "@/components/ui/input";
 import {
   Card,
@@ -614,36 +615,7 @@ export default function Home() {
           </div>
         </section>
 
-        <footer
-          className="
-          w-full
-          border-t
-          border-black/10
-          bg-white
-        "
-        >
-          <div
-            className="
-            max-w-7xl
-            mx-auto
-            px-4
-            sm:px-6
-            py-8
-            flex
-            flex-col
-            sm:flex-row
-            justify-between
-            items-center
-            gap-3
-          "
-          >
-            <div className="font-semibold text-black">NJ Notes</div>
-
-            <p className="text-sm text-black/40">
-              Simple notes. Clear thoughts.
-            </p>
-          </div>
-        </footer>
+        <Footer variant="default" />
       </div>
     </main>
   );

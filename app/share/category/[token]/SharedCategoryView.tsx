@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
+import { Footer } from "@/components/footer";
 
 interface SharedCategoryViewProps {
   category: {
@@ -467,9 +468,7 @@ export default function SharedCategoryView({
       )}
 
       {/* Footer */}
-      <footer className="text-center py-6 text-xs text-slate-400 border-t bg-white">
-        ระบบบันทึกข้อมูล NJ • แชร์หมวดหมู่ผ่านลิงก์สาธารณะ
-      </footer>
+      <Footer variant="compact" />
     </div>
   );
 }

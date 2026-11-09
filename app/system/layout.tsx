@@ -1,6 +1,7 @@
 import { NavbarLeft } from "@/components/navbar-left";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { NavbarRight } from "@/components/navbar-right";
+import { Footer } from "@/components/footer";
 import { hasEnvVars } from "@/lib/utils";
 import { Suspense } from "react";
 
@@ -10,9 +11,9 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen flex flex-col items-center w-full">
+    <main className="min-h-screen flex flex-col items-center w-full bg-slate-50/30">
       <div className="flex-1 w-full flex flex-col items-center gap-10">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white">
+        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white sticky top-0 z-40">
           <div className="w-full max-w-7xl flex justify-between items-center p-2 sm:p-3 sm:px-5 text-sm">
             <div className="flex gap-2 sm:gap-5 items-center font-semibold">
               <Suspense
@@ -37,8 +38,9 @@ export default function ProtectedLayout({
             )}
           </div>
         </nav>
-        <div className="w-full px-4 sm:px-6 lg:px-10">{children}</div>
+        <div className="w-full flex-1 px-4 sm:px-6 lg:px-10">{children}</div>
       </div>
+      <Footer variant="system" />
     </main>
   );
 }

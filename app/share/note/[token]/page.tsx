@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import CopyButton from "./CopyButton";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
+import { Footer } from "@/components/footer";
 
 interface PageProps {
   params: Promise<{
@@ -393,9 +394,7 @@ async function SharedNoteContent({ params }: PageProps) {
       </main>
 
       {/* Footer */}
-      <footer className="text-center py-6 text-xs text-slate-400 border-t bg-white">
-        ระบบบันทึกข้อมูล PUANJ • แชร์ผ่านลิงก์สาธารณะ
-      </footer>
+      <Footer variant="compact" />
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { TopBoardSection } from "@/components/TopBoardSection";
 import { BoardNoteCard } from "@/components/BoardNoteCard";
 import { BoardFilterBar } from "@/components/BoardFilterBar";
 import { NavbarRight } from "@/components/navbar-right";
+import { Footer } from "@/components/footer";
 import {
   MessagesSquare,
   ChevronLeft,
@@ -303,18 +304,6 @@ export default function BoardPage({ searchParams }: BoardPageProps) {
             >
               Workspace
             </Link>
-            <Link
-              href="/system/notes"
-              className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-            >
-              โน้ตของฉัน
-            </Link>
-            <Link
-              href="/system/calendar"
-              className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-            >
-              ปฏิทิน
-            </Link>
           </nav>
         </div>
 
@@ -335,7 +324,7 @@ export default function BoardPage({ searchParams }: BoardPageProps) {
         <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-4">
           {/* Heading */}
           <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-            กระดานสนทนาและคลังบันทึกความรู้
+            กระดานสนทนา
           </h1>
 
           {/* Description */}
@@ -369,26 +358,7 @@ export default function BoardPage({ searchParams }: BoardPageProps) {
         </Suspense>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-16 py-8 border-t border-slate-200/80 bg-white text-center text-xs text-slate-400">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-700">NJ Notes</span>
-            <span>• กระดานสนทนาและคลังบันทึกความรู้</span>
-          </div>
-          <div className="flex items-center gap-4 text-slate-500">
-            <Link href="/" className="hover:text-slate-800 transition">
-              หน้าแรก
-            </Link>
-            <Link href="/system/dashboard" className="hover:text-slate-800 transition">
-              Workspace
-            </Link>
-            <Link href="/system/profile" className="hover:text-slate-800 transition">
-              โปรไฟล์
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <Footer variant="default" />
     </div>
   );
 }
