@@ -1,0 +1,19 @@
+import { createClient } from "@supabase/supabase-js";
+
+/**
+ * Supabase Admin Client สำหรับรันงานเบื้องหลัง (เช่น Stripe Webhook)
+ * ที่ต้องมีสิทธิ์ Service Role ในการอัปเดต role และ expires_at ของผู้ใช้
+ */
+export function createAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}

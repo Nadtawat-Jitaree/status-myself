@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
 import { getCurrentUserProfile } from "@/app/actions/profile";
 import { AvatarDisplay } from "./AvatarDisplay";
+import { getSubscriptionInfo } from "@/lib/subscription";
+import { RoleBadge } from "./RoleBadge";
 
 export async function NavbarRight() {
   const supabase = await createClient();
@@ -11,9 +13,13 @@ export async function NavbarRight() {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
   const profile = user ? await getCurrentUserProfile() : null;
+  const subscription = user ? await getSubscriptionInfo() : null;
 
   return user ? (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 sm:gap-3">
+      {/* Role Badge พร้อม Hover Tooltip แสดงสิทธิ์การใช้งาน */}
+      {subscription && <RoleBadge subscription={subscription} />}
+
       <Link
         href="/system/profile"
         className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-slate-100 transition border border-transparent hover:border-slate-200"

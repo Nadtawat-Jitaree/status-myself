@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 import CalendarClient from '@/components/calendar/CalendarClient'
+import { requirePremiumAccess } from '@/lib/subscription'
 
 export const metadata: Metadata = {
   title: 'ปฏิทิน & บันทึกรายวัน | Note & Calendar',
@@ -18,11 +19,16 @@ function CalendarLoading() {
   )
 }
 
+async function CalendarContainer() {
+  await requirePremiumAccess();
+  return <CalendarClient />;
+}
+
 export default function CalendarPage() {
   return (
     <div className="container mx-auto max-w-6xl py-4 sm:py-6">
       <Suspense fallback={<CalendarLoading />}>
-        <CalendarClient />
+        <CalendarContainer />
       </Suspense>
     </div>
   )

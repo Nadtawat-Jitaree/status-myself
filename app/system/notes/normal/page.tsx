@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Notes from "../notes";
 import { getNotesPageData } from "@/app/actions/notes";
+import { requirePremiumAccess } from "@/lib/subscription";
 
 export const metadata = {
   title: "Notes | NJ Notes",
@@ -36,6 +37,7 @@ function NotesSkeleton() {
 }
 
 async function NormalNotesContent() {
+  await requirePremiumAccess();
   const initialData = await getNotesPageData("normal").catch(() => null);
   return <Notes noteType="normal" initialData={initialData} />;
 }

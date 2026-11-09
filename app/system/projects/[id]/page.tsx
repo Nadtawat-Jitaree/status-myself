@@ -2,9 +2,11 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { requirePremiumAccess } from "@/lib/subscription";
 import ProjectClient from "./ProjectClient";
 
 async function getProjectDetails(id: string) {
+  await requirePremiumAccess();
   const supabase = await createClient();
 
   const { data: project, error } = await supabase

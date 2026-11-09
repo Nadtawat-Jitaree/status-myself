@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { getProjects } from "@/app/actions/projects";
+import { requirePremiumAccess } from "@/lib/subscription";
 import Link from "next/link";
 import { FolderKanban, Calendar, LoaderCircle } from "lucide-react";
 import Image from "next/image";
@@ -52,6 +53,7 @@ function ProjectsLoading() {
 }
 
 async function ProjectList() {
+  await requirePremiumAccess();
   const projects = await getProjects();
 
   if (!projects || projects.length === 0) {

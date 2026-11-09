@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getQualities, getQualityTransactions } from "@/app/actions/qualities";
 import { QualityManager } from "@/components/QualityManager";
+import { requirePremiumAccess } from "@/lib/subscription";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ function QualityLoading() {
 }
 
 async function QualityDataContainer() {
+  await requirePremiumAccess();
   const [qualities, transactions] = await Promise.all([
     getQualities(),
     getQualityTransactions(100),

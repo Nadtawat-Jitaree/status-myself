@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
+import { requirePremiumAccess } from "@/lib/subscription";
 import DashboardCharts from "@/components/DashboardCharts";
 import { Button } from "@/components/ui/button";
 import {
@@ -104,6 +105,7 @@ function DashboardLoading() {
 }
 
 async function DashboardData() {
+  await requirePremiumAccess();
   const supabase = await createClient();
   const {
     data: { user },

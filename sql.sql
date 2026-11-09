@@ -8,6 +8,8 @@ CREATE TABLE public.profiles (
   lname text,
   tel text,
   address text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
   display_name text,
   avatar_type text DEFAULT 'icon'::text,
   avatar_icon text DEFAULT 'User'::text,
@@ -16,8 +18,12 @@ CREATE TABLE public.profiles (
   facebook_url text,
   youtube_url text,
   tiktok_url text,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
+  role text NOT NULL DEFAULT 'member'::text CHECK (role = ANY (ARRAY['member'::text, 'premium'::text])),
+  subscription_plan text CHECK (subscription_plan = ANY (ARRAY['monthly'::text, 'yearly'::text, NULL::text])),
+  subscribed_at timestamp with time zone,
+  expires_at timestamp with time zone,
+  stripe_customer_id text UNIQUE,
+  stripe_subscription_id text UNIQUE,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
@@ -182,9 +188,8 @@ CREATE TABLE public.note_reactions (
   type text NOT NULL CHECK (type = ANY (ARRAY['like'::text, 'dislike'::text])),
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT note_reactions_pkey PRIMARY KEY (id),
-  CONSTRAINT note_reactions_note_fk FOREIGN KEY (note_id) REFERENCES public.notes(id) ON DELETE CASCADE,
-  CONSTRAINT note_reactions_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
-  CONSTRAINT note_reactions_user_note_unique UNIQUE (note_id, user_id)
+  CONSTRAINT note_reactions_note_id_fkey FOREIGN KEY (note_id) REFERENCES public.notes(id),
+  CONSTRAINT note_reactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.note_comments (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -194,6 +199,21 @@ CREATE TABLE public.note_comments (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT note_comments_pkey PRIMARY KEY (id),
-  CONSTRAINT note_comments_note_fk FOREIGN KEY (note_id) REFERENCES public.notes(id) ON DELETE CASCADE,
-  CONSTRAINT note_comments_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+  CONSTRAINT note_comments_note_id_fkey FOREIGN KEY (note_id) REFERENCES public.notes(id),
+  CONSTRAINT note_comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.subscription_history (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  stripe_session_id text,
+  stripe_payment_intent text,
+  plan text NOT NULL CHECK (plan = ANY (ARRAY['monthly'::text, 'yearly'::text])),
+  amount integer NOT NULL,
+  currency text DEFAULT 'thb'::text,
+  status text NOT NULL CHECK (status = ANY (ARRAY['paid'::text, 'failed'::text, 'refunded'::text])),
+  started_at timestamp with time zone,
+  expires_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT subscription_history_pkey PRIMARY KEY (id),
+  CONSTRAINT subscription_history_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );

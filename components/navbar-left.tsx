@@ -1,15 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { BarChart3, LayoutGrid, MessagesSquare } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { BarChart3, LayoutGrid, MessagesSquare, Lock } from "lucide-react";
+import Swal from "sweetalert2";
 import NoteTypeModal from "./NoteTypeModal";
+import { getUserSubscriptionAction } from "@/app/actions/subscription";
+import type { SubscriptionInfo } from "@/lib/subscription-types";
 
 export function NavbarLeft() {
   const [openModalNavbar, setOpenModalNavbar] = useState(false);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    getUserSubscriptionAction()
+      .then((res) => setSubscription(res))
+      .catch(() => setSubscription(null));
+  }, [pathname]);
+
+  const isPremium = subscription?.isPremium ?? false;
 
   // ไฮไลท์ปุ่ม Menus เมื่อกำลังอยู่ในพื้นที่ทำงานใดๆ
   const isWorkspaceActive =
@@ -18,26 +31,33 @@ export function NavbarLeft() {
     pathname.startsWith("/system/calendar") ||
     pathname.startsWith("/system/qualities");
 
-  const navItems = [
-    {
-      title: "Dashboard",
-      href: "/system/dashboard",
-      icon: BarChart3,
-      color:
-        "text-blue-600 bg-blue-500/10 hover:bg-blue-500/20 border-blue-200/50",
-      activeColor: "bg-blue-600 text-white shadow-sm shadow-blue-500/30",
-      isActive: pathname.startsWith("/system/dashboard"),
-    },
-    {
-      title: "Board",
-      href: "/board",
-      icon: MessagesSquare,
-      color:
-        "text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border-rose-200/50",
-      activeColor: "bg-rose-600 text-white shadow-sm shadow-rose-500/30",
-      isActive: pathname.startsWith("/board"),
-    },
-  ];
+  const handleDashboardClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!isPremium) {
+      e.preventDefault();
+      Swal.fire({
+        icon: "warning",
+        title: "ฟีเจอร์สำหรับสมาชิก Premium",
+        html: `<div class="text-sm text-slate-600 space-y-2">
+          <p>หน้าระบบ <b>Dashboard</b> สงวนสิทธิ์สำหรับสมาชิก <b>Premium</b> เท่านั้น</p>
+          <p class="text-xs text-slate-500">อัปเกรดเพื่อดูสถิติภาพรวม วิเคราะห์ความก้าวหน้า และบันทึกทั้งหมดของคุณ</p>
+        </div>`,
+        showCancelButton: true,
+        confirmButtonText: "ดูแพ็กเกจ Premium",
+        cancelButtonText: "ไว้คราวหลัง",
+        confirmButtonColor: "#f59e0b",
+        cancelButtonColor: "#94a3b8",
+        customClass: {
+          popup: "rounded-3xl",
+          confirmButton: "rounded-xl font-bold px-4 py-2",
+          cancelButton: "rounded-xl font-medium px-4 py-2",
+        },
+      }).then((result) => {
+        if (result.isConfirmed) {
+          router.push("/subscription");
+        }
+      });
+    }
+  };
 
   return (
     <div className="flex items-center gap-2 sm:gap-3.5">
@@ -69,29 +89,41 @@ export function NavbarLeft() {
       {/* เส้นคั่นแบ่งหมวดหมู่ */}
       <div className="hidden h-6 w-px bg-slate-200/80 sm:block" />
 
-      {/* เมนูนำทาง (Menus, Dashboard, Board) */}
+      {/* เมนูนำทาง (Dashboard, Board, Menus) */}
       <nav className="flex items-center gap-1.5 sm:gap-2">
-        {/* ปุ่มเมนูพื้นที่ทำงาน (เปิด Modal) */}
+        {/* เมนู Dashboard */}
+        <Link
+          href="/system/dashboard"
+          onClick={handleDashboardClick}
+          title={isPremium ? "Dashboard" : "Dashboard (สำหรับสมาชิก Premium)"}
+          className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+            pathname.startsWith("/system/dashboard")
+              ? "bg-blue-600 text-white shadow-sm shadow-blue-500/30 border border-transparent"
+              : "text-blue-600 bg-blue-500/10 hover:bg-blue-500/20 border-blue-200/50 border"
+          }`}
+        >
+          <BarChart3 className="h-[18px] w-[18px]" />
+          <span className="hidden md:inline-block">Dashboard</span>
+          {!isPremium && (
+            <Lock className="h-3 w-3 text-amber-500 hidden sm:inline-block" />
+          )}
+        </Link>
 
-        {/* เมนูนำทางตามเส้นทางหลัก (Dashboard, Board) */}
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={item.title}
-              className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 ${
-                item.isActive
-                  ? `${item.activeColor} border border-transparent`
-                  : `${item.color} border`
-              }`}
-            >
-              <Icon className="h-[18px] w-[18px]" />
-              <span className="hidden md:inline-block">{item.title}</span>
-            </Link>
-          );
-        })}
+        {/* เมนู Board (สมาชิกทั่วไปใช้งานได้ตาม Requirement) */}
+        <Link
+          href="/board"
+          title="Board กระดานสนทนา"
+          className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+            pathname.startsWith("/board")
+              ? "bg-rose-600 text-white shadow-sm shadow-rose-500/30 border border-transparent"
+              : "text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border-rose-200/50 border"
+          }`}
+        >
+          <MessagesSquare className="h-[18px] w-[18px]" />
+          <span className="hidden md:inline-block">Board</span>
+        </Link>
+
+        {/* ปุ่มเมนูพื้นที่ทำงาน (เปิด Modal) */}
         <button
           type="button"
           onClick={() => setOpenModalNavbar(true)}
@@ -104,6 +136,9 @@ export function NavbarLeft() {
         >
           <LayoutGrid className="h-[18px] w-[18px] transition-transform duration-200 group-hover:rotate-12" />
           <span className="hidden md:inline-block">Menus</span>
+          {!isPremium && (
+            <Lock className="h-3 w-3 text-amber-500 hidden sm:inline-block" />
+          )}
           <span className="relative flex h-2 w-2">
             <span
               className={`absolute inline-flex h-full w-full animate-ping rounded-full ${
@@ -123,6 +158,7 @@ export function NavbarLeft() {
       <NoteTypeModal
         open={openModalNavbar}
         onClose={() => setOpenModalNavbar(false)}
+        subscription={subscription}
       />
     </div>
   );

@@ -4,7 +4,8 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -25,6 +26,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.10.1",
+    "stripe": "^23.1.0",
     "sweetalert2": "^11.26.24",
     "tailwind-merge": "^3.3.0"
   },
