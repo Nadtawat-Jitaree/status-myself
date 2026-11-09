@@ -55,6 +55,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/auth") &&
     !request.nextUrl.pathname.startsWith("/board") &&
     !request.nextUrl.pathname.startsWith("/sitemap.xml") &&
+    !request.nextUrl.pathname.startsWith("/api/stripe/webhook") &&
     !request.nextUrl.pathname.startsWith("/google8a7dc28b52112f8e.html") &&
     !request.nextUrl.pathname.startsWith("/share")
   ) {
