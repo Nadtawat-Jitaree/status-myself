@@ -22,7 +22,11 @@ export interface QualityTransaction {
   user_id: string;
   quality_id: string;
   note_id?: string | null;
+  task_id?: string | null;
+  project_id?: string | null;
   note_title?: string | null;
+  task_title?: string | null;
+  project_name?: string | null;
   quality_name?: string | null;
   quality_icon?: string | null;
   points_delta: number;
@@ -302,16 +306,264 @@ export async function syncNoteQualities(
     };
   });
 
+  revalidatePath("/system/qualities");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/dashboard");
+  return { success: true };
+}
+
+/**
+ * ดึงข้อมูลคุณสมบัติที่เชื่อมโยงกับ Task หนึ่งงาน
+ */
+export async function getTaskQualities(taskId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase
+    .from("task_qualities")
+    .select("quality_id, level, qualities(id, name, icon, color)")
+    .eq("task_id", taskId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error fetching task qualities:", error.message);
+    return [];
+  }
+
+  return (data || []) as unknown as {
+    quality_id: string;
+    level: 1 | 3 | 5;
+    qualities?: { id: string; name: string; icon: string; color: string } | null;
+  }[];
+}
+
+/**
+ * บันทึกและซิงค์คุณสมบัติสำหรับ Task หนึ่งงาน
+ * หากสถานะของงานเป็น 'done' อยู่แล้ว จะปรับปรุง transactions และแต้มตามไปด้วย
+ */
+export async function syncTaskQualities(
+  taskId: string,
+  selectedQualities: SelectedQualityInput[],
+  projectId?: string
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  // ดึงข้อมูล task เพื่อดูสถานะปัจจุบัน
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("id, title, status, project_id, projects(id, name)")
+    .eq("id", taskId)
+    .single();
+
+  const finalProjectId = projectId || task?.project_id;
+  const isDone = task?.status === "done";
+
+  // 1. ลบรายการ task_qualities เดิมของงานนี้
+  await supabase
+    .from("task_qualities")
+    .delete()
+    .eq("task_id", taskId)
+    .eq("user_id", user.id);
+
+  // 2. ถ้ามีคุณสมบัติที่เลือก ให้ Insert ลง task_qualities
+  if (selectedQualities && selectedQualities.length > 0) {
+    const taskQualitiesInsert = selectedQualities.map((item) => ({
+      task_id: taskId,
+      quality_id: item.quality_id,
+      user_id: user.id,
+      level: item.level,
+    }));
+
+    const { error: tqError } = await supabase
+      .from("task_qualities")
+      .insert(taskQualitiesInsert);
+
+    if (tqError) {
+      console.error("Error inserting task qualities:", tqError.message);
+    }
+  }
+
+  // 3. จัดการ Transactions ถ้างานนั้นอยู่ในสถานะ 'done' (สำเร็จ) อยู่แล้ว
+  if (isDone) {
+    // ลบ Transaction เก่าของงานนี้ออกก่อน (Trigger จะหักแต้มออก)
+    await supabase
+      .from("quality_transactions")
+      .delete()
+      .eq("task_id", taskId)
+      .eq("user_id", user.id);
+
+    // ถ้ามีคุณสมบัติใหม่ ให้เพิ่ม Transaction ใหม่ (Trigger จะบวกแต้มใหม่)
+    if (selectedQualities && selectedQualities.length > 0) {
+      const qualityIds = selectedQualities.map((q) => q.quality_id);
+      const { data: qualitiesData } = await supabase
+        .from("qualities")
+        .select("id, name, icon")
+        .in("id", qualityIds)
+        .eq("user_id", user.id);
+
+      const qualityMap = new Map((qualitiesData || []).map((q) => [q.id, q]));
+      const levelLabelMap: Record<number, string> = {
+        1: "ปกติ (+1)",
+        3: "กลาง (+3)",
+        5: "มาก (+5)",
+      };
+
+      const projectName = (task?.projects as any)?.name || "โปรเจกต์";
+      const txs = selectedQualities.map((item) => {
+        const qInfo = qualityMap.get(item.quality_id);
+        return {
+          user_id: user.id,
+          quality_id: item.quality_id,
+          note_id: null,
+          task_id: taskId,
+          project_id: finalProjectId,
+          task_title: task?.title || "งานในโปรเจกต์",
+          project_name: projectName,
+          quality_name: qInfo?.name || "คุณสมบัติ",
+          quality_icon: qInfo?.icon || "Star",
+          points_delta: item.level,
+          level_label: levelLabelMap[item.level] || `+${item.level}`,
+          source: "task",
+        };
+      });
+
+      const { error: txError } = await supabase
+        .from("quality_transactions")
+        .insert(txs);
+
+      if (txError) {
+        console.error("Error inserting task quality transactions:", txError.message);
+      }
+    }
+  }
+
+  if (finalProjectId) {
+    revalidatePath(`/system/projects/${finalProjectId}`);
+  }
+  revalidatePath("/system/qualities");
+  revalidatePath("/system/dashboard");
+  return { success: true };
+}
+
+/**
+ * เพิ่มแต้มคุณสมบัติเมื่อ Task มีสถานะเป็น 'done' (สำเร็จ)
+ */
+export async function awardTaskQualities(taskId: string, projectId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  // ป้องกันการให้แต้มซ้ำซ้อน (Idempotency check)
+  const { data: existingTxs } = await supabase
+    .from("quality_transactions")
+    .select("id")
+    .eq("task_id", taskId)
+    .eq("user_id", user.id);
+
+  if (existingTxs && existingTxs.length > 0) {
+    return { success: true, message: "Already awarded" };
+  }
+
+  // ดึงคุณสมบัติที่ผูกไว้กับ Task
+  const { data: taskQualities } = await supabase
+    .from("task_qualities")
+    .select("quality_id, level")
+    .eq("task_id", taskId)
+    .eq("user_id", user.id);
+
+  if (!taskQualities || taskQualities.length === 0) {
+    return { success: true };
+  }
+
+  // ดึงชื่อ Task และ Project เพื่อทำ snapshot
+  const { data: taskData } = await supabase
+    .from("tasks")
+    .select("title")
+    .eq("id", taskId)
+    .single();
+
+  const { data: projectData } = await supabase
+    .from("projects")
+    .select("name")
+    .eq("id", projectId)
+    .single();
+
+  const qualityIds = taskQualities.map((item) => item.quality_id);
+  const { data: qualitiesData } = await supabase
+    .from("qualities")
+    .select("id, name, icon")
+    .in("id", qualityIds)
+    .eq("user_id", user.id);
+
+  const qualityMap = new Map((qualitiesData || []).map((q) => [q.id, q]));
+  const levelLabelMap: Record<number, string> = {
+    1: "ปกติ (+1)",
+    3: "กลาง (+3)",
+    5: "มาก (+5)",
+  };
+
+  const transactionsInsert = taskQualities.map((item) => {
+    const qInfo = qualityMap.get(item.quality_id);
+    return {
+      user_id: user.id,
+      quality_id: item.quality_id,
+      note_id: null,
+      task_id: taskId,
+      project_id: projectId,
+      task_title: taskData?.title || "งานในโปรเจกต์",
+      project_name: projectData?.name || "โปรเจกต์",
+      quality_name: qInfo?.name || "คุณสมบัติ",
+      quality_icon: qInfo?.icon || "Star",
+      points_delta: item.level,
+      level_label: levelLabelMap[item.level] || `+${item.level}`,
+      source: "task",
+    };
+  });
+
   const { error: txError } = await supabase
     .from("quality_transactions")
     .insert(transactionsInsert);
 
   if (txError) {
-    console.error("Error inserting quality transactions:", txError.message);
+    console.error("Error awarding task qualities:", txError.message);
+  }
+
+  revalidatePath(`/system/projects/${projectId}`);
+  revalidatePath("/system/qualities");
+  revalidatePath("/system/dashboard");
+  return { success: true };
+}
+
+/**
+ * ยกเลิกแต้มคุณสมบัติเมื่อ Task ถูกเปลี่ยนสถานะออกจาก 'done' (กลับไป todo หรือ in_progress)
+ */
+export async function revokeTaskQualities(taskId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { error } = await supabase
+    .from("quality_transactions")
+    .delete()
+    .eq("task_id", taskId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error revoking task qualities:", error.message);
   }
 
   revalidatePath("/system/qualities");
-  revalidatePath("/system/notes");
   revalidatePath("/system/dashboard");
   return { success: true };
 }

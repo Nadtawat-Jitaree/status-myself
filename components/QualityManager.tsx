@@ -21,6 +21,8 @@ import {
   Layers,
   Calendar,
   FileText,
+  FolderKanban,
+  CheckCircle2,
   ChevronRight,
   Cpu,
   Flame,
@@ -690,9 +692,15 @@ export function QualityManager({
                       </td>
                       <td className="py-2.5 px-4">
                         <div className="flex items-center gap-1.5 text-foreground">
-                          <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                          {tx.source === "task" ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                          ) : (
+                            <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                          )}
                           <span className="truncate max-w-xs block">
-                            {tx.note_title || "โน้ตทั่วไป"}
+                            {tx.source === "task"
+                              ? `${tx.task_title || "งานในโปรเจกต์"}${tx.project_name ? ` (${tx.project_name})` : ""}`
+                              : tx.note_title || "โน้ตทั่วไป"}
                           </span>
                         </div>
                       </td>

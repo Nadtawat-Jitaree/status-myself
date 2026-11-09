@@ -2,6 +2,12 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from 'next/navigation';
+import {
+  awardTaskQualities,
+  revokeTaskQualities,
+  syncTaskQualities,
+  SelectedQualityInput,
+} from "./qualities";
 
 export async function getProjects() {
   const supabase = await createClient()
@@ -73,7 +79,17 @@ export async function toggleTaskStatus(taskId: string, currentStatus: string, pr
     .eq('project_id', projectId)
 
   if (error) throw error
+
+  // จัดการแต้มคุณสมบัติตามสถานะใหม่
+  if (newStatus === 'done') {
+    await awardTaskQualities(taskId, projectId)
+  } else {
+    await revokeTaskQualities(taskId)
+  }
+
   revalidatePath(`/system/projects/${projectId}`)
+  revalidatePath('/system/qualities')
+  revalidatePath('/system/dashboard')
 }
 
 export async function createTask(projectId: string, formData: FormData) {
@@ -129,7 +145,17 @@ export async function updateTaskStatus(taskId: string, newStatus: string, projec
     .eq('project_id', projectId)
 
   if (error) throw error
+
+  // จัดการแต้มคุณสมบัติตามสถานะใหม่
+  if (newStatus === 'done') {
+    await awardTaskQualities(taskId, projectId)
+  } else {
+    await revokeTaskQualities(taskId)
+  }
+
   revalidatePath(`/system/projects/${projectId}`)
+  revalidatePath('/system/qualities')
+  revalidatePath('/system/dashboard')
 }
 
 export async function updateProject(projectId: string, formData: FormData) {
@@ -155,6 +181,13 @@ export async function deleteProject(projectId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
+  // ลบ transactions ที่ผูกกับ project นี้ก่อนลบ project
+  await supabase
+    .from('quality_transactions')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+
   // ลบงานย่อยก่อนเพื่อความปลอดภัยหากฐานข้อมูลไม่ได้ตั้ง ON DELETE CASCADE
   await supabase.from('tasks').delete().eq('project_id', projectId)
 
@@ -166,6 +199,8 @@ export async function deleteProject(projectId: string) {
   
   if (error) throw error
   revalidatePath('/system/projects')
+  revalidatePath('/system/qualities')
+  revalidatePath('/system/dashboard')
   redirect('/system/projects')
 }
 
@@ -175,6 +210,9 @@ export async function deleteTask(taskId: string, projectId: string) {
   if (!user) throw new Error('Unauthorized')
   await verifyProjectOwnership(supabase, projectId, user.id)
 
+  // คืนค่าแต้มหากงานนี้เคยทำเสร็จไปแล้ว
+  await revokeTaskQualities(taskId)
+
   const { error } = await supabase
     .from('tasks')
     .delete()
@@ -183,6 +221,8 @@ export async function deleteTask(taskId: string, projectId: string) {
   
   if (error) throw error
   revalidatePath(`/system/projects/${projectId}`)
+  revalidatePath('/system/qualities')
+  revalidatePath('/system/dashboard')
 }
 
 export async function updateTaskTitle(taskId: string, newTitle: string, projectId: string) {
@@ -204,21 +244,43 @@ export async function updateTaskTitle(taskId: string, newTitle: string, projectI
 export async function updateTaskDetails(
   taskId: string,
   projectId: string,
-  payload: { title?: string; description?: string | null; priority?: string; due_date?: string | null }
+  payload: {
+    title?: string;
+    description?: string | null;
+    priority?: string;
+    due_date?: string | null;
+    selectedQualities?: SelectedQualityInput[];
+  }
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
   await verifyProjectOwnership(supabase, projectId, user.id)
 
-  const { error } = await supabase
-    .from('tasks')
-    .update(payload)
-    .eq('id', taskId)
-    .eq('project_id', projectId)
+  const updateFields: any = {}
+  if (payload.title !== undefined) updateFields.title = payload.title
+  if (payload.description !== undefined) updateFields.description = payload.description
+  if (payload.priority !== undefined) updateFields.priority = payload.priority
+  if (payload.due_date !== undefined) updateFields.due_date = payload.due_date
 
-  if (error) throw error
+  if (Object.keys(updateFields).length > 0) {
+    const { error } = await supabase
+      .from('tasks')
+      .update(updateFields)
+      .eq('id', taskId)
+      .eq('project_id', projectId)
+
+    if (error) throw error
+  }
+
+  // หากมีการส่ง selectedQualities มา ให้ซิงค์ข้อมูลคุณสมบัติ
+  if (payload.selectedQualities !== undefined) {
+    await syncTaskQualities(taskId, payload.selectedQualities, projectId)
+  }
+
   revalidatePath(`/system/projects/${projectId}`)
+  revalidatePath('/system/qualities')
+  revalidatePath('/system/dashboard')
 }
 
 export async function reorderTasks(

@@ -15,14 +15,61 @@ async function getProjectDetails(id: string) {
 
   if (error) throw error;
 
+  // ดึง task_qualities เพื่อนำมาแสดง badge และกำหนดค่าเริ่มต้นใน modal
+  const taskIds = (project?.tasks || []).map((t: any) => t.id);
+  const taskQualitiesMap: Record<string, any[]> = {};
+  if (taskIds.length > 0) {
+    try {
+      const { data: tqData, error: tqError } = await supabase
+        .from("task_qualities")
+        .select("task_id, quality_id, level, qualities(id, name, icon, color)")
+        .in("task_id", taskIds);
+      if (!tqError && tqData) {
+        for (const item of tqData) {
+          if (!taskQualitiesMap[item.task_id]) {
+            taskQualitiesMap[item.task_id] = [];
+          }
+          taskQualitiesMap[item.task_id].push({
+            quality_id: item.quality_id,
+            level: item.level,
+            name: (item.qualities as any)?.name || "คุณสมบัติ",
+            icon: (item.qualities as any)?.icon || "Star",
+            color: (item.qualities as any)?.color || "#6366f1",
+          });
+        }
+      }
+    } catch {
+      // ตาราง task_qualities อาจยังไม่ได้รัน migration
+    }
+  }
+
   if (project?.tasks) {
+    project.tasks = project.tasks.map((task: any) => ({
+      ...task,
+      qualities: taskQualitiesMap[task.id] || [],
+    }));
+
     project.tasks.sort(
       (a: any, b: any) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
   }
 
-  return project;
+  // ดึงรายการคุณสมบัติที่เปิดใช้งานทั้งหมดของผู้ใช้
+  let availableQualities: any[] = [];
+  try {
+    const { data: qData } = await supabase
+      .from("qualities")
+      .select("*")
+      .eq("user_id", project.user_id)
+      .eq("is_active", true)
+      .order("order_index", { ascending: true });
+    availableQualities = qData || [];
+  } catch {
+    // qualities table อาจยังไม่มีข้อมูล
+  }
+
+  return { project, availableQualities };
 }
 
 function ProjectDetailSkeleton() {
@@ -60,8 +107,8 @@ async function ProjectDataWrapper({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const project = await getProjectDetails(id);
-  return <ProjectClient project={project} />;
+  const { project, availableQualities } = await getProjectDetails(id);
+  return <ProjectClient project={project} availableQualities={availableQualities} />;
 }
 
 export default function ProjectDetailPage({

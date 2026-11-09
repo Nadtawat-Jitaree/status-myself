@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   updateProject,
   deleteProject,
@@ -12,6 +13,9 @@ import {
   reorderTasks,
   updateProjectTarget,
 } from "@/app/actions/projects";
+import { QualityPicker } from "@/components/QualityPicker";
+import { QualityIconRenderer } from "@/lib/lucide-icons";
+import { SelectedQualityInput } from "@/app/actions/qualities";
 
 import {
   CheckCircle2,
@@ -58,7 +62,13 @@ import {
 
 import Swal from "sweetalert2";
 
-export default function ProjectClient({ project }: { project: any }) {
+export default function ProjectClient({
+  project,
+  availableQualities = [],
+}: {
+  project: any;
+  availableQualities?: any[];
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<any[]>(project.tasks || []);
@@ -89,7 +99,17 @@ export default function ProjectClient({ project }: { project: any }) {
 
   // Selected Task for Detail Modal / Drawer
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [selectedQualities, setSelectedQualities] = useState<SelectedQualityInput[]>([]);
   const [isSavingTaskDetail, setIsSavingTaskDetail] = useState(false);
+
+  const openTaskDetail = (task: any) => {
+    setSelectedTask(task);
+    const initialQualities: SelectedQualityInput[] = (task.qualities || []).map((q: any) => ({
+      quality_id: q.quality_id,
+      level: q.level as 1 | 3 | 5,
+    }));
+    setSelectedQualities(initialQualities);
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -291,18 +311,30 @@ export default function ProjectClient({ project }: { project: any }) {
         description,
         priority,
         due_date,
+        selectedQualities,
+      });
+
+      const updatedQualities = selectedQualities.map((sq) => {
+        const qInfo = availableQualities.find((aq: any) => aq.id === sq.quality_id);
+        return {
+          quality_id: sq.quality_id,
+          level: sq.level,
+          name: qInfo?.name || "คุณสมบัติ",
+          icon: qInfo?.icon || "Star",
+          color: qInfo?.color || "#6366f1",
+        };
       });
 
       setTasks((prev) =>
         prev.map((t) =>
           t.id === selectedTask.id
-            ? { ...t, title, description, priority, due_date }
+            ? { ...t, title, description, priority, due_date, qualities: updatedQualities }
             : t
         )
       );
 
       setSelectedTask((prev: any) =>
-        prev ? { ...prev, title, description, priority, due_date } : null
+        prev ? { ...prev, title, description, priority, due_date, qualities: updatedQualities } : null
       );
 
       Swal.fire({
@@ -1128,7 +1160,7 @@ export default function ProjectClient({ project }: { project: any }) {
                                             ? "text-emerald-700/70 line-through"
                                             : "text-foreground"
                                         }`}
-                                        onClick={() => setSelectedTask(task)}
+                                        onClick={() => openTaskDetail(task)}
                                         title="คลิกเพื่อเปิดดูรายละเอียดและแก้ไข"
                                       >
                                         {task.title}
@@ -1137,7 +1169,7 @@ export default function ProjectClient({ project }: { project: any }) {
                                       {/* Task Description Preview */}
                                       {task.description && (
                                         <p
-                                          onClick={() => setSelectedTask(task)}
+                                          onClick={() => openTaskDetail(task)}
                                           className="text-xs text-muted-foreground line-clamp-2 cursor-pointer hover:text-foreground bg-muted/30 hover:bg-muted/50 p-2 rounded-lg border border-border/50 transition-colors"
                                           title="คลิกเพื่อเปิดดูรายละเอียดฉบับเต็ม"
                                         >
@@ -1155,15 +1187,40 @@ export default function ProjectClient({ project }: { project: any }) {
                                         {renderCreatedDateBadge(task.created_at)}
                                         <button
                                           type="button"
-                                          onClick={() => setSelectedTask(task)}
-                                          className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium ml-1"
+                                          onClick={() => openTaskDetail(task)}
+                                          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-md transition-colors border border-primary/20"
                                         >
                                           <FileText className="w-3 h-3" />
                                           <span>
-                                            {task.description ? "ดู/แก้รายละเอียด" : "+ รายละเอียด"}
+                                            {task.description ? "รายละเอียด & โน้ต" : "+ รายละเอียด"}
                                           </span>
                                         </button>
                                       </div>
+
+                                      {/* Quality Badges */}
+                                      {task.qualities && task.qualities.length > 0 && (
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                          {task.qualities.map((q: any) => (
+                                            <span
+                                              key={q.quality_id}
+                                              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium border"
+                                              style={{
+                                                borderColor: `${q.color || "#6366f1"}40`,
+                                                backgroundColor: `${q.color || "#6366f1"}15`,
+                                                color: q.color || "#6366f1",
+                                              }}
+                                              title={`${q.name} (+${q.level})`}
+                                            >
+                                              <QualityIconRenderer
+                                                iconName={q.icon || "Star"}
+                                                className="w-3 h-3 flex-shrink-0"
+                                              />
+                                              <span className="truncate max-w-[120px]">{q.name}</span>
+                                              <span className="font-bold text-[10px] opacity-90">+{q.level}</span>
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -1237,18 +1294,21 @@ export default function ProjectClient({ project }: { project: any }) {
                                     </form>
                                   </div>
 
-                                  <div className="flex w-full gap-2 lg:w-auto">
+                                  <div className="flex w-full gap-1.5 lg:w-auto items-center">
                                     <button
-                                      onClick={() => setEditingTaskId(task.id)}
-                                      className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border bg-background px-3 text-xs font-medium text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary lg:flex-none"
-                                      title="แก้ไขชื่องาน"
+                                      type="button"
+                                      onClick={() => openTaskDetail(task)}
+                                      className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-primary/5 px-3 text-xs font-semibold text-primary hover:bg-primary/10 hover:border-primary/40 transition-all shadow-2xs lg:flex-none"
+                                      title="แก้ไขรายละเอียดและคุณสมบัติงาน"
                                     >
-                                      <Pencil className="h-3.5 w-3.5" />
+                                      <Pencil className="h-3.5 w-3.5 shrink-0" />
+                                      <span>แก้ไข</span>
                                     </button>
 
                                     <button
+                                      type="button"
                                       onClick={() => handleDeleteTask(task.id)}
-                                      className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-medium text-red-600 hover:bg-red-100 lg:flex-none"
+                                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-xs font-medium text-red-600 hover:bg-red-100 hover:border-red-300 transition-colors"
                                       title="ลบงาน"
                                     >
                                       <Trash2 className="h-3.5 w-3.5" />
@@ -1294,114 +1354,140 @@ export default function ProjectClient({ project }: { project: any }) {
       </section>
     
       {/* Task Detail Modal */}
-      {selectedTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="relative w-full max-w-lg rounded-2xl border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
-            <div className="flex items-start justify-between gap-3 border-b pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-primary/10 text-primary">
+      {selectedTask && isMounted && createPortal(
+        <div
+          className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] !m-0 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setSelectedTask(null)}
+        >
+          <div
+            className="relative w-full max-w-lg sm:max-w-xl max-h-[90vh] rounded-2xl sm:rounded-3xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between gap-3 border-b border-border p-4 sm:p-5 bg-card shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
                   <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-foreground">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground">
                     รายละเอียดงาน (Task Details)
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    ดูและแก้ไขข้อมูลรายละเอียดขั้นตอนงาน
+                    ดูและแก้ไขข้อมูลรายละเอียดขั้นตอนงาน และคุณสมบัติ
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedTask(null)}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="rounded-xl p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                title="ปิด"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveTaskDetailModal} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
-                  ชื่องาน / หัวข้อ <span className="text-destructive">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  defaultValue={selectedTask.title}
-                  required
-                  disabled={isSavingTaskDetail}
-                  className="w-full h-10 rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-foreground block mb-1.5">
-                  รายละเอียดเชิงลึก / บันทึก (Notes)
-                </label>
-                <textarea
-                  name="description"
-                  defaultValue={selectedTask.description || ""}
-                  rows={5}
-                  disabled={isSavingTaskDetail}
-                  placeholder="เขียนสรุป ข้อมูลอ้างอิง ลิงก์ สิ่งที่ต้องระวัง หรือขั้นตอนย่อย..."
-                  className="w-full rounded-xl border bg-background p-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            {/* Modal Form */}
+            <form onSubmit={handleSaveTaskDetailModal} className="flex flex-col flex-1 overflow-hidden min-h-0">
+              {/* Scrollable Form Body */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-foreground block mb-1.5">
-                    ความสำคัญ
-                  </label>
-                  <select
-                    name="priority"
-                    defaultValue={selectedTask.priority || "medium"}
-                    disabled={isSavingTaskDetail}
-                    className="w-full h-10 rounded-xl border bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="low">ทั่วไป</option>
-                    <option value="medium">ปานกลาง</option>
-                    <option value="high">ด่วนมาก 🔥</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
-                    วันครบกำหนด
+                    ชื่องาน / หัวข้อ <span className="text-destructive">*</span>
                   </label>
                   <input
-                    type="date"
-                    name="due_date"
-                    defaultValue={
-                      selectedTask.due_date
-                        ? new Date(selectedTask.due_date).toISOString().split("T")[0]
-                        : ""
-                    }
+                    type="text"
+                    name="title"
+                    defaultValue={selectedTask.title}
+                    required
                     disabled={isSavingTaskDetail}
-                    className="w-full h-10 rounded-xl border bg-background px-3 text-xs text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
+                    className="w-full h-10 rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1.5">
+                    รายละเอียดเชิงลึก / บันทึก (Notes)
+                  </label>
+                  <textarea
+                    name="description"
+                    defaultValue={selectedTask.description || ""}
+                    rows={4}
+                    disabled={isSavingTaskDetail}
+                    placeholder="เขียนสรุป ข้อมูลอ้างอิง ลิงก์ สิ่งที่ต้องระวัง หรือขั้นตอนย่อย..."
+                    className="w-full rounded-xl border bg-background p-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-foreground block mb-1.5">
+                      ความสำคัญ
+                    </label>
+                    <select
+                      name="priority"
+                      defaultValue={selectedTask.priority || "medium"}
+                      disabled={isSavingTaskDetail}
+                      className="w-full h-10 rounded-xl border bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="low">ทั่วไป</option>
+                      <option value="medium">ปานกลาง</option>
+                      <option value="high">ด่วนมาก 🔥</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-foreground block mb-1.5">
+                      วันครบกำหนด
+                    </label>
+                    <input
+                      type="date"
+                      name="due_date"
+                      defaultValue={
+                        selectedTask.due_date
+                          ? new Date(selectedTask.due_date).toISOString().split("T")[0]
+                          : ""
+                      }
+                      disabled={isSavingTaskDetail}
+                      className="w-full h-10 rounded-xl border bg-background px-3 text-xs text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                </div>
+
+                {/* Quality Picker */}
+                {availableQualities.length > 0 && (
+                  <div>
+                    <QualityPicker
+                      qualities={availableQualities}
+                      value={selectedQualities}
+                      onChange={setSelectedQualities}
+                      label="คุณสมบัติที่จะได้รับจากงานนี้"
+                      sublabel="ติ๊กเพื่อรับแต้มเมื่อทำสถานะสำเร็จ"
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t">
-                <span className="text-[11px] text-muted-foreground">
+              {/* Modal Footer (Sticky at bottom) */}
+              <div className="flex items-center justify-between gap-3 border-t border-border p-4 sm:p-5 bg-card shrink-0">
+                <span className="text-[11px] text-muted-foreground truncate">
                   สร้างเมื่อ: {selectedTask.created_at ? new Date(selectedTask.created_at).toLocaleDateString("th-TH") : "-"}
                 </span>
 
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setSelectedTask(null)}
                     disabled={isSavingTaskDetail}
-                    className="px-4 py-2 rounded-xl border bg-background text-xs font-medium hover:bg-muted"
+                    className="px-4 py-2 rounded-xl border bg-background text-xs font-medium hover:bg-muted transition-colors"
                   >
                     ปิด
                   </button>
                   <button
                     type="submit"
                     disabled={isSavingTaskDetail}
-                    className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-60 inline-flex items-center gap-1.5"
+                    className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-60 inline-flex items-center gap-1.5 shadow-sm transition-colors"
                   >
                     {isSavingTaskDetail ? (
                       <>
@@ -1419,7 +1505,8 @@ export default function ProjectClient({ project }: { project: any }) {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

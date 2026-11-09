@@ -9,9 +9,17 @@ interface QualityPickerProps {
   qualities: Quality[];
   value: SelectedQualityInput[];
   onChange: (val: SelectedQualityInput[]) => void;
+  label?: string;
+  sublabel?: string;
 }
 
-export function QualityPicker({ qualities, value, onChange }: QualityPickerProps) {
+export function QualityPicker({
+  qualities,
+  value,
+  onChange,
+  label = "คุณสมบัติที่ได้รับ",
+  sublabel = "ติ๊กเพื่อรับแต้มเมื่อทำสำเร็จ",
+}: QualityPickerProps) {
   if (!qualities || qualities.length === 0) {
     return null;
   }
@@ -49,10 +57,10 @@ export function QualityPicker({ qualities, value, onChange }: QualityPickerProps
       <div className="flex items-center justify-between">
         <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-primary" />
-          คุณสมบัติที่ได้รับจากบันทึกนี้
+          {label}
         </label>
         <span className="text-[11px] text-muted-foreground">
-          ติ๊กเพื่อรับแต้ม
+          {sublabel}
         </span>
       </div>
 

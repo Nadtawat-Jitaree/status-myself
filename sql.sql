@@ -105,3 +105,66 @@ CREATE TABLE public.log_items (
   CONSTRAINT log_items_daily_log_id_fkey FOREIGN KEY (daily_log_id) REFERENCES public.daily_logs(id),
   CONSTRAINT log_items_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.qualities (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  name text NOT NULL,
+  icon text NOT NULL DEFAULT 'Star'::text,
+  points integer NOT NULL DEFAULT 0,
+  color text DEFAULT '#6366f1'::text,
+  description text,
+  is_active boolean NOT NULL DEFAULT true,
+  order_index integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT qualities_pkey PRIMARY KEY (id),
+  CONSTRAINT qualities_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.note_qualities (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  note_id uuid NOT NULL,
+  quality_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  level integer NOT NULL CHECK (level = ANY (ARRAY[1, 3, 5])),
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT note_qualities_pkey PRIMARY KEY (id),
+  CONSTRAINT note_qualities_note_fk FOREIGN KEY (note_id) REFERENCES public.notes(id),
+  CONSTRAINT note_qualities_quality_fk FOREIGN KEY (quality_id) REFERENCES public.qualities(id),
+  CONSTRAINT note_qualities_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.task_qualities (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  task_id uuid NOT NULL,
+  quality_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  level integer NOT NULL CHECK (level = ANY (ARRAY[1, 3, 5])),
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT task_qualities_pkey PRIMARY KEY (id),
+  CONSTRAINT task_qualities_task_fk FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE CASCADE,
+  CONSTRAINT task_qualities_quality_fk FOREIGN KEY (quality_id) REFERENCES public.qualities(id) ON DELETE CASCADE,
+  CONSTRAINT task_qualities_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
+  CONSTRAINT task_qualities_task_quality_unique UNIQUE (task_id, quality_id)
+);
+CREATE TABLE public.quality_transactions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  quality_id uuid NOT NULL,
+  note_id uuid,
+  task_id uuid,
+  project_id uuid,
+  note_title text,
+  task_title text,
+  project_name text,
+  quality_name text,
+  quality_icon text,
+  points_delta integer NOT NULL,
+  level_label text,
+  source text NOT NULL DEFAULT 'note'::text,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT quality_transactions_pkey PRIMARY KEY (id),
+  CONSTRAINT quality_transactions_user_fk FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT quality_transactions_quality_fk FOREIGN KEY (quality_id) REFERENCES public.qualities(id),
+  CONSTRAINT quality_transactions_note_fk FOREIGN KEY (note_id) REFERENCES public.notes(id),
+  CONSTRAINT quality_transactions_task_fk FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE CASCADE,
+  CONSTRAINT quality_transactions_project_fk FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE
+);
