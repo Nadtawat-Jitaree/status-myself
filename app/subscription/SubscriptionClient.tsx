@@ -182,9 +182,15 @@ export function SubscriptionClient({
           </div>
 
           {isPremium && (
-            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 self-end sm:self-center">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>ปลดล็อคทุกฟีเจอร์แล้ว</span>
+            <div className="flex flex-col sm:items-end gap-1.5 self-start sm:self-center">
+              <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>ปลดล็อคทุกฟีเจอร์แล้ว</span>
+              </div>
+              <div className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>ซื้อแพ็กเกจซ้ำเพื่อ +บวกวันใช้งานสะสมได้</span>
+              </div>
             </div>
           )}
         </div>
@@ -358,6 +364,11 @@ export function SubscriptionClient({
             >
               {loadingPlan === "monthly" ? (
                 <span>กำลังเปิดระบบชำระเงิน...</span>
+              ) : isPremium ? (
+                <>
+                  <Zap className="w-4 h-4" />
+                  <span>ต่ออายุเพิ่ม +30 วัน (50 บาท)</span>
+                </>
               ) : (
                 <>
                   <Zap className="w-4 h-4" />
@@ -439,6 +450,11 @@ export function SubscriptionClient({
             >
               {loadingPlan === "yearly" ? (
                 <span>กำลังเปิดระบบชำระเงิน...</span>
+              ) : isPremium ? (
+                <>
+                  <Crown className="w-4 h-4" />
+                  <span>ต่ออายุเพิ่ม +365 วัน (500 บาท) — สุดคุ้ม</span>
+                </>
               ) : (
                 <>
                   <Crown className="w-4 h-4" />
@@ -483,10 +499,19 @@ export function SubscriptionClient({
         <div className="space-y-3">
           <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
             <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              ถ้าซื้อแพ็กเกจเพิ่มในขณะที่ยังมีวันใช้งานเหลืออยู่ วันจะทบให้หรือไม่?
+            </h5>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+              ระบบจะนำวันใช้งานใหม่ (+30 วัน หรือ +365 วัน) ไปบวกสะสมต่อจากวันหมดอายุเดิมของคุณให้อัตโนมัติทันที ไม่ต้องรอให้หมดอายุก่อน สามารถซื้อสะสมเวลาล่วงหน้าได้ตลอดเวลา
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+            <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">
               เมื่อหมดอายุแพ็กเกจ ข้อมูลโน้ตของฉันจะหายไปหรือไม่?
             </h5>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              ข้อมูลของคุณจะไม่สูญหาย ระบบจะยังคงเก็บโน้ตและโปรเจกต์ของคุณไว้อย่างปลอดภัย แต่จะทำการล็อคการเข้าใช้งานไว้ชั่วคราว จนกว่าคุณจะต่ออายุแพ็กเกจใหม่
+              ข้อมูลของคุณจะไม่สูญหาย ระบบจะปรับสถานะของคุณกลับเป็น "สมาชิกทั่วไป" และล็อคพื้นที่ทำงานไว้ชั่วคราว เมื่อคุณกลับมาต่ออายุแพ็กเกจ ข้อมูลเดิมทั้งหมดจะกลับมาใช้งานได้ทันที
             </p>
           </div>
 

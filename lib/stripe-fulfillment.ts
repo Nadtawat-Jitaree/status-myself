@@ -45,8 +45,27 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {
 
   const planConfig = PLANS[plan];
   const now = new Date();
+
+  // ดึงข้อมูลเดิมของ User เพื่อตรวจสอบว่ามีวันหมดอายุเดิมที่ยังไม่หมดหรือไม่
+  const { data: currentProfile } = await adminSupabase
+    .from("profiles")
+    .select("role, expires_at, subscribed_at")
+    .eq("id", userId)
+    .single();
+
+  const currentExpiresAt = currentProfile?.expires_at
+    ? new Date(currentProfile.expires_at)
+    : null;
+
+  // หากผู้ใช้มีวันหมดอายุเดิมที่ยังไม่หมด (currentExpiresAt > now) ให้บวกเวลาต่อยอดจากเดิม
+  // หากยังไม่เคยมี หรือหมดอายุไปแล้ว ให้เริ่มนับจากเวลาปัจจุบัน (now)
+  const baseTime =
+    currentExpiresAt && currentExpiresAt.getTime() > now.getTime()
+      ? currentExpiresAt
+      : now;
+
   const expiresAt = new Date(
-    now.getTime() + planConfig.days * 24 * 60 * 60 * 1000
+    baseTime.getTime() + planConfig.days * 24 * 60 * 60 * 1000
   );
 
   const customerId =
@@ -54,13 +73,17 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {
   const paymentIntentId =
     typeof session.payment_intent === "string" ? session.payment_intent : null;
 
-  // 3. อัปเดตข้อมูลผู้ใช้ในตาราง profiles เป็น premium
+  // วันที่เริ่มสมัคร (หากเคยมีแล้วให้ใช้วันเดิม หากเพิ่งเคยสมัครให้ใช้วันนี้)
+  const subscribedAt =
+    currentProfile?.subscribed_at || now.toISOString();
+
+  // 3. อัปเดตข้อมูลผู้ใช้ในตาราง profiles เป็น premium และบวกวันหมดอายุ
   const { error: profileError } = await adminSupabase
     .from("profiles")
     .update({
       role: "premium",
       subscription_plan: plan,
-      subscribed_at: now.toISOString(),
+      subscribed_at: subscribedAt,
       expires_at: expiresAt.toISOString(),
       stripe_customer_id: customerId,
       updated_at: now.toISOString(),

@@ -76,13 +76,13 @@ export function RoleBadge({ subscription }: RoleBadgeProps) {
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
     >
-      {/* Badge Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+      {/* Badge Link -> กดที่ Role แล้วไปหน้า subscription */}
+      <Link
+        href="/subscription"
+        onClick={() => setIsOpen(false)}
         className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all duration-200 active:scale-95 cursor-pointer select-none ${badgeClasses}`}
-        aria-label="ดูสิทธิ์และสถานะสมาชิก"
-        title="คลิกหรือชี้เมาส์เพื่อดูรายละเอียดสิทธิ์"
+        aria-label="ไปยังหน้าจัดการแพ็กเกจและดูสิทธิ์"
+        title="คลิกเพื่อไปยังหน้าแพ็กเกจ Premium / ชี้เมาส์เพื่อดูรายละเอียดสิทธิ์"
       >
         {iconNode}
         <span>{labelText}</span>
@@ -91,7 +91,7 @@ export function RoleBadge({ subscription }: RoleBadgeProps) {
             {daysLeft} วัน
           </span>
         )}
-      </button>
+      </Link>
 
       {/* Popover / Tooltip */}
       {isOpen && (
@@ -224,17 +224,24 @@ export function RoleBadge({ subscription }: RoleBadgeProps) {
           )}
 
           {isPremium && (
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-slate-400 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                สถานะสมาชิกพร้อมใช้งาน
-              </span>
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  สถานะสมาชิกพร้อมใช้งาน
+                </span>
+                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                  {daysLeft !== null ? `เหลืออีก ${daysLeft} วัน` : "Premium"}
+                </span>
+              </div>
               <Link
                 href="/subscription"
                 onClick={() => setIsOpen(false)}
-                className="font-semibold text-amber-600 hover:text-amber-700 underline text-[11px]"
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 py-2 px-3 text-xs font-bold transition-colors"
               >
-                ดูรายละเอียดแพ็กเกจ
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>ต่ออายุเพิ่ม (บวกวันใช้งานสะสม)</span>
+                <ChevronRight className="w-3.5 h-3.5 ml-auto" />
               </Link>
             </div>
           )}

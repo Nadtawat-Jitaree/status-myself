@@ -43,6 +43,23 @@ export async function getSubscriptionInfo(): Promise<SubscriptionInfo | null> {
   // ตรวจสอบว่าหมดอายุแล้วหรือไม่
   const isExpired = expiresAt ? now.getTime() > expiresAt.getTime() : false;
 
+  // หากเดิมเป็น premium แต่หมดอายุแล้ว ให้ทำการปรับ role ใน DB เป็น 'member' (สมาชิกทั่วไป) ทันที
+  if (rawRole === "premium" && isExpired) {
+    try {
+      const { createAdminClient } = await import("./supabase/admin");
+      const adminSupabase = createAdminClient();
+      await adminSupabase
+        .from("profiles")
+        .update({
+          role: "member",
+          updated_at: now.toISOString(),
+        })
+        .eq("id", user.id);
+    } catch (err) {
+      console.warn("Auto-downgrade expired role error:", err);
+    }
+  }
+
   // เป็น Premium ได้ก็ต่อเมื่อ role คือ 'premium' และยังไม่หมดอายุ
   const isPremium = rawRole === "premium" && !isExpired;
   const effectiveRole: UserRole = isPremium ? "premium" : "member";
