@@ -52,3 +52,51 @@ export function invalidateNotesCache(noteType?: string): void {
     notesMemoryCache.clear();
   }
 }
+
+export interface CachedNoteQuality {
+  quality_id: string;
+  level: 1 | 3 | 5;
+}
+
+interface NoteQualitiesCacheEntry {
+  data: CachedNoteQuality[];
+  timestamp: number;
+}
+
+// In-Memory Hash Map สำหรับแคชข้อมูล Note Qualities (ความเร็ว O(1) ~0ms)
+const noteQualitiesMemoryCache = new Map<string, NoteQualitiesCacheEntry>();
+const QUALITIES_CACHE_TTL_MS = 60 * 1000;
+
+/**
+ * ดึง Note Qualities จากแคช (ความเร็ว O(1) ใช้เวลา ~0ms)
+ */
+export function getCachedNoteQualities(noteId: string): CachedNoteQuality[] | null {
+  const entry = noteQualitiesMemoryCache.get(noteId);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > QUALITIES_CACHE_TTL_MS) {
+    noteQualitiesMemoryCache.delete(noteId);
+    return null;
+  }
+  return entry.data;
+}
+
+/**
+ * บันทึก Note Qualities ลงแคช
+ */
+export function setCachedNoteQualities(noteId: string, data: CachedNoteQuality[]): void {
+  noteQualitiesMemoryCache.set(noteId, {
+    data,
+    timestamp: Date.now(),
+  });
+}
+
+/**
+ * ลบแคช Note Qualities เมื่อบันทึกหรือลบ
+ */
+export function invalidateNoteQualitiesCache(noteId?: string): void {
+  if (noteId) {
+    noteQualitiesMemoryCache.delete(noteId);
+  } else {
+    noteQualitiesMemoryCache.clear();
+  }
+}

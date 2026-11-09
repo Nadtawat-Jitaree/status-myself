@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,6 +33,10 @@ import {
   Quality,
   SelectedQualityInput,
 } from "@/app/actions/qualities";
+import {
+  getCachedNoteQualities,
+  setCachedNoteQualities,
+} from "@/lib/notes-cache";
 
 export interface NoteCategoryItem {
   id: string;
@@ -79,6 +83,11 @@ export function NoteFormModal({
   const [file, setFile] = useState<File | null>(null);
   const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
   const [selectedQualities, setSelectedQualities] = useState<SelectedQualityInput[]>([]);
+  const [isLoadingQualities, setIsLoadingQualities] = useState(false);
+
+  // ป้องกัน Race Condition และความล่าช้าจากการโหลดข้าม Note
+  const activeFetchNoteIdRef = useRef<string | null>(null);
+  const previousNoteIdRef = useRef<string | null | undefined>(undefined);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeletingFile, setIsDeletingFile] = useState(false);
@@ -89,37 +98,77 @@ export function NoteFormModal({
   const [modalSelectYear, setModalSelectYear] = useState<number | "all" | "none">("all");
   const [modalSelectSemester, setModalSelectSemester] = useState<number | "all" | "none">("all");
 
-  const isEditMode = Boolean(note?.id);
+  const noteId = note?.id || null;
+  const isEditMode = Boolean(noteId);
 
-  // โหลดข้อมูลเมื่อเปิด modal หรือ note เปลี่ยน
+  // โหลดข้อมูลเมื่อเปิด modal หรือ note เปลี่ยน โดยใช้ Algorithm ป้องกัน Race Condition & Stale State
   useEffect(() => {
-    if (isOpen) {
-      if (note) {
-        setTitle(note.title || "");
-        setContent(note.content || "");
-        setCategoryId(note.category_id || "");
-        setStatus(note.status || "ทั่วไป");
-        setExistingFilePath(note.file_path || null);
-        setFile(null);
-
-        if (note.id) {
-          getNoteQualities(note.id)
-            .then((data) => setSelectedQualities(data))
-            .catch((err) => console.error("Error loading note qualities:", err));
-        } else {
-          setSelectedQualities([]);
-        }
-      } else {
-        setTitle("");
-        setContent("");
-        setCategoryId(categories.length > 0 ? categories[0].id : "");
-        setStatus("ทั่วไป");
-        setExistingFilePath(null);
-        setFile(null);
-        setSelectedQualities([]);
-      }
+    if (!isOpen) {
+      // เมื่อปิด modal ให้ยกเลิกคำขอที่ค้างอยู่และล้างสถานะ
+      activeFetchNoteIdRef.current = null;
+      previousNoteIdRef.current = undefined;
+      setIsLoadingQualities(false);
+      return;
     }
-  }, [isOpen, note, categories]);
+
+    // ตรวจสอบว่า Note ID เปลี่ยนจริงหรือไม่ (ป้องกัน re-render ซ้ำซ้อนจาก Parent ที่ส่ง Object ใหม่)
+    const isNewTarget = previousNoteIdRef.current !== noteId;
+    if (!isNewTarget) {
+      return;
+    }
+    previousNoteIdRef.current = noteId;
+
+    if (note && noteId) {
+      // --- โหมดแก้ไข Note ---
+      setTitle(note.title || "");
+      setContent(note.content || "");
+      setCategoryId(note.category_id || (categories.length > 0 ? categories[0].id : ""));
+      setStatus(note.status || "ทั่วไป");
+      setExistingFilePath(note.file_path || null);
+      setFile(null);
+
+      activeFetchNoteIdRef.current = noteId;
+
+      // 1. ตรวจสอบ In-Memory Cache ความเร็ว O(1) (~0ms)
+      const cached = getCachedNoteQualities(noteId);
+      if (cached) {
+        setSelectedQualities(cached);
+        setIsLoadingQualities(false);
+      } else {
+        // ล้างข้อมูลทันที ไม่ให้มีค่าจาก Note เก่าตกค้างขณะโหลด
+        setSelectedQualities([]);
+        setIsLoadingQualities(true);
+
+        getNoteQualities(noteId)
+          .then((data) => {
+            // ตรวจสอบว่า Note ที่ตอบกลับมายังเป็น Note ปัจจุบันหรือไม่
+            if (activeFetchNoteIdRef.current === noteId) {
+              setCachedNoteQualities(noteId, data);
+              setSelectedQualities(data);
+              setIsLoadingQualities(false);
+            }
+          })
+          .catch((err) => {
+            console.error("Error loading note qualities:", err);
+            if (activeFetchNoteIdRef.current === noteId) {
+              setIsLoadingQualities(false);
+            }
+          });
+      }
+    } else {
+      // --- โหมดสร้าง Note ใหม่ ---
+      // ยกเลิกคำขอเดิมทั้งหมดทันที และรีเซ็ตฟอร์มเป็นค่าเริ่มต้น
+      activeFetchNoteIdRef.current = null;
+      setTitle(note?.title || "");
+      setContent(note?.content || "");
+      setCategoryId(note?.category_id || (categories.length > 0 ? categories[0].id : ""));
+      setStatus(note?.status || "ทั่วไป");
+      setExistingFilePath(null);
+      setFile(null);
+      setSelectedQualities([]);
+      setIsLoadingQualities(false);
+    }
+  }, [isOpen, noteId, categories]);
 
   if (!isOpen) return null;
 
@@ -254,6 +303,8 @@ export function NoteFormModal({
       if (savedId && selectedQualities.length >= 0) {
         try {
           await syncNoteQualities(savedId, title.trim(), selectedQualities);
+          // อัปเดต In-Memory Cache ทันที เพื่อให้การเปิดแก้ไขครั้งถัดไปเร็วระดับ O(1) ~0ms
+          setCachedNoteQualities(savedId, selectedQualities);
         } catch (qErr) {
           console.error("Error syncing note qualities:", qErr);
         }
@@ -381,6 +432,7 @@ export function NoteFormModal({
                     qualities={availableQualities}
                     value={selectedQualities}
                     onChange={setSelectedQualities}
+                    isLoading={isLoadingQualities}
                   />
                 )}
 

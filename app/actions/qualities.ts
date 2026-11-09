@@ -239,18 +239,19 @@ export async function syncNoteQualities(
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  // 1. ลบ note_qualities และ transactions เก่าของ note นี้ (ถ้ามี)
-  await supabase
-    .from("note_qualities")
-    .delete()
-    .eq("note_id", noteId)
-    .eq("user_id", user.id);
-
-  await supabase
-    .from("quality_transactions")
-    .delete()
-    .eq("note_id", noteId)
-    .eq("user_id", user.id);
+  // 1. ลบ note_qualities และ transactions เก่าของ note นี้ (ถ้ามี) แบบ Parallel (ลด Network Roundtrip)
+  await Promise.all([
+    supabase
+      .from("note_qualities")
+      .delete()
+      .eq("note_id", noteId)
+      .eq("user_id", user.id),
+    supabase
+      .from("quality_transactions")
+      .delete()
+      .eq("note_id", noteId)
+      .eq("user_id", user.id),
+  ]);
 
   if (!selectedQualities || selectedQualities.length === 0) {
     revalidatePath("/system/qualities");
@@ -276,14 +277,6 @@ export async function syncNoteQualities(
     level: item.level,
   }));
 
-  const { error: nqError } = await supabase
-    .from("note_qualities")
-    .insert(noteQualitiesInsert);
-
-  if (nqError) {
-    console.error("Error inserting note qualities:", nqError.message);
-  }
-
   // เตรียม Insert quality_transactions
   const levelLabelMap: Record<number, string> = {
     1: "ปกติ (+1)",
@@ -306,12 +299,18 @@ export async function syncNoteQualities(
     };
   });
 
-  const { error: txError } = await supabase
-    .from("quality_transactions")
-    .insert(transactionsInsert);
+  // รัน insert ทั้งสองแบบ Parallel เพื่อความรวดเร็ว
+  const [nqRes, txRes] = await Promise.all([
+    supabase.from("note_qualities").insert(noteQualitiesInsert),
+    supabase.from("quality_transactions").insert(transactionsInsert),
+  ]);
 
-  if (txError) {
-    console.error("Error inserting note quality transactions:", txError.message);
+  if (nqRes.error) {
+    console.error("Error inserting note qualities:", nqRes.error.message);
+  }
+
+  if (txRes.error) {
+    console.error("Error inserting note quality transactions:", txRes.error.message);
   }
 
   revalidatePath("/system/qualities");

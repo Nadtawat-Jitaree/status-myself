@@ -20,6 +20,7 @@ import {
   isCacheFresh,
   setCachedNotes,
   invalidateNotesCache,
+  invalidateNoteQualitiesCache,
 } from "@/lib/notes-cache";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,13 +63,9 @@ import ShareModal from "@/components/ShareModal";
 import { NoteFormModal } from "@/components/NoteFormModal";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
 import RichNoteEditor from "@/components/RichNoteEditor";
-import { QualityPicker } from "@/components/QualityPicker";
 import {
   getQualities,
-  getNoteQualities,
-  syncNoteQualities,
   Quality,
-  SelectedQualityInput,
 } from "@/app/actions/qualities";
 
 type Category = {
@@ -324,54 +321,10 @@ export default function NotesPage({ noteType, initialData }: Props) {
     }
   };
 
-  const handleRemoveExistingPdf = async () => {
-    if (!editingNoteId || !existingFilePath) return;
-
-    const result = await Swal.fire({
-      title: "ยืนยันการลบไฟล์?",
-      text: "ไฟล์ PDF นี้จะถูกลบออกอย่างถาวร!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#94a3b8",
-      confirmButtonText: "ใช่, ลบเลย",
-      cancelButtonText: "ยกเลิก",
-    });
-
-    if (result.isConfirmed) {
-      setIsDeletingFile(true);
-      try {
-        await removeNoteAttachment(editingNoteId, existingFilePath);
-        setExistingFilePath(null);
-        Swal.fire({
-          icon: "success",
-          title: "ลบไฟล์สำเร็จ!",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-        await loadNotes();
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
-        Swal.fire({
-          icon: "error",
-          title: "เกิดข้อผิดพลาด",
-          text: message,
-        });
-      } finally {
-        setIsDeletingFile(false);
-      }
-    }
-  };
-
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [status, setStatus] = useState("ทั่วไป");
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
 
   // ทักษะ & แต้ม
   const [availableQualities, setAvailableQualities] = useState<Quality[]>([]);
-  const [selectedQualities, setSelectedQualities] = useState<SelectedQualityInput[]>([]);
 
   // โหลดรายการทักษะของผู้ใช้เมื่อเข้าหน้านี้
   useEffect(() => {
@@ -806,114 +759,19 @@ export default function NotesPage({ noteType, initialData }: Props) {
     }
   };
 
-  const [file, setFile] = useState<File | null>(null);
-
-  const handleSaveNote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-    setIsSubmittingNote(true);
-
-    try {
-      let uploadedFilePath = null;
-
-      if (file) {
-        const supabase = createClient();
-        const fileName = await hashFileToName(file);
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("note_attachments")
-          .upload(fileName, file);
-
-        if (uploadError)
-          throw new Error("อัปโหลดไฟล์ไม่สำเร็จ: " + uploadError.message);
-
-        uploadedFilePath = uploadData.path;
-      }
-      if (!categoryId) {
-        throw new Error("กรุณาเลือกหมวดหมู่");
-      }
-      const cleanedContent = (content || "")
-        .replace(/<span[^>]*>\s*<\/span>/gi, "")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
-      const notePayload = {
-        title,
-        content: cleanedContent,
-        category_id: categoryId,
-        status: status,
-        ...(uploadedFilePath && { file_path: uploadedFilePath }),
-      };
-
-      let savedNoteId = editingNoteId;
-
-      if (editingNoteId) {
-        await updateNote(editingNoteId, notePayload);
-      } else {
-        const createRes = await createNote(notePayload);
-        savedNoteId = createRes?.id || null;
-      }
-
-      // บันทึกและซิงค์ทักษะ + transactions
-      if (savedNoteId) {
-        await syncNoteQualities(savedNoteId, title, selectedQualities);
-      }
-
-      Swal.fire({
-        icon: "success",
-        title: editingNoteId ? "อัปเดตสำเร็จ!" : "บันทึกสำเร็จ!",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-
-      closeNoteModal();
-      setFile(null);
-      invalidateNotesCache(noteType);
-      await loadNotes();
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "ไม่สามารถบันทึกข้อมูลได้";
-      Swal.fire({
-        icon: "error",
-        title: "เกิดข้อผิดพลาด",
-        text: message,
-      });
-    } finally {
-      setIsSubmittingNote(false);
-    }
-  };
-
   const openNewNoteModal = () => {
-    setEditingNoteId(null);
-    setTitle("");
-    setContent("");
-    setCategoryId("");
-    setStatus("ทั่วไป");
-    setSelectedQualities([]);
+    setEditingNote(null);
     setIsNoteModalOpen(true);
   };
 
   const handleEditNoteClick = (note: Note) => {
-    setExistingFilePath(note.file_path || null);
-    setEditingNoteId(note.id);
-    setTitle(note.title);
-    setContent(note.content || "");
-    setCategoryId(note.category_id || "");
-    setStatus(note.status || "ทั่วไป");
-    setSelectedQualities([]);
+    setEditingNote(note);
     setIsNoteModalOpen(true);
-
-    // ดึงคุณสมบัติที่ผูกกับ note นี้ไว้
-    getNoteQualities(note.id)
-      .then((data) => setSelectedQualities(data))
-      .catch((err) => console.error("Error loading note qualities:", err));
   };
 
   const closeNoteModal = () => {
     setIsNoteModalOpen(false);
-    setEditingNoteId(null);
-    setTitle("");
-    setContent("");
-    setCategoryId("");
-    setStatus("ทั่วไป");
-    setSelectedQualities([]);
+    setEditingNote(null);
   };
 
   const handleInlineStatusChange = async (note: Note, newStatus: string) => {
@@ -966,6 +824,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
       try {
         await deleteNote(id);
         invalidateNotesCache(noteType);
+        invalidateNoteQualitiesCache(id);
         setNotes((prev) => prev.filter((note) => note.id !== id));
       } catch {
         Swal.fire("ข้อผิดพลาด!", "ไม่สามารถลบโน้ตได้", "error");
@@ -2328,18 +2187,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
       <NoteFormModal
         isOpen={isNoteModalOpen}
         onClose={closeNoteModal}
-        note={
-          editingNoteId
-            ? {
-                id: editingNoteId,
-                title,
-                content,
-                category_id: categoryId,
-                status,
-                file_path: existingFilePath,
-              }
-            : null
-        }
+        note={editingNote}
         categories={categories}
         availableQualities={availableQualities}
         noteType={noteType}
