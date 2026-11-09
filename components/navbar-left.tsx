@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { BarChart3, LayoutGrid, MessagesSquare, Lock } from "lucide-react";
-import Swal from "sweetalert2";
 import NoteTypeModal from "./NoteTypeModal";
 import { getUserSubscriptionAction } from "@/app/actions/subscription";
 import type { SubscriptionInfo } from "@/lib/subscription-types";
@@ -14,7 +13,6 @@ export function NavbarLeft() {
   const [openModalNavbar, setOpenModalNavbar] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const pathname = usePathname();
-  const router = useRouter();
 
   useEffect(() => {
     getUserSubscriptionAction()
@@ -30,44 +28,6 @@ export function NavbarLeft() {
     pathname.startsWith("/system/projects") ||
     pathname.startsWith("/system/calendar") ||
     pathname.startsWith("/system/qualities");
-
-  const handleDashboardClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
-    let currentIsPremium = isPremium;
-    // ป้องกัน race condition กรณีเพิ่งอัปเกรดหรือ state ยังไม่พร้อม
-    if (!currentIsPremium) {
-      const freshSub = await getUserSubscriptionAction().catch(() => null);
-      if (freshSub?.isPremium) {
-        setSubscription(freshSub);
-        return;
-      }
-    }
-
-    if (!currentIsPremium) {
-      e.preventDefault();
-      Swal.fire({
-        icon: "warning",
-        title: "ฟีเจอร์สำหรับสมาชิก Premium",
-        html: `<div class="text-sm text-slate-600 space-y-2">
-          <p>หน้าระบบ <b>Dashboard</b> สงวนสิทธิ์สำหรับสมาชิก <b>Premium</b> เท่านั้น</p>
-          <p class="text-xs text-slate-500">อัปเกรดเพื่อดูสถิติภาพรวม วิเคราะห์ความก้าวหน้า และบันทึกทั้งหมดของคุณ</p>
-        </div>`,
-        showCancelButton: true,
-        confirmButtonText: "ดูแพ็กเกจ Premium",
-        cancelButtonText: "ไว้คราวหลัง",
-        confirmButtonColor: "#f59e0b",
-        cancelButtonColor: "#94a3b8",
-        customClass: {
-          popup: "rounded-3xl",
-          confirmButton: "rounded-xl font-bold px-4 py-2",
-          cancelButton: "rounded-xl font-medium px-4 py-2",
-        },
-      }).then((result) => {
-        if (result.isConfirmed) {
-          router.push("/subscription");
-        }
-      });
-    }
-  };
 
   return (
     <div className="flex items-center gap-2 sm:gap-3.5">
@@ -102,22 +62,40 @@ export function NavbarLeft() {
       {/* เมนูนำทาง (Dashboard, Board, Menus) */}
       <nav className="flex items-center gap-1.5 sm:gap-2">
         {/* เมนู Dashboard */}
-        <Link
-          href="/system/dashboard"
-          onClick={handleDashboardClick}
-          title={isPremium ? "Dashboard" : "Dashboard (สำหรับสมาชิก Premium)"}
-          className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 ${
-            pathname.startsWith("/system/dashboard")
-              ? "bg-blue-600 text-white shadow-sm shadow-blue-500/30 border border-transparent"
-              : "text-blue-600 bg-blue-500/10 hover:bg-blue-500/20 border-blue-200/50 border"
-          }`}
-        >
-          <BarChart3 className="h-[18px] w-[18px]" />
-          <span className="hidden md:inline-block">Dashboard</span>
-          {!isPremium && (
-            <Lock className="h-3 w-3 text-amber-500 hidden sm:inline-block" />
-          )}
-        </Link>
+        {isPremium ? (
+          <Link
+            href="/system/dashboard"
+            title="Dashboard"
+            className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+              pathname.startsWith("/system/dashboard")
+                ? "bg-blue-600 text-white shadow-sm shadow-blue-500/30 border border-transparent"
+                : "text-blue-600 bg-blue-500/10 hover:bg-blue-500/20 border-blue-200/50 border"
+            }`}
+          >
+            <BarChart3 className="h-[18px] w-[18px]" />
+            <span className="hidden md:inline-block">Dashboard</span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            title="Dashboard (สงวนสิทธิ์เฉพาะสมาชิก Premium เท่านั้น)"
+            className="relative flex h-10 items-center justify-center rounded-2xl px-2.5 sm:px-3 text-xs font-semibold border border-slate-200/70 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-800/40 cursor-not-allowed select-none overflow-hidden transition-opacity"
+          >
+            {/* เนื้อหาเดิมที่ถูกเบลอ */}
+            <div className="flex items-center gap-2 blur-[1.5px] opacity-30 grayscale select-none pointer-events-none">
+              <BarChart3 className="h-[18px] w-[18px]" />
+              <span className="hidden md:inline-block">Dashboard</span>
+            </div>
+            {/* Icon กุญแจล็อคตรงกลาง */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/15 dark:bg-amber-400/20 text-amber-600 dark:text-amber-400 border border-amber-300/40 dark:border-amber-500/30 shadow-xs">
+                <Lock className="w-3.5 h-3.5" />
+              </div>
+            </div>
+          </button>
+        )}
 
         {/* เมนู Board (สมาชิกทั่วไปใช้งานได้ตาม Requirement) */}
         <Link
@@ -134,34 +112,53 @@ export function NavbarLeft() {
         </Link>
 
         {/* ปุ่มเมนูพื้นที่ทำงาน (เปิด Modal) */}
-        <button
-          type="button"
-          onClick={() => setOpenModalNavbar(true)}
-          className={`group relative flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 shadow-xs ${
-            isWorkspaceActive
-              ? "bg-purple-600 text-white shadow-sm shadow-purple-500/30 border border-transparent"
-              : "text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-200/60"
-          }`}
-          title="เลือกพื้นที่ทำงาน (Menus)"
-        >
-          <LayoutGrid className="h-[18px] w-[18px] transition-transform duration-200 group-hover:rotate-12" />
-          <span className="hidden md:inline-block">Menus</span>
-          {!isPremium && (
-            <Lock className="h-3 w-3 text-amber-500 hidden sm:inline-block" />
-          )}
-          <span className="relative flex h-2 w-2">
-            <span
-              className={`absolute inline-flex h-full w-full animate-ping rounded-full ${
-                isWorkspaceActive ? "bg-white/80" : "bg-purple-400"
-              } opacity-75`}
-            />
-            <span
-              className={`relative inline-flex h-2 w-2 rounded-full ${
-                isWorkspaceActive ? "bg-white" : "bg-purple-500"
-              }`}
-            />
-          </span>
-        </button>
+        {isPremium ? (
+          <button
+            type="button"
+            onClick={() => setOpenModalNavbar(true)}
+            className={`group relative flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 shadow-xs ${
+              isWorkspaceActive
+                ? "bg-purple-600 text-white shadow-sm shadow-purple-500/30 border border-transparent"
+                : "text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-200/60"
+            }`}
+            title="เลือกพื้นที่ทำงาน (Menus)"
+          >
+            <LayoutGrid className="h-[18px] w-[18px] transition-transform duration-200 group-hover:rotate-12" />
+            <span className="hidden md:inline-block">Menus</span>
+            <span className="relative flex h-2 w-2">
+              <span
+                className={`absolute inline-flex h-full w-full animate-ping rounded-full ${
+                  isWorkspaceActive ? "bg-white/80" : "bg-purple-400"
+                } opacity-75`}
+              />
+              <span
+                className={`relative inline-flex h-2 w-2 rounded-full ${
+                  isWorkspaceActive ? "bg-white" : "bg-purple-500"
+                }`}
+              />
+            </span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            title="Menus (สงวนสิทธิ์เฉพาะสมาชิก Premium เท่านั้น)"
+            className="relative flex h-10 items-center justify-center rounded-2xl px-2.5 sm:px-3 text-xs font-semibold border border-slate-200/70 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-800/40 cursor-not-allowed select-none overflow-hidden transition-opacity"
+          >
+            {/* เนื้อหาเดิมที่ถูกเบลอ */}
+            <div className="flex items-center gap-2 blur-[1.5px] opacity-30 grayscale select-none pointer-events-none">
+              <LayoutGrid className="h-[18px] w-[18px]" />
+              <span className="hidden md:inline-block">Menus</span>
+            </div>
+            {/* Icon กุญแจล็อคตรงกลาง */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/15 dark:bg-amber-400/20 text-amber-600 dark:text-amber-400 border border-amber-300/40 dark:border-amber-500/30 shadow-xs">
+                <Lock className="w-3.5 h-3.5" />
+              </div>
+            </div>
+          </button>
+        )}
       </nav>
 
       {/* Modal เลือกพื้นที่ทำงาน */}
