@@ -91,6 +91,66 @@ export async function getUserProfile(userId: string): Promise<ProfileRecord | nu
 }
 
 /**
+ * ดึง path สำหรับอ้างอิงใน Supabase Storage Bucket 'avatars'
+ */
+function extractStoragePath(rawUrlOrPath?: string | null): string | null {
+  if (!rawUrlOrPath) return null;
+  if (rawUrlOrPath.startsWith("blob:")) return null;
+
+  let path = rawUrlOrPath;
+  if (path.includes("/avatars/")) {
+    path = path.split("/avatars/")[1];
+  }
+  path = path.split("?")[0].trim();
+  return path || null;
+}
+
+/**
+ * ลบรูปโปรไฟล์เก่าออกจาก Supabase Storage Bucket 'avatars'
+ * เพื่อไม่ให้มีไฟล์รูปภาพที่ไม่ได้ใช้งานตกค้างในระบบ
+ */
+async function cleanupOldAvatars(
+  supabase: any,
+  userId: string,
+  oldAvatarUrl?: string | null,
+  keepPath?: string | null
+) {
+  try {
+    const toDeleteSet = new Set<string>();
+
+    const oldExtracted = extractStoragePath(oldAvatarUrl);
+    const keepExtracted = extractStoragePath(keepPath);
+
+    if (oldExtracted && oldExtracted !== keepExtracted) {
+      toDeleteSet.add(oldExtracted);
+    }
+
+    // สแกนและลบไฟล์เก่าในโฟลเดอร์ของ user นี้
+    const { data: files } = await supabase.storage.from("avatars").list(userId);
+    if (files && files.length > 0) {
+      const keepFileName = keepExtracted ? keepExtracted.split("/").pop() : null;
+      for (const file of files) {
+        if (file.name && file.name !== keepFileName) {
+          toDeleteSet.add(`${userId}/${file.name}`);
+        }
+      }
+    }
+
+    const filesToDelete = Array.from(toDeleteSet);
+    if (filesToDelete.length > 0) {
+      const { error: removeError } = await supabase.storage
+        .from("avatars")
+        .remove(filesToDelete);
+      if (removeError) {
+        console.warn("Could not delete old avatars from storage:", removeError);
+      }
+    }
+  } catch (err) {
+    console.warn("cleanupOldAvatars error:", err);
+  }
+}
+
+/**
  * บันทึกการแก้ไขข้อมูลโปรไฟล์ (Display name, Avatar selection, Social links)
  */
 export async function updateProfile(formData: {
@@ -109,6 +169,13 @@ export async function updateProfile(formData: {
   } = await supabase.auth.getUser();
 
   if (!user) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
+
+  // ดึงข้อมูลโปรไฟล์ปัจจุบันเพื่อตรวจสอบรูปภาพเดิมก่อนอัปเดต
+  const { data: currentProfile } = await supabase
+    .from("profiles")
+    .select("avatar_url, avatar_type")
+    .eq("id", user.id)
+    .single();
 
   const updatePayload: Record<string, any> = {
     display_name: formData.display_name?.trim() || null,
@@ -132,6 +199,16 @@ export async function updateProfile(formData: {
   if (error) {
     console.error("Update profile error:", error);
     throw new Error("บันทึกข้อมูลไม่สำเร็จ: " + error.message);
+  }
+
+  // ลบรูปภาพเก่าใน bucket 'avatars' เมื่อเปลี่ยนรูปใหม่ หรือเปลี่ยนไปใช้ icon
+  const oldAvatarUrl = currentProfile?.avatar_url;
+  const newAvatarUrl = formData.avatar_url;
+  const isTypeIcon = formData.avatar_type === "icon";
+
+  if (isTypeIcon || (oldAvatarUrl && oldAvatarUrl !== newAvatarUrl)) {
+    const keepPath = isTypeIcon ? null : newAvatarUrl;
+    await cleanupOldAvatars(supabase, user.id, oldAvatarUrl, keepPath);
   }
 
   revalidatePath("/board");

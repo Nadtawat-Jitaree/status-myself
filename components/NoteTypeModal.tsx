@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, X, Sparkles, FileText, GraduationCap, FolderKanban } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 
 interface NoteTypeModalProps {
   open: boolean;
@@ -21,160 +21,161 @@ export default function NoteTypeModal({
     setMounted(true);
   }, []);
 
+  // รองรับการกด Esc เพื่อปิด Modal
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
   if (!open || !mounted) return null;
 
-  const menuItems = [
+  const workspaceItems = [
     {
       title: "โน้ตทั่วไป",
-      description: "บันทึกข้อความ ไอเดีย และงานทั่วไปในชีวิตประจำวัน",
       href: "/system/notes/normal",
       image: "/note.webp",
-      tag: "Personal & Work",
-      color: "blue",
-      borderHover: "hover:border-blue-500/50 hover:shadow-blue-500/5",
-      bgHover: "hover:bg-blue-50/50",
-      iconBg: "bg-blue-100/80 text-blue-600",
-      tagColor: "bg-blue-50 text-blue-700 border-blue-200/60",
+      hoverBorder: "hover:border-blue-400 hover:shadow-blue-500/15",
+      hoverBg: "hover:bg-blue-50/50 dark:hover:bg-blue-950/20",
+      textColor: "group-hover:text-blue-600 dark:group-hover:text-blue-400",
+      glowBg: "from-blue-500/10 to-transparent",
     },
     {
       title: "โน้ตมหาวิทยาลัย",
-      description: "จัดการบันทึกวิชาเรียน การบ้าน รายงาน และตารางสอบ",
       href: "/system/notes/school",
       image: "/school.webp",
-      tag: "Education & Study",
-      color: "emerald",
-      borderHover: "hover:border-emerald-500/50 hover:shadow-emerald-500/5",
-      bgHover: "hover:bg-emerald-50/50",
-      iconBg: "bg-emerald-100/80 text-emerald-600",
-      tagColor: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
+      hoverBorder: "hover:border-emerald-400 hover:shadow-emerald-500/15",
+      hoverBg: "hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20",
+      textColor: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
+      glowBg: "from-emerald-500/10 to-transparent",
     },
     {
-      title: "โปรเจกต์ & ภารกิจ",
-      description: "ติดตามความคืบหน้ารายงาน โปรเจกต์ และขั้นตอนการทำงาน",
+      title: "โปรเจกต์",
       href: "/system/projects",
       image: "/normal.webp",
-      tag: "Task Tracking",
-      color: "purple",
-      borderHover: "hover:border-purple-500/50 hover:shadow-purple-500/5",
-      bgHover: "hover:bg-purple-50/50",
-      iconBg: "bg-purple-100/80 text-purple-600",
-      tagColor: "bg-purple-50 text-purple-700 border-purple-200/60",
+      hoverBorder: "hover:border-purple-400 hover:shadow-purple-500/15",
+      hoverBg: "hover:bg-purple-50/50 dark:hover:bg-purple-950/20",
+      textColor: "group-hover:text-purple-600 dark:group-hover:text-purple-400",
+      glowBg: "from-purple-500/10 to-transparent",
     },
     {
-      title: "ปฏิทิน & บันทึกรายวัน",
-      description: "ดูตารางปฏิทิน เช็คกิจกรรมที่ทำแล้ว และบันทึกสรุปประจำวัน",
+      title: "ปฏิทิน",
       href: "/system/calendar",
       image: "/all.webp",
-      tag: "Daily Log & Calendar",
-      color: "amber",
-      borderHover: "hover:border-amber-500/50 hover:shadow-amber-500/5",
-      bgHover: "hover:bg-amber-50/50",
-      iconBg: "bg-amber-100/80 text-amber-600",
-      tagColor: "bg-amber-50 text-amber-700 border-amber-200/60",
+      hoverBorder: "hover:border-amber-400 hover:shadow-amber-500/15",
+      hoverBg: "hover:bg-amber-50/50 dark:hover:bg-amber-950/20",
+      textColor: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
+      glowBg: "from-amber-500/10 to-transparent",
     },
     {
-      title: "ทักษะ & แต้มสะสม",
-      description: "จัดการทักษะ ทักษะ และดูสถิติแต้มพัฒนาการของตนเอง",
+      title: "ทักษะ",
       href: "/system/qualities",
       image: "/skills.png",
-      tag: "Skills & Points",
-      color: "indigo",
-      borderHover: "hover:border-indigo-500/50 hover:shadow-indigo-500/5",
-      bgHover: "hover:bg-indigo-50/50",
-      iconBg: "bg-indigo-100/80 text-indigo-600",
-      tagColor: "bg-indigo-50 text-indigo-700 border-indigo-200/60",
+      hoverBorder: "hover:border-indigo-400 hover:shadow-indigo-500/15",
+      hoverBg: "hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20",
+      textColor: "group-hover:text-indigo-600 dark:group-hover:text-indigo-400",
+      glowBg: "from-indigo-500/10 to-transparent",
     },
   ];
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="workspace-modal-title"
     >
       <div
-        className="relative w-full max-w-lg rounded-3xl border bg-card p-6 sm:p-8 shadow-2xl"
+        className="relative w-full max-w-3xl rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-6 sm:p-8 shadow-2xl backdrop-blur-md transition-all max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
+        {/* ปุ่มปิดมุมขวาบน */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-          aria-label="ปิด"
+          className="absolute right-4 top-4 rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+          aria-label="ปิดหน้าต่าง"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
-        <div className="mb-7 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
-            <Sparkles className="w-6 h-6" />
+        {/* ส่วนหัว Modal สั้นกระชับ ไม่รก */}
+        <div className="mb-6 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-semibold mb-2">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Workspace</span>
           </div>
-
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          <h2
+            id="workspace-modal-title"
+            className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
+          >
             เลือกพื้นที่ทำงาน
           </h2>
-
-          <p className="mt-1 text-sm text-muted-foreground">
-            เลือกประเภทบันทึกหรือโปรเจกต์ที่คุณต้องการเข้าใช้งาน
-          </p>
         </div>
 
-        {/* Menu Items */}
-        <div className="space-y-3.5">
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              className={`group relative flex items-center gap-4 rounded-2xl border bg-card/60 p-4  hover:shadow-md ${item.borderHover} ${item.bgHover}`}
-            >
-              {/* Icon Container */}
-              <div
-                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl p-2 ${item.iconBg}`}
-              >
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  width={36}
-                  height={36}
-                  style={{ width: "auto", height: "auto" }}
-                  unoptimized
-                />
-              </div>
+        {/* Card Grid สไตล์ App Launcher: โลโก้เด่นด้านบน + ชื่ออยู่ข้างล่าง ไม่ซับซ้อน */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 sm:gap-4">
+          {workspaceItems.map((item, index) => {
+            // เมื่ออยู่บนมือถือ (2 cols) ให้รายการที่ 5 อยู่ตรงกลางกว้างเต็ม 2 ช่อง
+            const isLastOdd =
+              index === workspaceItems.length - 1 && workspaceItems.length % 2 !== 0;
 
-              {/* Text Info */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-base text-foreground group-hover:text-primary">
-                    {item.title}
-                  </span>
-                  <span
-                    className={`hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full border ${item.tagColor}`}
-                  >
-                    {item.tag}
-                  </span>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                className={`group relative flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 sm:p-5 transition-all duration-200 hover:shadow-sm active:scale-95 text-center ${
+                  item.hoverBorder
+                } ${item.hoverBg} ${
+                  isLastOdd
+                    ? "col-span-2 sm:col-span-1 max-w-[200px] sm:max-w-none mx-auto w-full"
+                    : ""
+                }`}
+              >
+                {/* แสงเรืองบางๆ ด้านหลังโลโก้ */}
+                <div
+                  className={`absolute inset-0 rounded-2xl sm:rounded-3xl bg-radial ${item.glowBg} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`}
+                />
+
+                {/* โลโก้เด่นชัด ขนาดใหญ่ */}
+                <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center transition-transform duration-200 group-hover:scale-105">
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    width={80}
+                    height={80}
+                    className="object-contain drop-shadow-md select-none"
+                    unoptimized
+                    priority
+                  />
                 </div>
 
-                <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                  {item.description}
-                </p>
-              </div>
-
-              {/* Arrow Icon */}
-              <div className="shrink-0 text-muted-foreground/60 group-hover:text-primary">
-                <ArrowRight className="w-5 h-5" />
-              </div>
-            </Link>
-          ))}
+                {/* ชื่อพื้นที่ทำงาน อยู่ใต้โลโก้ ตัวหนา ชัดเจน */}
+                <span
+                  className={`mt-3 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition-colors ${item.textColor}`}
+                >
+                  {item.title}
+                </span>
+              </Link>
+            );
+          })}
         </div>
 
-        {/* Cancel Button */}
-        <button
-          onClick={onClose}
-          className="mt-6 w-full rounded-xl border bg-background py-2.5 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          ยกเลิก
-        </button>
+        {/* ปุ่มปิดด้านล่าง เรียบง่าย */}
+        <div className="mt-7 text-center">
+          <button
+            onClick={onClose}
+            className="rounded-xl px-6 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            ยกเลิก
+          </button>
+        </div>
       </div>
     </div>,
     document.body

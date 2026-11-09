@@ -57,7 +57,7 @@ async function ProjectList() {
   if (!projects || projects.length === 0) {
     return (
       <div className="text-center py-12 border-2 border-dashed rounded-xl text-muted-foreground">
-        ยังไม่มีโปรเจค เริ่มสร้างโปรเจคแรกของคุณได้เลย
+        ยังไม่มีโปรเจกต์ เริ่มสร้างโปรเจกต์แรกของคุณได้เลย
       </div>
     );
   }
@@ -81,7 +81,7 @@ export default function ProjectsPage() {
           Projects
         </h1>
         <p className="text-muted-foreground mt-2">
-          จัดการและติดตามความคืบหน้าของโปรเจคทั้งหมด
+          จัดการและติดตามความคืบหน้าของโปรเจกต์ทั้งหมด
         </p>
       </div>
 

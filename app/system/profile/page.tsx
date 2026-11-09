@@ -21,13 +21,20 @@ async function ProfileContent() {
 
 function ProfileSkeleton() {
   return (
-    <div className="max-w-4xl mx-auto py-10 space-y-8 animate-pulse">
-      <div className="h-8 bg-slate-200 rounded-lg w-48" />
+    <div className="container mx-auto px-4 sm:px-8 py-8 sm:py-9 max-w-5xl flex flex-col gap-8 border-2 rounded-3xl animate-pulse">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b">
+        <div className="space-y-2">
+          <div className="h-8 bg-muted rounded-lg w-48" />
+          <div className="h-4 bg-muted rounded-lg w-72" />
+        </div>
+        <div className="h-9 bg-muted rounded-md w-32" />
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="h-64 bg-slate-200 rounded-3xl" />
+        <div className="h-72 bg-muted rounded-xl" />
         <div className="lg:col-span-2 space-y-6">
-          <div className="h-32 bg-slate-200 rounded-3xl" />
-          <div className="h-48 bg-slate-200 rounded-3xl" />
+          <div className="h-28 bg-muted rounded-xl" />
+          <div className="h-64 bg-muted rounded-xl" />
+          <div className="h-44 bg-muted rounded-xl" />
         </div>
       </div>
     </div>

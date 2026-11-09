@@ -53,7 +53,8 @@ export async function getBoardNotes(params: {
   page?: number;
   limit?: number;
   search?: string;
-  categoryName?: string;
+  category?: string;
+  sortBy?: "latest" | "popular" | "comments";
 }): Promise<BoardResponse> {
   const page = Math.max(1, params.page || 1);
   const limit = params.limit || 9;
@@ -94,22 +95,54 @@ export async function getBoardNotes(params: {
     .not("share_token", "is", null);
 
   if (params.search?.trim()) {
-    query = query.ilike("title", `%${params.search.trim()}%`);
+    const s = params.search.trim();
+    query = query.or(`title.ilike.%${s}%,content.ilike.%${s}%`);
   }
 
-  const { data: rawNotes, count, error } = await query
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  if (params.category && params.category !== "all") {
+    query = query.eq("category_id", params.category);
+  }
 
-  if (error || !rawNotes) {
-    console.error("Error fetching board notes:", error);
-    return {
-      notes: [],
-      totalCount: 0,
-      currentPage: page,
-      totalPages: 1,
-      pageSize: limit,
-    };
+  const isCustomSort = params.sortBy === "popular" || params.sortBy === "comments";
+
+  let rawNotes: any[] = [];
+  let count: number = 0;
+
+  if (isCustomSort) {
+    // ดึงโน้ตที่ตรงเงื่อนไขเพื่อมาจัดเรียงตาม Reactions / Comments
+    const { data, count: c, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(300);
+
+    if (error || !data) {
+      console.error("Error fetching board notes for custom sort:", error);
+      return {
+        notes: [],
+        totalCount: 0,
+        currentPage: page,
+        totalPages: 1,
+        pageSize: limit,
+      };
+    }
+    rawNotes = data;
+    count = c || data.length;
+  } else {
+    const { data, count: c, error } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error || !data) {
+      console.error("Error fetching board notes:", error);
+      return {
+        notes: [],
+        totalCount: 0,
+        currentPage: page,
+        totalPages: 1,
+        pageSize: limit,
+      };
+    }
+    rawNotes = data;
+    count = c || 0;
   }
 
   const noteIds = rawNotes.map((n) => n.id);
@@ -164,7 +197,7 @@ export async function getBoardNotes(params: {
   }
 
   // 5. รวมผลลัพธ์
-  const notes: BoardNoteItem[] = rawNotes.map((n) => {
+  let notes: BoardNoteItem[] = rawNotes.map((n) => {
     const cat = Array.isArray(n.note_categories)
       ? n.note_categories[0]
       : n.note_categories;
@@ -195,6 +228,16 @@ export async function getBoardNotes(params: {
     };
   });
 
+  if (params.sortBy === "popular") {
+    notes.sort((a, b) => b.likeCount - a.likeCount || b.commentCount - a.commentCount);
+  } else if (params.sortBy === "comments") {
+    notes.sort((a, b) => b.commentCount - a.commentCount || b.likeCount - a.likeCount);
+  }
+
+  if (isCustomSort) {
+    notes = notes.slice(offset, offset + limit);
+  }
+
   const totalCount = count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
@@ -204,6 +247,70 @@ export async function getBoardNotes(params: {
     currentPage: page,
     totalPages,
     pageSize: limit,
+  };
+}
+
+/**
+ * ดึงรายการหมวดหมู่ที่มีโน้ตแชร์สาธารณะ พร้อมจำนวนโน้ต
+ */
+export async function getBoardCategories(): Promise<
+  { id: string; name: string; count: number }[]
+> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("notes")
+    .select("category_id, note_categories(id, name)")
+    .eq("is_shared", true)
+    .not("share_token", "is", null);
+
+  if (!data) return [];
+
+  const map = new Map<string, { id: string; name: string; count: number }>();
+  for (const item of data) {
+    const cat = Array.isArray(item.note_categories)
+      ? item.note_categories[0]
+      : item.note_categories;
+    if (cat?.id && cat?.name) {
+      const existing = map.get(cat.id);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(cat.id, { id: cat.id, name: cat.name, count: 1 });
+      }
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => b.count - a.count);
+}
+
+/**
+ * ดึงสถิติภาพรวมของบอร์ด (จำนวนโน้ต, การกดชอบ, ความคิดเห็น)
+ */
+export async function getBoardStats(): Promise<{
+  totalNotes: number;
+  totalLikes: number;
+  totalComments: number;
+}> {
+  const supabase = await createClient();
+  const [notesRes, likesRes, commentsRes] = await Promise.all([
+    supabase
+      .from("notes")
+      .select("id", { count: "exact", head: true })
+      .eq("is_shared", true)
+      .not("share_token", "is", null),
+    supabase
+      .from("note_reactions")
+      .select("id", { count: "exact", head: true })
+      .eq("type", "like"),
+    supabase
+      .from("note_comments")
+      .select("id", { count: "exact", head: true }),
+  ]);
+
+  return {
+    totalNotes: notesRes.count || 0,
+    totalLikes: likesRes.count || 0,
+    totalComments: commentsRes.count || 0,
   };
 }
 

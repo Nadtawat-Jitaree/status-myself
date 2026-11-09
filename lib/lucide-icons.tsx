@@ -272,6 +272,22 @@ export function QualityIconRenderer({
   className?: string;
   color?: string;
 }) {
-  const IconComponent = (Icons as unknown as Record<string, React.ElementType>)[iconName] || Icons.Star;
+  const iconsRecord = Icons as unknown as Record<string, React.ElementType>;
+  let IconComponent = iconsRecord[iconName];
+
+  if (!IconComponent && iconName) {
+    const lower = iconName.trim().toLowerCase();
+    const foundKey = Object.keys(iconsRecord).find(
+      (k) => k.toLowerCase() === lower
+    );
+    if (foundKey) {
+      IconComponent = iconsRecord[foundKey];
+    }
+  }
+
+  if (!IconComponent) {
+    IconComponent = Icons.User || Icons.Star;
+  }
+
   return <IconComponent className={className} style={color ? { color } : undefined} />;
 }

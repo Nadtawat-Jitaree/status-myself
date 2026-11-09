@@ -2,22 +2,28 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { getBoardNotes, getTopBoardNotes } from "@/app/actions/board";
+import {
+  getBoardNotes,
+  getTopBoardNotes,
+  getBoardStats,
+} from "@/app/actions/board";
 import { TopBoardSection } from "@/components/TopBoardSection";
 import { BoardNoteCard } from "@/components/BoardNoteCard";
+import { BoardFilterBar } from "@/components/BoardFilterBar";
 import { NavbarRight } from "@/components/navbar-right";
 import {
   MessagesSquare,
-  Search,
   ChevronLeft,
   ChevronRight,
   Sparkles,
   BookOpen,
   PlusCircle,
+  FileText,
+  Heart,
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "กระดานสนทนา (Discussion Board) | NJ Notes",
+  title: "กระดานสนทนาและคลังบันทึกความรู้ (Discussion Board) | NJ Notes",
   description:
     "พื้นที่แบ่งปันความคิด บันทึกความรู้ บทความ และสาระน่ารู้จากสมาชิกทุกคนบน NJ Notes พร้อมร่วมกดถูกใจและแลกเปลี่ยนความคิดเห็น",
   alternates: {
@@ -26,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "https://notes.puanj.com/board",
-    title: "กระดานสนทนา (Discussion Board) | NJ Notes",
+    title: "กระดานสนทนาและคลังบันทึกความรู้ | NJ Notes",
     description:
       "รวมบทความและบันทึกความรู้ที่เปิดแชร์สาธารณะ ค้นหา แลกเปลี่ยนมุมมอง และแสดงความคิดเห็น",
     siteName: "NJ Notes",
@@ -37,6 +43,7 @@ interface BoardPageProps {
   searchParams: Promise<{
     page?: string;
     q?: string;
+    sort?: "latest" | "popular" | "comments";
   }>;
 }
 
@@ -44,73 +51,113 @@ async function BoardContent({ searchParams }: BoardPageProps) {
   const resolvedParams = await searchParams;
   const currentPage = Math.max(1, parseInt(resolvedParams.page || "1", 10));
   const searchQuery = (resolvedParams.q || "").trim();
+  const sortParam = resolvedParams.sort || "latest";
 
-  // ดึงข้อมูลโน้ต 9 รายการต่อหน้า + Top 3 Notes พร้อมกัน
-  const [boardData, topNotes] = await Promise.all([
+  // ดึงข้อมูลโน้ต, สถิติ, และ Top 3 Notes พร้อมกันแบบ Parallel
+  const [boardData, topNotes, stats] = await Promise.all([
     getBoardNotes({
       page: currentPage,
       limit: 9,
       search: searchQuery,
+      sortBy: sortParam,
     }),
     getTopBoardNotes(),
+    getBoardStats(),
   ]);
 
   const { notes, totalCount, totalPages } = boardData;
 
+  // ฟังก์ชันสร้าง URL สำหรับ Pagination
+  const buildPageUrl = (pageNumber: number) => {
+    const params = new URLSearchParams();
+    if (pageNumber > 1) params.set("page", pageNumber.toString());
+    if (searchQuery) params.set("q", searchQuery);
+    if (sortParam && sortParam !== "latest") params.set("sort", sortParam);
+    const qs = params.toString();
+    return qs ? `/board?${qs}` : "/board";
+  };
+
+  const isDefaultView =
+    currentPage === 1 && !searchQuery && sortParam === "latest";
+
   return (
     <>
-      {/* Top 3 Board Section (แสดงเฉพาะหน้าแรกเมื่อไม่มีคำค้นหา) */}
-      {currentPage === 1 && !searchQuery && (
-        <TopBoardSection topNotes={topNotes} />
-      )}
+      {/* Search & Sort Filter Bar */}
+      <BoardFilterBar
+        currentSearch={searchQuery}
+        currentSort={sortParam}
+        totalCount={totalCount}
+      />
 
-      {/* Section Heading */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-xl bg-indigo-500/10 text-indigo-600">
-            <MessagesSquare className="w-5 h-5" />
+      {/* Top 3 Board Section (แสดงเฉพาะหน้าแรกเมื่อยังไม่ได้เปิดการกรองเฉพาะทาง) */}
+      {isDefaultView && <TopBoardSection topNotes={topNotes} />}
+
+      {/* Section Heading & Result Count */}
+      <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-200/60">
+        <div className="flex items-center gap-2.5">
+          <span className="p-2 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+            <MessagesSquare className="w-4 h-4" />
           </span>
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-              {searchQuery ? `ผลการค้นหา "${searchQuery}"` : "โน้ตล่าสุดทั้งหมด"}
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <span>
+                {searchQuery
+                  ? `ผลการค้นหา "${searchQuery}"`
+                  : sortParam === "popular"
+                  ? "โน้ตยอดนิยมสูงสุด"
+                  : sortParam === "comments"
+                  ? "โน้ตที่มีการพูดคุยมากที่สุด"
+                  : "โน้ตความรู้ล่าสุดทั้งหมด"}
+              </span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-[11px] sm:text-xs text-slate-400">
               พบทั้งหมด {totalCount} รายการ (หน้า {currentPage} จาก {totalPages})
             </p>
           </div>
         </div>
 
-        {searchQuery && (
+        {/* Quick clear link if any filter active */}
+        {(!isDefaultView || currentPage > 1) && (
           <Link
             href="/board"
-            className="text-xs font-semibold text-indigo-600 hover:underline"
+            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
           >
-            ล้างการค้นหา
+            ล้างตัวกรอง
           </Link>
         )}
       </div>
 
       {/* Grid 9 Items */}
       {notes.length === 0 ? (
-        <div className="py-16 text-center bg-white rounded-3xl border border-slate-200/80 p-8 flex flex-col items-center justify-center gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-            <BookOpen className="w-7 h-7" />
+        <div className="py-20 text-center bg-white rounded-3xl border border-slate-200 p-8 flex flex-col items-center justify-center gap-3">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+            <BookOpen className="w-8 h-8" />
           </div>
-          <h3 className="text-base font-bold text-slate-800">
-            ยังไม่พบบันทึกที่แชร์
+          <h3 className="text-base sm:text-lg font-bold text-slate-800">
+            ยังไม่พบบันทึกที่ตรงกับเงื่อนไข
           </h3>
-          <p className="text-xs text-slate-400 max-w-sm">
+          <p className="text-xs sm:text-sm text-slate-400 max-w-md leading-relaxed">
             {searchQuery
-              ? `ไม่พบบันทึกที่ตรงกับคำค้นหา "${searchQuery}" ลองเปลี่ยนคำค้นหาดูอีกครั้ง`
-              : "ยังไม่มีผู้ใช้เปิดแชร์โน้ตในขณะนี้ คุณสามารถเป็นคนแรกที่เปิดแชร์โน้ตจาก Workspace ได้!"}
+              ? `ไม่พบบันทึกที่ตรงกับคำค้นหา "${searchQuery}" ลองปรับเปลี่ยนคำค้นหาใหม่อีกครั้ง`
+              : "ยังไม่มีผู้ใช้เปิดแชร์โน้ตในขณะนี้ คุณสามารถเป็นคนแรกที่เปิดแชร์โน้ตจาก Workspace!"}
           </p>
-          <Link
-            href="/system/notes"
-            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>ไปที่บันทึกของฉัน</span>
-          </Link>
+          <div className="flex items-center gap-2.5 mt-2">
+            {(searchQuery || sortParam !== "latest") && (
+              <Link
+                href="/board"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+              >
+                ดูโน้ตทั้งหมด
+              </Link>
+            )}
+            <Link
+              href="/system/notes"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>เปิดแชร์โน้ตของคุณ</span>
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -122,13 +169,14 @@ async function BoardContent({ searchParams }: BoardPageProps) {
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-10">
+        <nav
+          aria-label="Pagination"
+          className="flex items-center justify-center gap-2 mt-12"
+        >
           {/* Prev Button */}
           <Link
-            href={`/board?page=${Math.max(1, currentPage - 1)}${
-              searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""
-            }`}
-            className={`p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition ${
+            href={buildPageUrl(Math.max(1, currentPage - 1))}
+            className={`p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors ${
               currentPage <= 1 ? "pointer-events-none opacity-40" : ""
             }`}
             title="หน้าก่อนหน้า"
@@ -143,15 +191,14 @@ async function BoardContent({ searchParams }: BoardPageProps) {
               p === totalPages ||
               (p >= currentPage - 1 && p <= currentPage + 1)
             ) {
+              const isActive = currentPage === p;
               return (
                 <Link
                   key={p}
-                  href={`/board?page=${p}${
-                    searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""
-                  }`}
-                  className={`w-9 h-9 flex items-center justify-center rounded-xl text-xs font-semibold transition ${
-                    currentPage === p
-                      ? "bg-indigo-600 text-white shadow-xs"
+                  href={buildPageUrl(p)}
+                  className={`w-9 h-9 flex items-center justify-center rounded-xl text-xs font-semibold transition-colors ${
+                    isActive
+                      ? "bg-slate-900 text-white"
                       : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
                   }`}
                 >
@@ -171,17 +218,15 @@ async function BoardContent({ searchParams }: BoardPageProps) {
 
           {/* Next Button */}
           <Link
-            href={`/board?page=${Math.min(totalPages, currentPage + 1)}${
-              searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""
-            }`}
-            className={`p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition ${
+            href={buildPageUrl(Math.min(totalPages, currentPage + 1))}
+            className={`p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors ${
               currentPage >= totalPages ? "pointer-events-none opacity-40" : ""
             }`}
             title="หน้าถัดไป"
           >
             <ChevronRight className="w-4 h-4" />
           </Link>
-        </div>
+        </nav>
       )}
     </>
   );
@@ -190,15 +235,27 @@ async function BoardContent({ searchParams }: BoardPageProps) {
 function BoardSkeleton() {
   return (
     <div className="space-y-8 animate-pulse">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-64 bg-slate-200 rounded-3xl" />
+      {/* Filter Bar Skeleton */}
+      <div className="h-12 bg-slate-200/70 rounded-2xl w-full" />
+      <div className="flex gap-2">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-8 bg-slate-200/70 rounded-xl w-20" />
         ))}
       </div>
+
+      {/* Top 3 Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-64 bg-slate-200/80 rounded-3xl" />
+        ))}
+      </div>
+
       <div className="h-8 bg-slate-200 rounded-lg w-48" />
+
+      {/* Grid Skeleton */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-56 bg-slate-200 rounded-3xl" />
+          <div key={i} className="h-56 bg-slate-200/70 rounded-3xl" />
         ))}
       </div>
     </div>
@@ -207,12 +264,12 @@ function BoardSkeleton() {
 
 export default function BoardPage({ searchParams }: BoardPageProps) {
   return (
-    <div className="min-h-screen bg-slate-50/70 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-50/70 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-slate-50 p-1 border border-slate-200/70 shadow-xs">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-slate-50 p-1 border border-slate-200">
               <Image
                 src="/logo.png"
                 alt="NJ Notes"
@@ -232,23 +289,36 @@ export default function BoardPage({ searchParams }: BoardPageProps) {
             </div>
           </Link>
 
-          {/* Quick link to Workspace */}
-          <div className="hidden sm:flex items-center gap-2 ml-4 pl-4 border-l border-slate-200">
+          {/* Quick links to Workspace & Menus */}
+          <nav className="hidden md:flex items-center gap-1.5 ml-4 pl-4 border-l border-slate-200">
+            <Link
+              href="/board"
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-700"
+            >
+              กระดานสนทนา
+            </Link>
             <Link
               href="/system/dashboard"
-              className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
+              className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >
               Workspace
             </Link>
             <Link
-              href="/system/profile"
-              className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
+              href="/system/notes"
+              className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >
-              โปรไฟล์ของฉัน
+              โน้ตของฉัน
             </Link>
-          </div>
+            <Link
+              href="/system/calendar"
+              className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            >
+              ปฏิทิน
+            </Link>
+          </nav>
         </div>
 
+        {/* User profile / Login button */}
         <div className="flex items-center gap-3">
           <Suspense
             fallback={
@@ -261,42 +331,34 @@ export default function BoardPage({ searchParams }: BoardPageProps) {
       </header>
 
       {/* Hero Banner */}
-      <section className="bg-gradient-to-b from-white via-indigo-50/20 to-transparent border-b border-slate-200/50 py-10 sm:py-14 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto text-center flex flex-col items-center gap-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-200/60 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Community Discussion Board</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight max-w-2xl">
+      <section className="bg-white border-b border-slate-200 py-10 sm:py-14 px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-4">
+          {/* Heading */}
+          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
             กระดานสนทนาและคลังบันทึกความรู้
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-600 max-w-xl leading-relaxed">
-            แหล่งรวมโน้ตและบทความที่แชร์จากทุกคน ร่วมอ่าน กดถูกใจ แลกเปลี่ยนความคิดเห็น
-            และสร้างพื้นที่ความรู้ร่วมกัน
+          {/* Description */}
+          <p className="text-xs sm:text-base text-slate-600 max-w-2xl leading-relaxed">
+            พื้นที่แลกเปลี่ยนและแบ่งปันโน้ต บทความ และสาระน่ารู้จากสมาชิกทุกคนบน NJ Notes
+            ร่วมอ่าน กดถูกใจ ส่งต่อไอเดีย และสร้างสังคมการเรียนรู้ร่วมกัน
           </p>
 
-          {/* Search Bar Form */}
-          <form
-            action="/board"
-            method="GET"
-            className="w-full max-w-lg mt-3 flex items-center relative"
-          >
-            <Search className="w-4 h-4 text-slate-400 absolute left-4" />
-            <input
-              type="text"
-              name="q"
-              placeholder="ค้นหาตามชื่อบันทึกหรือหัวข้อ..."
-              className="w-full pl-11 pr-24 py-3 rounded-2xl border border-slate-200 bg-white text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-            />
-            <button
-              type="submit"
-              className="absolute right-2 px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition"
-            >
-              ค้นหา
-            </button>
-          </form>
+          {/* Highlights / Quick Stats Pills */}
+          <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap pt-2 text-[11px] sm:text-xs text-slate-600 font-medium">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-50 border border-slate-200">
+              <FileText className="w-3.5 h-3.5 text-indigo-600" />
+              <span>บันทึกความรู้สาธารณะ</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-50 border border-slate-200">
+              <MessagesSquare className="w-3.5 h-3.5 text-sky-600" />
+              <span>แลกเปลี่ยนความคิดเห็น</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-50 border border-slate-200">
+              <Heart className="w-3.5 h-3.5 text-rose-500" />
+              <span>ให้กำลังใจผู้สร้างสรรค์</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -308,8 +370,24 @@ export default function BoardPage({ searchParams }: BoardPageProps) {
       </main>
 
       {/* Footer */}
-      <footer className="mt-16 py-6 border-t border-slate-200 bg-white text-center text-xs text-slate-400">
-        NJ Notes กระดานสนทนาสาธารณะ • ทุกบทความแชร์โดยสมาชิก
+      <footer className="mt-16 py-8 border-t border-slate-200/80 bg-white text-center text-xs text-slate-400">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-700">NJ Notes</span>
+            <span>• กระดานสนทนาและคลังบันทึกความรู้</span>
+          </div>
+          <div className="flex items-center gap-4 text-slate-500">
+            <Link href="/" className="hover:text-slate-800 transition">
+              หน้าแรก
+            </Link>
+            <Link href="/system/dashboard" className="hover:text-slate-800 transition">
+              Workspace
+            </Link>
+            <Link href="/system/profile" className="hover:text-slate-800 transition">
+              โปรไฟล์
+            </Link>
+          </div>
+        </div>
       </footer>
     </div>
   );

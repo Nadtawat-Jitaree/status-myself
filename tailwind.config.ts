@@ -7,6 +7,12 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  safelist: [
+    {
+      pattern: /(from|to)-(blue|indigo|amber|orange|yellow|cyan|pink|rose|purple|stone|slate|teal|emerald|fuchsia|violet|sky|green|red)-(400|500|600|700|800|900)/,
+    },
   ],
   theme: {
     extend: {

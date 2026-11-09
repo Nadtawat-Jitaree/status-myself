@@ -111,12 +111,12 @@ export function ReactionButtons({
         onClick={(e) => handleReaction("like", e)}
         title="กดชอบโน้ตนี้"
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-xl font-medium transition-all active:scale-95",
+          "inline-flex items-center gap-1.5 rounded-xl font-medium transition-colors",
           isSmall
             ? "px-2.5 py-1 text-xs"
             : "px-3 py-1.5 text-xs sm:text-sm",
           userReaction === "like"
-            ? "bg-rose-500 text-white shadow-xs shadow-rose-500/30 font-semibold"
+            ? "bg-rose-500 text-white font-semibold"
             : "bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600"
         )}
       >
@@ -136,12 +136,12 @@ export function ReactionButtons({
         onClick={(e) => handleReaction("dislike", e)}
         title="ไม่ชอบโน้ตนี้"
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-xl font-medium transition-all active:scale-95",
+          "inline-flex items-center gap-1.5 rounded-xl font-medium transition-colors",
           isSmall
             ? "px-2 py-1 text-xs"
             : "px-2.5 py-1.5 text-xs sm:text-sm",
           userReaction === "dislike"
-            ? "bg-slate-700 text-white shadow-xs font-semibold"
+            ? "bg-slate-700 text-white font-semibold"
             : "bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800"
         )}
       >

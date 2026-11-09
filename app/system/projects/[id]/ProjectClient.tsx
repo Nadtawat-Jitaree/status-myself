@@ -213,13 +213,13 @@ export default function ProjectClient({
 
   const handleDeleteProject = async () => {
     const result = await Swal.fire({
-      title: "ต้องการลบโปรเจคนี้?",
-      text: "งานย่อยทั้งหมดในโปรเจคนี้จะถูกลบไปด้วย และไม่สามารถกู้คืนได้!",
+      title: "ต้องการลบโปรเจกต์นี้?",
+      text: "งานย่อยทั้งหมดในโปรเจกต์นี้จะถูกลบไปด้วย และไม่สามารถกู้คืนได้!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
       cancelButtonColor: "#64748b",
-      confirmButtonText: "ใช่, ลบโปรเจค",
+      confirmButtonText: "ใช่, ลบโปรเจกต์",
       cancelButtonText: "ยกเลิก",
     });
 
@@ -231,7 +231,7 @@ export default function ProjectClient({
   const handleDeleteTask = async (taskId: string) => {
     const result = await Swal.fire({
       title: "ลบงานนี้?",
-      text: "งานนี้จะถูกลบออกจากโปรเจค",
+      text: "งานนี้จะถูกลบออกจากโปรเจกต์",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
@@ -511,7 +511,7 @@ export default function ProjectClient({
             <form action={handleUpdateProject} className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">
-                  ชื่อโปรเจค
+                  ชื่อโปรเจกต์
                 </label>
                 <input
                   type="text"
@@ -576,7 +576,7 @@ export default function ProjectClient({
                     className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-100"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    ลบโปรเจค
+                    ลบโปรเจกต์
                   </button>
                 </div>
               </div>
@@ -1038,7 +1038,7 @@ export default function ProjectClient({
             </div>
             <p className="font-medium">ยังไม่มีขั้นตอนการทำงาน</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              เริ่มเพิ่มงานแรกของโปรเจคได้จากแบบฟอร์มด้านบน
+              เริ่มเพิ่มงานแรกของโปรเจกต์ได้จากแบบฟอร์มด้านบน
             </p>
           </div>
         ) : processedTasks.length === 0 ? (

@@ -28,7 +28,7 @@ export default function CreateProjectForm() {
       Swal.fire({
         icon: "error",
         title: "เกิดข้อผิดพลาด",
-        text: "ไม่สามารถสร้างโปรเจคได้ กรุณาลองใหม่อีกครั้ง",
+        text: "ไม่สามารถสร้างโปรเจกต์ได้ กรุณาลองใหม่อีกครั้ง",
       });
     } finally {
       setIsSubmitting(false);
@@ -40,7 +40,7 @@ export default function CreateProjectForm() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
           <Plus className="w-5 h-5 text-primary" />
-          สร้างโปรเจคใหม่
+          สร้างโปรเจกต์ใหม่
         </h2>
         <button
           type="button"
@@ -64,7 +64,7 @@ export default function CreateProjectForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-xs sm:text-sm font-medium">ชื่อโปรเจค <span className="text-destructive">*</span></label>
+            <label className="text-xs sm:text-sm font-medium">ชื่อโปรเจกต์ <span className="text-destructive">*</span></label>
             <input
               type="text"
               name="name"
@@ -97,7 +97,7 @@ export default function CreateProjectForm() {
                 การตั้งเป้าหมายเชิงจำนวน (Target Tracker)
               </span>
               <span className="text-[11px] text-muted-foreground">
-                (ไม่บังคับ - แยกตามประเภทของโปรเจค)
+                (ไม่บังคับ - แยกตามประเภทของโปรเจกต์)
               </span>
             </div>
 
@@ -148,7 +148,7 @@ export default function CreateProjectForm() {
                 <span>กำลังบันทึก...</span>
               </>
             ) : (
-              "บันทึกโปรเจค"
+              "บันทึกโปรเจกต์"
             )}
           </button>
         </div>

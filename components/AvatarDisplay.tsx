@@ -64,7 +64,7 @@ export function AvatarDisplay({
         className={cn(
           "relative rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-100",
           baseSize,
-          showBorder && "ring-2 ring-white/80 shadow-xs",
+          showBorder && "ring-2 ring-white/80",
           onClick && "cursor-pointer hover:opacity-90 transition-opacity",
           className
         )}
@@ -85,18 +85,18 @@ export function AvatarDisplay({
     <div
       onClick={onClick}
       className={cn(
-        "relative rounded-full shrink-0 flex items-center justify-center bg-gradient-to-br shadow-xs select-none",
+        "relative rounded-full shrink-0 flex items-center justify-center bg-gradient-to-br select-none",
         preset.bgGradient,
         baseSize,
         showBorder && "ring-2 ring-white/80",
-        onClick && "cursor-pointer hover:scale-105 transition-transform",
+        onClick && "cursor-pointer hover:opacity-90 transition-opacity",
         className
       )}
       title={name || preset.label}
     >
       <QualityIconRenderer
         iconName={avatarIcon || "User"}
-        className={cn(iconSize, "text-white drop-shadow-xs")}
+        className={cn(iconSize, "text-white")}
       />
     </div>
   );
