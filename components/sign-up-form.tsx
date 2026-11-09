@@ -201,7 +201,7 @@ export function SignUpForm({
                 />
               </div>
               </div>
-              <p className="text-red-500 text-sm text-center">ปิดการเข้าถึง ใช้ส่วนตัวอิอิ</p>
+              <p className="text-red-500 text-sm text-center">สมัครผ่าน Google ได้เลยครับ</p>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={true}>
                 {isLoading ? "Creating an account..." : "Sign up"}
