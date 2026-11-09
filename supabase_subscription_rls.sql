@@ -61,3 +61,16 @@ CREATE TRIGGER trg_protect_profile_subscription_fields
 BEFORE UPDATE ON public.profiles
 FOR EACH ROW
 EXECUTE FUNCTION public.protect_profile_subscription_fields();
+
+-- ------------------------------------------------------------------------------
+-- 5. กำหนดให้ stripe_session_id เป็น UNIQUE ป้องกันการ Replay หรือเพิ่มเวลาซ้ำ
+-- ------------------------------------------------------------------------------
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'subscription_history_stripe_session_id_key'
+  ) THEN
+    ALTER TABLE public.subscription_history 
+    ADD CONSTRAINT subscription_history_stripe_session_id_key UNIQUE (stripe_session_id);
+  END IF;
+END $$;

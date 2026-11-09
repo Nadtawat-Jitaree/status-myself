@@ -5,6 +5,7 @@ import { createAdminClient } from "./supabase/admin";
 /**
  * ฟังก์ชันสำหรับประมวลผลการสั่งซื้อและอัปเกรดสิทธิ์ Premium ให้ผู้ใช้
  * ปลอดภัย ใช้งานได้ทั้งจาก Stripe Webhook และ Success Page (Idempotent)
+ * ป้องกันการกด F5 ซ้ำ หรือ Replay attack โดยตรวจสอบ stripe_session_id ทุกครั้ง
  */
 export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {
   // ตรวจสอบสถานะการจ่ายเงิน
@@ -13,6 +14,21 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {
   }
 
   const adminSupabase = createAdminClient();
+
+  // 0. IDEMPOTENCY CHECK: ตรวจสอบว่า Checkout Session ID นี้เคยประมวลผลไปแล้วหรือไม่
+  // หากเคยบันทึกใน subscription_history แล้ว ให้ return true ทันที โดยไม่บวกวันเพิ่มเด็ดขาด
+  const { data: existingSessions } = await adminSupabase
+    .from("subscription_history")
+    .select("id")
+    .eq("stripe_session_id", session.id)
+    .limit(1);
+
+  if (existingSessions && existingSessions.length > 0) {
+    console.log(
+      `[Stripe Fulfillment] Session ${session.id} already fulfilled. Skipping duplicate extension.`
+    );
+    return true;
+  }
 
   // 1. หา User ID (จาก metadata, client_reference_id หรือค้นจาก email ใน Supabase)
   let userId = session.metadata?.user_id || session.client_reference_id;
@@ -77,7 +93,30 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {
   const subscribedAt =
     currentProfile?.subscribed_at || now.toISOString();
 
-  // 3. อัปเดตข้อมูลผู้ใช้ในตาราง profiles เป็น premium และบวกวันหมดอายุ
+  // 3. บันทึกประวัติในตาราง subscription_history เป็นด่านแรกเพื่อป้องกัน Concurrency / Duplicate
+  const { error: insertErr } = await adminSupabase
+    .from("subscription_history")
+    .insert({
+      user_id: userId,
+      stripe_session_id: session.id,
+      stripe_payment_intent: paymentIntentId,
+      plan: plan,
+      amount: session.amount_total || planConfig.price,
+      currency: session.currency || "thb",
+      status: "paid",
+      started_at: now.toISOString(),
+      expires_at: expiresAt.toISOString(),
+    });
+
+  if (insertErr) {
+    console.error(
+      "[Stripe Fulfillment] Failed to insert subscription history (possible concurrent duplicate):",
+      insertErr
+    );
+    return true; // ป้องกันการบวกเวลาซ้ำในกรณีมี race condition
+  }
+
+  // 4. อัปเดตข้อมูลผู้ใช้ในตาราง profiles เป็น premium และบันทึกวันหมดอายุ
   const { error: profileError } = await adminSupabase
     .from("profiles")
     .update({
@@ -93,27 +132,6 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {
   if (profileError) {
     console.error("Fulfill error updating profile:", profileError);
     return false;
-  }
-
-  // 4. บันทึกประวัติในตาราง subscription_history (ป้องกันซ้ำซ้อนด้วย stripe_session_id)
-  const { data: existing } = await adminSupabase
-    .from("subscription_history")
-    .select("id")
-    .eq("stripe_session_id", session.id)
-    .maybeSingle();
-
-  if (!existing) {
-    await adminSupabase.from("subscription_history").insert({
-      user_id: userId,
-      stripe_session_id: session.id,
-      stripe_payment_intent: paymentIntentId,
-      plan: plan,
-      amount: session.amount_total || planConfig.price,
-      currency: session.currency || "thb",
-      status: "paid",
-      started_at: now.toISOString(),
-      expires_at: expiresAt.toISOString(),
-    });
   }
 
   return true;

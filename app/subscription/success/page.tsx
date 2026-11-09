@@ -6,6 +6,7 @@ import { NavbarRight } from "@/components/navbar-right";
 import { Footer } from "@/components/footer";
 import { stripe } from "@/lib/stripe";
 import { fulfillCheckoutSession } from "@/lib/stripe-fulfillment";
+import { CleanSessionUrl } from "./CleanSessionUrl";
 
 interface SuccessPageProps {
   searchParams: Promise<{
@@ -40,6 +41,7 @@ export default function SubscriptionSuccessPage({
 }: SuccessPageProps) {
   return (
     <main className="min-h-screen flex flex-col items-center w-full bg-slate-50/50 dark:bg-slate-950">
+      <CleanSessionUrl />
       <Suspense fallback={null}>
         <SuccessFulfillment searchParams={searchParams} />
       </Suspense>
