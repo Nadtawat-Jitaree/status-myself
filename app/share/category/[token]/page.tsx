@@ -16,15 +16,45 @@ export async function generateMetadata({ params }: PageProps) {
 
   if (!result || !result.category) {
     return {
-      title: "ไม่พบหมวดหมู่ที่แชร์ | PUANJ",
+      title: "ไม่พบหมวดหมู่ที่แชร์ | PUANJ Notes",
+      robots: { index: false, follow: false },
     };
   }
 
+  const pageUrl = `https://notes.puanj.com/share/category/${token}`;
+  const { category, notes } = result;
+  const noteCount = notes.length;
+  const description =
+    category.description ||
+    `รวม ${noteCount} บันทึกในหมวดหมู่ "${category.name}" — แชร์ผ่าน PUANJ Notes`;
+
   return {
-    title: `${result.category.name} | หมวดหมู่บันทึกที่แชร์ - PUANJ`,
-    description:
-      result.category.description ||
-      `รวมบันทึกทั้งหมดในหมวดหมู่ ${result.category.name}`,
+    title: `${category.name} | PUANJ Notes`,
+    description,
+    // ─── Canonical ──────────────────────────────────────────────────
+    alternates: { canonical: pageUrl },
+    // ─── Open Graph ─────────────────────────────────────────────────
+    openGraph: {
+      type: "website",
+      url: pageUrl,
+      title: `${category.name} — หมวดหมู่บันทึก`,
+      description,
+      siteName: "PUANJ Notes",
+      locale: "th_TH",
+    },
+    // ─── Twitter Card ───────────────────────────────────────────────
+    twitter: {
+      card: "summary",
+      title: `${category.name} — หมวดหมู่บันทึก | PUANJ Notes`,
+      description,
+      site: "@puanj",
+    },
+    // ─── Robots ─────────────────────────────────────────────────────
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true },
+    },
   };
 }
 

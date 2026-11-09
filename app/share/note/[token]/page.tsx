@@ -24,13 +24,62 @@ export async function generateMetadata({ params }: PageProps) {
 
   if (!note) {
     return {
-      title: "ไม่พบบันทึกที่แชร์ | PUANJ",
+      title: "ไม่พบบันทึกที่แชร์ | PUANJ Notes",
+      robots: { index: false, follow: false },
     };
   }
 
+  const pageUrl = `https://notes.puanj.com/share/note/${token}`;
+  const rawContent = note.content ?? "";
+  // ตัด markdown/html tags ออก แล้วใช้เป็น description
+  const plainText = rawContent
+    .replace(/<[^>]*>/g, "")
+    .replace(/[#*`>\-_~]/g, "")
+    .trim();
+  const description = plainText.slice(0, 155) || "บันทึกที่แชร์ผ่าน PUANJ Notes";
+  const category = note.note_categories?.name ?? "บันทึก";
+  const dateStr = new Date(note.created_at).toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
   return {
-    title: `${note.title} | บันทึกที่แชร์ - PUANJ`,
-    description: note.content ? note.content.slice(0, 150) : "บันทึกที่แชร์ผ่านระบบ",
+    title: `${note.title} | PUANJ Notes`,
+    description,
+    // ─── Canonical ──────────────────────────────────────────────────
+    alternates: { canonical: pageUrl },
+    // ─── Open Graph (Facebook, LINE, Discord, ฯลฯ) ─────────────────
+    openGraph: {
+      type: "article",
+      url: pageUrl,
+      title: note.title,
+      description,
+      siteName: "PUANJ Notes",
+      locale: "th_TH",
+      publishedTime: note.created_at,
+      modifiedTime: note.updated_at,
+      tags: [category, "บันทึก", "PUANJ"],
+    },
+    // ─── Twitter Card ───────────────────────────────────────────────
+    twitter: {
+      card: "summary",
+      title: note.title,
+      description,
+      site: "@puanj",
+    },
+    // ─── Robots ─────────────────────────────────────────────────────
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true },
+    },
+    // ─── Structured Data hint ───────────────────────────────────────
+    other: {
+      "article:section": category,
+      "article:published_time": note.created_at,
+      "article:modified_time": note.updated_at,
+    },
   };
 }
 
@@ -107,8 +156,34 @@ async function SharedNoteContent({ params }: PageProps) {
     }
   };
 
+  // ─── JSON-LD Structured Data ────────────────────────────────────
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: note.title,
+    description: note.content
+      ? note.content.replace(/<[^>]*>/g, "").slice(0, 155)
+      : "",
+    datePublished: note.created_at,
+    dateModified: note.updated_at,
+    publisher: {
+      "@type": "Organization",
+      name: "PUANJ Notes",
+      url: "https://notes.puanj.com",
+    },
+    url: `https://notes.puanj.com/share/note/${token}`,
+    ...(note.note_categories?.name && {
+      articleSection: note.note_categories.name,
+    }),
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      {/* JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b px-6 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
