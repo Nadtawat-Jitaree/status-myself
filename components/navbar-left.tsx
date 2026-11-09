@@ -31,8 +31,18 @@ export function NavbarLeft() {
     pathname.startsWith("/system/calendar") ||
     pathname.startsWith("/system/qualities");
 
-  const handleDashboardClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!isPremium) {
+  const handleDashboardClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    let currentIsPremium = isPremium;
+    // ป้องกัน race condition กรณีเพิ่งอัปเกรดหรือ state ยังไม่พร้อม
+    if (!currentIsPremium) {
+      const freshSub = await getUserSubscriptionAction().catch(() => null);
+      if (freshSub?.isPremium) {
+        setSubscription(freshSub);
+        return;
+      }
+    }
+
+    if (!currentIsPremium) {
       e.preventDefault();
       Swal.fire({
         icon: "warning",

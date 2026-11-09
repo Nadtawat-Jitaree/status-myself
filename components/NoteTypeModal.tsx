@@ -19,26 +19,24 @@ interface NoteTypeModalProps {
 export default function NoteTypeModal({
   open,
   onClose,
-  subscription: initialSub,
+  subscription: propSub,
 }: NoteTypeModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [subInfo, setSubInfo] = useState<SubscriptionInfo | null>(
-    initialSub ?? null
-  );
+  const [fetchedSub, setFetchedSub] = useState<SubscriptionInfo | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // โหลดสถานะ subscription หากไม่ได้ส่งมาจาก prop
+  // ดึงข้อมูลสิทธิ์ล่าสุดเมื่อเปิด Modal (กรณีไม่ได้ส่ง propSub เข้ามา)
   useEffect(() => {
-    if (open && initialSub === undefined) {
+    if (open && !propSub) {
       getUserSubscriptionAction()
-        .then((res) => setSubInfo(res))
-        .catch(() => setSubInfo(null));
+        .then((res) => setFetchedSub(res))
+        .catch(() => setFetchedSub(null));
     }
-  }, [open, initialSub]);
+  }, [open, propSub]);
 
   // รองรับการกด Esc เพื่อปิด Modal
   useEffect(() => {
@@ -54,7 +52,8 @@ export default function NoteTypeModal({
 
   if (!open || !mounted) return null;
 
-  const isPremium = subInfo?.isPremium ?? false;
+  const currentSub = propSub || fetchedSub;
+  const isPremium = currentSub?.isPremium ?? false;
 
   const workspaceItems = [
     {
@@ -104,11 +103,22 @@ export default function NoteTypeModal({
     },
   ];
 
-  const handleItemClick = (
+  const handleItemClick = async (
     e: React.MouseEvent<HTMLAnchorElement>,
     title: string
   ) => {
-    if (!isPremium) {
+    let checkPremium = isPremium;
+    if (!checkPremium) {
+      // ตรวจสอบสดๆ อีก 1 ครั้งก่อนตัดสินใจบล็อค ป้องกันข้อมูลค้างเก่า
+      const fresh = await getUserSubscriptionAction().catch(() => null);
+      if (fresh?.isPremium) {
+        setFetchedSub(fresh);
+        onClose();
+        return;
+      }
+    }
+
+    if (!checkPremium) {
       e.preventDefault();
       Swal.fire({
         icon: "warning",
