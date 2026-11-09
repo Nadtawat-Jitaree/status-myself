@@ -9,7 +9,9 @@ export interface BoardNoteItem {
   content: string | null;
   file_path: string | null;
   status: string | null;
-  share_token: string;
+  share_token: string | null;
+  is_shared?: boolean;
+  isOwner?: boolean;
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -55,6 +57,8 @@ export async function getBoardNotes(params: {
   search?: string;
   category?: string;
   sortBy?: "latest" | "popular" | "comments";
+  filter?: "all" | "mine";
+  shareStatus?: "all" | "shared" | "unshared";
 }): Promise<BoardResponse> {
   const page = Math.max(1, params.page || 1);
   const limit = params.limit || 9;
@@ -67,7 +71,18 @@ export async function getBoardNotes(params: {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
 
-  // 1. Query โน้ตที่แชร์สาธารณะ (is_shared = true)
+  // หากเลือก filter 'mine' แต่ยังไม่ได้เข้าสู่ระบบ ให้ส่งผลลัพธ์ว่างกลับไป
+  if (params.filter === "mine" && !currentUser) {
+    return {
+      notes: [],
+      totalCount: 0,
+      currentPage: page,
+      totalPages: 1,
+      pageSize: limit,
+    };
+  }
+
+  // 1. Query โน้ตบนกระดาน (ถ้าเป็น 'mine' จะดึงโน้ตของผู้ใช้เองเพื่อจัดการเปิด/ปิดแชร์ได้ หากเป็นทั่วไปจะดึง is_shared = true)
   let query = supabase
     .from("notes")
     .select(
@@ -78,6 +93,7 @@ export async function getBoardNotes(params: {
       file_path,
       status,
       share_token,
+      is_shared,
       created_at,
       updated_at,
       user_id,
@@ -90,9 +106,20 @@ export async function getBoardNotes(params: {
       )
     `,
       { count: "exact" }
-    )
-    .eq("is_shared", true)
-    .not("share_token", "is", null);
+    );
+
+  if (params.filter === "mine" && currentUser) {
+    query = query.eq("user_id", currentUser.id);
+
+    // กรองสถานะการแชร์ในโน้ตของฉัน
+    if (params.shareStatus === "shared") {
+      query = query.eq("is_shared", true);
+    } else if (params.shareStatus === "unshared") {
+      query = query.or("is_shared.eq.false,is_shared.is.null");
+    }
+  } else {
+    query = query.eq("is_shared", true).not("share_token", "is", null);
+  }
 
   if (params.search?.trim()) {
     const s = params.search.trim();
@@ -210,6 +237,8 @@ export async function getBoardNotes(params: {
       file_path: n.file_path,
       status: n.status,
       share_token: n.share_token,
+      is_shared: n.is_shared ?? true,
+      isOwner: Boolean(currentUser && currentUser.id === n.user_id),
       created_at: n.created_at,
       updated_at: n.updated_at,
       user_id: n.user_id,
@@ -374,6 +403,7 @@ export async function getTopBoardNotes(): Promise<BoardNoteItem[]> {
       file_path,
       status,
       share_token,
+      is_shared,
       created_at,
       updated_at,
       user_id,
@@ -445,6 +475,8 @@ export async function getTopBoardNotes(): Promise<BoardNoteItem[]> {
       file_path: n.file_path,
       status: n.status,
       share_token: n.share_token,
+      is_shared: n.is_shared ?? true,
+      isOwner: Boolean(currentUser && currentUser.id === n.user_id),
       created_at: n.created_at,
       updated_at: n.updated_at,
       user_id: n.user_id,
@@ -643,4 +675,99 @@ export async function deleteNoteComment(commentId: string) {
 
   revalidatePath("/board");
   return { success: true };
+}
+
+/**
+ * แก้ไขโน้ตจากหน้ากระดานสนทนา (เฉพาะเจ้าของโน้ต)
+ */
+export async function updateBoardNote(
+  noteId: string,
+  payload: {
+    title: string;
+    content: string;
+    status: string;
+  }
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
+
+  const { error } = await supabase
+    .from("notes")
+    .update({
+      title: payload.title,
+      content: payload.content,
+      status: payload.status,
+    })
+    .eq("id", noteId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    throw new Error("แก้ไขโน้ตไม่สำเร็จ: " + error.message);
+  }
+
+  revalidatePath("/board");
+  revalidatePath("/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes/normal");
+  revalidatePath("/system/notes/school");
+  return { success: true };
+}
+
+/**
+ * ลบโน้ตจากหน้ากระดานสนทนา (เฉพาะเจ้าของโน้ต)
+ */
+export async function deleteBoardNote(noteId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
+
+  const { data: oldNote } = await supabase
+    .from("notes")
+    .select("file_path")
+    .eq("id", noteId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (oldNote?.file_path) {
+    await supabase.storage.from("note_attachments").remove([oldNote.file_path]);
+  }
+
+  await supabase
+    .from("quality_transactions")
+    .delete()
+    .eq("note_id", noteId)
+    .eq("user_id", user.id);
+
+  const { error } = await supabase
+    .from("notes")
+    .delete()
+    .eq("id", noteId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    throw new Error("ลบโน้ตไม่สำเร็จ: " + error.message);
+  }
+
+  revalidatePath("/board");
+  revalidatePath("/notes");
+  revalidatePath("/system/notes");
+  revalidatePath("/system/notes/normal");
+  revalidatePath("/system/notes/school");
+  revalidatePath("/system/qualities");
+  return { success: true };
+}
+
+/**
+ * สลับสถานะเปิด/ปิดการแชร์ของโน้ตจากหน้ากระดานสนทนา (เฉพาะเจ้าของโน้ต)
+ */
+export async function toggleBoardNoteShare(noteId: string) {
+  const { toggleShareNote } = await import("./share");
+  return await toggleShareNote(noteId);
 }

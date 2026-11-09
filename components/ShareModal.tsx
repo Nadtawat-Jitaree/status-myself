@@ -88,8 +88,8 @@ export default function ShareModal({
         position: "top-end",
         icon: "success",
         title: result.is_shared
-          ? "เปิดการแชร์ลิงก์แล้ว 🌐"
-          : "ปิดการแชร์ลิงก์แล้ว 🔒",
+          ? "เปิดการแชร์ลิงก์แล้ว"
+          : "ปิดการแชร์ลิงก์แล้ว",
         showConfirmButton: false,
         timer: 1500,
       });

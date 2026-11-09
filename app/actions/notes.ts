@@ -38,6 +38,7 @@ export async function removeNoteAttachment(id: string, filePath: string) {
 
   if (dbError) throw new Error(dbError.message);
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -186,6 +187,7 @@ export async function togglePinNote(id: string, isPinned: boolean) {
     throw new Error(error.message);
   }
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -214,6 +216,7 @@ export async function createNote(payload: {
     .single();
   if (error) throw new Error(error.message);
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -268,6 +271,7 @@ export async function updateNote(
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -309,6 +313,7 @@ export async function deleteNote(id: string) {
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -384,6 +389,7 @@ export async function createCategory(
     }
   }
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -453,6 +459,7 @@ export async function updateCategory(
     }
   }
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -484,6 +491,7 @@ export async function deleteCategory(id: string) {
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -544,4 +552,28 @@ export async function getCalendarNotes(
   }
 
   return (data || []) as CalendarNote[];
+}
+
+/**
+ * ดึงรายการหมวดหมู่ทั้งหมดของผู้ใช้งานปัจจุบัน (สำหรับใช้ใน Modal แก้ไขโน้ตร่วมกัน)
+ */
+export async function getAllUserCategories() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("note_categories")
+    .select("id, name, pic, note_type, year, semester")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching all user categories:", error.message);
+    return [];
+  }
+
+  return data || [];
 }

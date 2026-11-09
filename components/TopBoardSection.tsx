@@ -37,10 +37,6 @@ export function TopBoardSection({ topNotes }: TopBoardSectionProps) {
             </p>
           </div>
 
-          <div className="hidden sm:inline-flex items-center gap-1.5 text-xs text-amber-700 font-semibold px-3 py-1.5 rounded-xl bg-amber-100/60 border border-amber-200/50">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>Community Spotlight</span>
-          </div>
         </div>
 
         {/* Top 3 Cards Grid */}

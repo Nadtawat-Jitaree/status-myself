@@ -1,11 +1,13 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import {
   getBoardNotes,
   getTopBoardNotes,
   getBoardStats,
 } from "@/app/actions/board";
+import { getAllUserCategories } from "@/app/actions/notes";
 import { TopBoardSection } from "@/components/TopBoardSection";
 import { BoardNoteCard } from "@/components/BoardNoteCard";
 import { BoardFilterBar } from "@/components/BoardFilterBar";
@@ -47,6 +49,8 @@ interface BoardPageProps {
     page?: string;
     q?: string;
     sort?: "latest" | "popular" | "comments";
+    filter?: "all" | "mine";
+    shareStatus?: "all" | "shared" | "unshared";
   }>;
 }
 
@@ -55,17 +59,27 @@ async function BoardContent({ searchParams }: BoardPageProps) {
   const currentPage = Math.max(1, parseInt(resolvedParams.page || "1", 10));
   const searchQuery = (resolvedParams.q || "").trim();
   const sortParam = resolvedParams.sort || "latest";
+  const filterParam = resolvedParams.filter || "all";
+  const shareStatusParam = resolvedParams.shareStatus || "all";
 
-  // ดึงข้อมูลโน้ต, สถิติ, และ Top 3 Notes พร้อมกันแบบ Parallel
-  const [boardData, topNotes, stats] = await Promise.all([
+  const supabase = await createClient();
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+
+  // ดึงข้อมูลโน้ต, สถิติ, Top 3 Notes และหมวดหมู่ของผู้ใช้พร้อมกันแบบ Parallel
+  const [boardData, topNotes, stats, userCategories] = await Promise.all([
     getBoardNotes({
       page: currentPage,
       limit: 9,
       search: searchQuery,
       sortBy: sortParam,
+      filter: filterParam,
+      shareStatus: shareStatusParam,
     }),
     getTopBoardNotes(),
     getBoardStats(),
+    currentUser ? getAllUserCategories() : Promise.resolve([]),
   ]);
 
   const { notes, totalCount, totalPages } = boardData;
@@ -76,12 +90,14 @@ async function BoardContent({ searchParams }: BoardPageProps) {
     if (pageNumber > 1) params.set("page", pageNumber.toString());
     if (searchQuery) params.set("q", searchQuery);
     if (sortParam && sortParam !== "latest") params.set("sort", sortParam);
+    if (filterParam && filterParam !== "all") params.set("filter", filterParam);
+    if (shareStatusParam && shareStatusParam !== "all") params.set("shareStatus", shareStatusParam);
     const qs = params.toString();
     return qs ? `/board?${qs}` : "/board";
   };
 
   const isDefaultView =
-    currentPage === 1 && !searchQuery && sortParam === "latest";
+    currentPage === 1 && !searchQuery && sortParam === "latest" && filterParam === "all";
 
   return (
     <>
@@ -89,6 +105,9 @@ async function BoardContent({ searchParams }: BoardPageProps) {
       <BoardFilterBar
         currentSearch={searchQuery}
         currentSort={sortParam}
+        currentFilter={filterParam}
+        currentShareStatus={shareStatusParam}
+        isLoggedIn={Boolean(currentUser)}
         totalCount={totalCount}
       />
 
@@ -104,7 +123,9 @@ async function BoardContent({ searchParams }: BoardPageProps) {
           <div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
               <span>
-                {searchQuery
+                {filterParam === "mine"
+                  ? "โน้ตของคุณบนบอร์ด"
+                  : searchQuery
                   ? `ผลการค้นหา "${searchQuery}"`
                   : sortParam === "popular"
                   ? "โน้ตยอดนิยมสูงสุด"
@@ -140,7 +161,9 @@ async function BoardContent({ searchParams }: BoardPageProps) {
             ยังไม่พบบันทึกที่ตรงกับเงื่อนไข
           </h3>
           <p className="text-xs sm:text-sm text-slate-400 max-w-md leading-relaxed">
-            {searchQuery
+            {filterParam === "mine"
+              ? "คุณยังไม่มีโน้ตบนบอร์ด หรือยังไม่ได้เปิดแชร์โน้ต คุณสามารถเปิดแชร์โน้ตของคุณได้จากหน้าบันทึกส่วนตัว"
+              : searchQuery
               ? `ไม่พบบันทึกที่ตรงกับคำค้นหา "${searchQuery}" ลองปรับเปลี่ยนคำค้นหาใหม่อีกครั้ง`
               : "ยังไม่มีผู้ใช้เปิดแชร์โน้ตในขณะนี้ คุณสามารถเป็นคนแรกที่เปิดแชร์โน้ตจาก Workspace!"}
           </p>
@@ -165,7 +188,12 @@ async function BoardContent({ searchParams }: BoardPageProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {notes.map((note) => (
-            <BoardNoteCard key={note.id} note={note} />
+            <BoardNoteCard
+              key={note.id}
+              note={note}
+              categories={userCategories}
+              isMyNotesView={filterParam === "mine"}
+            />
           ))}
         </div>
       )}

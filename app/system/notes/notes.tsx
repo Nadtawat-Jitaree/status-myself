@@ -48,6 +48,7 @@ import {
   Folder,
   Share2,
   Globe,
+  Lock,
   GraduationCap,
   ChevronDown,
   RotateCcw,
@@ -58,6 +59,7 @@ import {
   Calendar,
 } from "lucide-react";
 import ShareModal from "@/components/ShareModal";
+import { NoteFormModal } from "@/components/NoteFormModal";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
 import RichNoteEditor from "@/components/RichNoteEditor";
 import { QualityPicker } from "@/components/QualityPicker";
@@ -267,7 +269,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
         toast: true,
         position: "top-end",
         icon: "success",
-        title: nextPinned ? "ปักหมุดแล้ว 📌" : "ยกเลิกการปักหมุดแล้ว",
+        title: nextPinned ? "ปักหมุดแล้ว" : "ยกเลิกการปักหมุดแล้ว",
         showConfirmButton: false,
         timer: 1500,
       });
@@ -418,12 +420,14 @@ export default function NotesPage({ noteType, initialData }: Props) {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   type StatusFilter = "all" | "ทั่วไป" | "สำคัญ" | "งานค้าง" | "เสร็จสิ้น";
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  type ShareFilter = "all" | "shared" | "private";
+  const [shareFilter, setShareFilter] = useState<ShareFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 6;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterCategory, statusFilter, searchQuery, selectedYear, selectedSemester]);
+  }, [filterCategory, statusFilter, shareFilter, searchQuery, selectedYear, selectedSemester]);
 
   const [isLoading, setIsLoading] = useState<boolean>(() => {
     if (initialData !== undefined && initialData !== null) return false;
@@ -669,6 +673,56 @@ export default function NotesPage({ noteType, initialData }: Props) {
     return counts;
   }, [notes, filterCategory, selectedYear, selectedSemester, noteType, categoryMap]);
 
+  const shareCounts = useMemo(() => {
+    const eligibleNotes = notes.filter((note) => {
+      if (noteType === "school") {
+        const cat = note.category_id ? categoryMap.get(note.category_id) : undefined;
+        const yr = note.note_categories?.year ?? cat?.year;
+        const sem = note.note_categories?.semester ?? cat?.semester;
+
+        if (selectedYear !== "all") {
+          if (selectedYear === "none") {
+            if (yr) return false;
+          } else {
+            if (yr !== selectedYear) return false;
+          }
+        }
+
+        if (selectedSemester !== "all") {
+          if (selectedSemester === "none") {
+            if (sem) return false;
+          } else {
+            if (sem !== selectedSemester) return false;
+          }
+        }
+      }
+
+      if (filterCategory !== "all") {
+        if (filterCategory === "none" && note.category_id !== null) return false;
+        if (filterCategory !== "none" && note.category_id !== filterCategory) return false;
+      }
+
+      const noteStatus = note.status || "ทั่วไป";
+      if (statusFilter !== "all" && noteStatus !== statusFilter) return false;
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchTitle = note.title?.toLowerCase().includes(query) || false;
+        const matchContent = note.content?.toLowerCase().includes(query) || false;
+        if (!matchTitle && !matchContent) return false;
+      }
+
+      return true;
+    });
+
+    const shared = eligibleNotes.filter((n) => Boolean(n.is_shared)).length;
+    return {
+      all: eligibleNotes.length,
+      shared,
+      private: eligibleNotes.length - shared,
+    };
+  }, [notes, noteType, selectedYear, selectedSemester, filterCategory, statusFilter, searchQuery, categoryMap]);
+
   const filteredNotes = useMemo(() => {
     return notes.filter((note) => {
       if (noteType === "school") {
@@ -696,6 +750,10 @@ export default function NotesPage({ noteType, initialData }: Props) {
       const noteStatus = note.status || "ทั่วไป";
       if (statusFilter !== "all" && noteStatus !== statusFilter) return false;
 
+      // ตัวกรองสถานะการแชร์ (Share Filter)
+      if (shareFilter === "shared" && !note.is_shared) return false;
+      if (shareFilter === "private" && note.is_shared) return false;
+
       if (filterCategory !== "all") {
         if (filterCategory === "none" && note.category_id !== null)
           return false;
@@ -714,7 +772,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
 
       return true;
     });
-  }, [notes, statusFilter, filterCategory, searchQuery, noteType, selectedYear, selectedSemester, categoryMap]);
+  }, [notes, statusFilter, shareFilter, filterCategory, searchQuery, noteType, selectedYear, selectedSemester, categoryMap]);
 
   const totalPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE);
   const paginatedNotes = useMemo(() => {
@@ -1154,7 +1212,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
       <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat">
         {/* Compact Year & Semester Bar for University Notes */}
         {noteType === "school" && (
-          <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:px-4 sm:py-2.5 bg-background/90 backdrop-blur-xs border border-indigo-100 dark:border-indigo-950/60 rounded-2xl shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:px-4 sm:py-2.5 bg-background/90 border border-indigo-100 dark:border-indigo-950/60 rounded-2xl shadow-xs">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {/* Year Selector */}
               <div className="flex items-center gap-1.5">
@@ -1451,10 +1509,60 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   </button>
                 );
               })}
+
+              {/* เส้นคั่นตัวกรองการแชร์ */}
+              <div className="h-5 w-[1px] bg-border/60 shrink-0 mx-1 hidden sm:block" />
+
+              {/* ปุ่มตัวกรองรายการที่แชร์ (Share Filter) */}
+              <button
+                type="button"
+                onClick={() => setShareFilter(shareFilter === "shared" ? "all" : "shared")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer transition-all ${
+                  shareFilter === "shared"
+                    ? "bg-indigo-600 text-white border-indigo-600 shadow-xs dark:bg-indigo-600 dark:text-white"
+                    : "bg-background/90 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
+                }`}
+                title="กรองแสดงเฉพาะโน้ตที่เปิดแชร์สาธารณะ"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>แชร์แล้ว</span>
+                <span
+                  className={`text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-semibold ${
+                    shareFilter === "shared"
+                      ? "bg-white/25 text-white"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {shareCounts.shared}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShareFilter(shareFilter === "private" ? "all" : "private")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer transition-all ${
+                  shareFilter === "private"
+                    ? "bg-slate-800 text-white border-slate-800 shadow-xs dark:bg-slate-700"
+                    : "bg-background/90 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
+                }`}
+                title="กรองแสดงเฉพาะโน้ตส่วนตัว (ยังไม่แชร์)"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>ส่วนตัว</span>
+                <span
+                  className={`text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-semibold ${
+                    shareFilter === "private"
+                      ? "bg-white/25 text-white"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {shareCounts.private}
+                </span>
+              </button>
             </div>
 
             {/* Clear All Filters Button */}
-            {(selectedYear !== "all" || selectedSemester !== "all" || filterCategory !== "all" || statusFilter !== "all" || searchQuery !== "") && (
+            {(selectedYear !== "all" || selectedSemester !== "all" || filterCategory !== "all" || statusFilter !== "all" || shareFilter !== "all" || searchQuery !== "") && (
               <button
                 type="button"
                 onClick={() => {
@@ -1462,6 +1570,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   setSelectedSemester("all");
                   setFilterCategory("all");
                   setStatusFilter("all");
+                  setShareFilter("all");
                   setSearchQuery("");
                 }}
                 className="flex items-center gap-1 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:underline shrink-0 font-medium px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer ml-auto"
@@ -2026,7 +2135,10 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   title="แชร์บันทึกนี้"
                 >
                   <Share2 className="w-3.5 h-3.5" />
-                  <span>{readingNote.is_shared ? "แชร์อยู่ 🌐" : "แชร์"}</span>
+                  <span>{readingNote.is_shared ? "แชร์อยู่" : "แชร์"}</span>
+                  {readingNote.is_shared && (
+                    <Globe className="w-3 h-3 text-sky-500 ml-0.5" />
+                  )}
                 </Button>
                 <Button
                   variant="ghost"
@@ -2212,423 +2324,30 @@ export default function NotesPage({ noteType, initialData }: Props) {
         </div>
       )}
 
-      {isNoteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-2 sm:p-4">
-          <div className="my-auto flex max-h-[calc(100dvh-1rem)] w-full max-w-lg min-h-0 flex-col overflow-hidden rounded-xl bg-background sm:max-h-[calc(100dvh-2rem)]">
-            <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-0 shadow-none">
-              <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b pb-4">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  {editingNoteId ? (
-                    <>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 16 16"
-                        fill="currentColor"
-                        className="w-5 h-5 text-blue-500"
-                      >
-                        <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z" />
-                        <path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z" />
-                      </svg>
-                      แก้ไข Note
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 16 16"
-                        fill="currentColor"
-                        className="w-5 h-5"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M8 1.5a.75.75 0 0 1 .75.75V7h4.75a.75.75 0 0 1 0 1.5H8.75v4.75a.75.75 0 0 1-1.5 0V8.5H2.5a.75.75 0 0 1 0-1.5h4.75V2.25A.75.75 0 0 1 8 1.5Z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      สร้าง Note ใหม่
-                    </>
-                  )}
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={closeNoteModal}
-                  className="h-8 w-8 rounded-full"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                  </svg>
-                </Button>
-              </CardHeader>
-              <CardContent className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pt-5 sm:p-6">
-                <form onSubmit={handleSaveNote} className="flex flex-col gap-5">
-                  <div className="grid gap-2">
-                    <Label htmlFor="title">หัวข้อ (Title)</Label>
-                    <Input
-                      id="title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      required
-                      disabled={isSubmittingNote}
-                    />
-                  </div>
-                  <RichNoteEditor
-                    value={content}
-                    onChange={setContent}
-                    disabled={isSubmittingNote}
-                  />
-
-                  {/* Quality Picker */}
-                  {availableQualities.length > 0 && (
-                    <QualityPicker
-                      qualities={availableQualities}
-                      value={selectedQualities}
-                      onChange={setSelectedQualities}
-                    />
-                  )}
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="file">แนบไฟล์ (PDF หรือ รูปภาพ - ทางเลือก)</Label>
-                    {editingNoteId && existingFilePath && (
-                      <div className="flex items-center justify-between p-3 border border-slate-200 bg-slate-50 rounded-md mb-2">
-                        <span className="text-sm text-slate-600 truncate">
-                          มีไฟล์แนบอยู่แล้ว ({existingFilePath.split(".").pop()?.toUpperCase()})
-                        </span>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={handleRemoveExistingPdf}
-                          disabled={isDeletingFile || isSubmittingNote}
-                          className="h-8 text-xs shrink-0"
-                        >
-                          ลบไฟล์นี้
-                        </Button>
-                      </div>
-                    )}
-                    <Input
-                      id="file"
-                      type="file"
-                      accept=".pdf,image/*"
-                      onChange={(e) => setFile(e.target.files?.[0] || null)}
-                      disabled={isSubmittingNote || isDeletingFile}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid min-w-0 gap-2">
-                      <Label>หมวดหมู่</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full min-w-0 justify-between overflow-hidden h-10 px-3 bg-background font-normal"
-                        onClick={() => setIsNoteCategoryModalOpen(true)}
-                        disabled={isSubmittingNote}
-                      >
-                        {categoryId ? (
-                          (() => {
-                            const cat = categories.find(
-                              (c) => c.id === categoryId,
-                            );
-                            return cat ? (
-                              <div className="flex w-0 min-w-0 flex-1 items-center gap-2 overflow-hidden">
-                                {noteType === "school" && (cat.year || cat.semester) && (
-                                  <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 px-1.5 py-0.2 rounded text-[10px] font-bold shrink-0">
-                                    {formatYearSemester(cat.year, cat.semester)}
-                                  </span>
-                                )}
-                                {cat.pic ? (
-                                  <img
-                                    src={getPicUrl(cat.pic)}
-                                    className="w-5 h-5 rounded object-cover shrink-0"
-                                    alt="pic"
-                                  />
-                                ) : (
-                                  <div className="w-5 h-5 bg-slate-200 rounded shrink-0 flex items-center justify-center text-[10px] text-slate-500">
-                                    -
-                                  </div>
-                                )}
-                                <span className="block min-w-0 flex-1 truncate" title={cat.name}>
-                                  {cat.name}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">
-                                -- เลือกหมวดหมู่ --
-                              </span>
-                            );
-                          })()
-                        ) : (
-                          <span className="text-muted-foreground">
-                            -- เลือกหมวดหมู่ --
-                          </span>
-                        )}
-                      </Button>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="status">สถานะ</Label>
-                      <select
-                        id="status"
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        disabled={isSubmittingNote}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50"
-                      >
-                        <option value="ทั่วไป">ทั่วไป</option>
-                        <option value="สำคัญ">สำคัญ</option>
-                        <option value="งานค้าง">งานค้าง</option>
-                        <option value="เสร็จสิ้น">เสร็จสิ้น</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 mt-4 pt-4 border-t">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={closeNoteModal}
-                      className="flex-1"
-                      disabled={isSubmittingNote}
-                    >
-                      ยกเลิก
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={isSubmittingNote}
-                      className="flex-1"
-                    >
-                      {isSubmittingNote
-                        ? "กำลังบันทึก..."
-                        : editingNoteId
-                          ? "อัปเดต Note"
-                          : "บันทึก Note"}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      {isNoteCategoryModalOpen && (
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setIsNoteCategoryModalOpen(false)}
-        >
-          <div
-            className="w-full max-w-2xl bg-background rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="p-5 md:p-6 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/20">
-              <div>
-                <h3 className="font-bold text-xl flex items-center gap-2 text-foreground">
-                  <Folder className="w-5 h-5 text-primary" />
-                  เลือกหมวดหมู่สำหรับบันทึกนี้
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  เลือกหมวดหมู่ที่ตรงกับหัวข้อของคุณ
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {/* Search Bar */}
-                <div className="relative flex-1 sm:w-52">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={categorySelectSearch}
-                    onChange={(e) => setCategorySelectSearch(e.target.value)}
-                    placeholder="ค้นหาหมวดหมู่..."
-                    className="w-full h-9 pl-9 pr-7 rounded-xl border bg-background text-xs outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                  {categorySelectSearch && (
-                    <button
-                      onClick={() => setCategorySelectSearch("")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-full shrink-0"
-                  onClick={() => setIsNoteCategoryModalOpen(false)}
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Year & Semester Filter Tabs inside Note Category Modal */}
-            {noteType === "school" && (
-              <div className="flex flex-col gap-2 px-5 md:px-6 pt-3 pb-2.5 border-b bg-muted/10">
-                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
-                  <span className="text-xs font-semibold text-muted-foreground mr-1 shrink-0">
-                    ชั้นปี:
-                  </span>
-                  {[
-                    { id: "all" as const, label: "ทุกชั้นปี" },
-                    { id: 1 as const, label: "ปี 1" },
-                    { id: 2 as const, label: "ปี 2" },
-                    { id: 3 as const, label: "ปี 3" },
-                    { id: 4 as const, label: "ปี 4" },
-                    ...(hasUnassignedYearCats
-                      ? [{ id: "none" as const, label: "ไม่ระบุ" }]
-                      : []),
-                  ].map((yTab) => (
-                    <button
-                      key={String(yTab.id)}
-                      type="button"
-                      onClick={() => setModalSelectYear(yTab.id)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 transition-colors ${
-                        modalSelectYear === yTab.id
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                          : "bg-background text-muted-foreground border-border hover:bg-muted"
-                      }`}
-                    >
-                      {yTab.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin pt-1 border-t border-border/40">
-                  <span className="text-xs font-semibold text-muted-foreground mr-1 shrink-0">
-                    ภาคเรียน:
-                  </span>
-                  {[
-                    { id: "all" as const, label: "ทุกภาคเรียน" },
-                    { id: 1 as const, label: "เทอม 1" },
-                    { id: 2 as const, label: "เทอม 2" },
-                    { id: 3 as const, label: "ฤดูร้อน" },
-                    ...(hasUnassignedSemesterCats
-                      ? [{ id: "none" as const, label: "ไม่ระบุ" }]
-                      : []),
-                  ].map((sTab) => (
-                    <button
-                      key={String(sTab.id)}
-                      type="button"
-                      onClick={() => setModalSelectSemester(sTab.id)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border shrink-0 transition-colors ${
-                        modalSelectSemester === sTab.id
-                          ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
-                          : "bg-background text-muted-foreground border-border hover:bg-muted"
-                      }`}
-                    >
-                      {sTab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Grid */}
-            <div className="p-5 md:p-6 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3.5">
-              {categories
-                .filter((cat) => {
-                  if (noteType === "school") {
-                    if (modalSelectYear !== "all") {
-                      if (modalSelectYear === "none") {
-                        if (cat.year) return false;
-                      } else {
-                        if (cat.year !== modalSelectYear) return false;
-                      }
-                    }
-                    if (modalSelectSemester !== "all") {
-                      if (modalSelectSemester === "none") {
-                        if (cat.semester) return false;
-                      } else {
-                        if (cat.semester !== modalSelectSemester) return false;
-                      }
-                    }
-                  }
-                  return cat.name
-                    .toLowerCase()
-                    .includes(categorySelectSearch.toLowerCase());
-                })
-                .map((cat) => {
-                  const isSelected = categoryId === cat.id;
-                  const count = categoryNoteCounts[cat.id] || 0;
-
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        setCategoryId(cat.id);
-                        setIsNoteCategoryModalOpen(false);
-                      }}
-                      className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border text-center hover:shadow-md ${
-                        isSelected
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm"
-                          : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
-                      }`}
-                    >
-                      {isSelected && (
-                        <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
-                          <Check className="w-3 h-3 stroke-[3]" />
-                        </span>
-                      )}
-
-                      {cat.pic ? (
-                        <img
-                          src={getPicUrl(cat.pic)}
-                          className="w-12 h-12 rounded-2xl object-cover shadow-sm mb-2.5"
-                          alt={cat.name}
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shadow-sm mb-2.5">
-                          <Folder className="w-6 h-6" />
-                        </div>
-                      )}
-
-                      <span className="font-bold text-sm truncate w-full text-foreground">
-                        {cat.name}
-                      </span>
-                      {noteType === "school" && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 mt-0.5">
-                          {formatYearSemester(cat.year, cat.semester) || "ไม่ระบุปี/เทอม"}
-                        </span>
-                      )}
-                      <span className="text-[11px] font-medium text-muted-foreground mt-0.5">
-                        {count} บันทึก
-                      </span>
-                    </button>
-                  );
-                })}
-
-              {/* Add New Category Card */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsNoteCategoryModalOpen(false);
-                  setIsCategoryModalOpen(true);
-                }}
-                className="group flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-muted hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-primary"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-muted/60 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary mb-2.5">
-                  <FolderPlus className="w-6 h-6" />
-                </div>
-                <span className="font-semibold text-xs">
-                  + จัดการหมวดหมู่
-                </span>
-                <span className="text-[10px] text-muted-foreground mt-0.5">
-                  เพิ่มหมวดหมู่ใหม่
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Note Form Modal (Shared Component) */}
+      <NoteFormModal
+        isOpen={isNoteModalOpen}
+        onClose={closeNoteModal}
+        note={
+          editingNoteId
+            ? {
+                id: editingNoteId,
+                title,
+                content,
+                category_id: categoryId,
+                status,
+                file_path: existingFilePath,
+              }
+            : null
+        }
+        categories={categories}
+        availableQualities={availableQualities}
+        noteType={noteType}
+        onSuccess={async () => {
+          invalidateNotesCache(noteType);
+          await loadNotes();
+        }}
+      />
 
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">

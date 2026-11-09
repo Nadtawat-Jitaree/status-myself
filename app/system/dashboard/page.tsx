@@ -252,7 +252,7 @@ async function DashboardData() {
   return (
     <div className="w-full min-w-0 space-y-6 sm:space-y-8">
       {/* 1. Hero Welcome Banner (Monochrome / Black & White Gradient) */}
-      <div className="relative overflow-hidden rounded-3xl border border-border/80  p-5 sm:p-8 backdrop-blur-sm shadow-xs">
+      <div className="relative overflow-hidden rounded-3xl border border-border/80  p-5 sm:p-8 shadow-xs">
         {/* Monochrome Glow Effects */}
         <div className="pointer-events-none absolute -left-12 -top-12 h-44 w-44 rounded-full " />
         <div className="pointer-events-none absolute -right-12 -bottom-12 h-44 w-44 rounded-full " />
@@ -260,7 +260,7 @@ async function DashboardData() {
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2.5 max-w-2xl">
             {/* Thai Date Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/90 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur-md shadow-xs">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/90 px-3 py-1 text-xs font-semibold text-foreground shadow-xs">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{todayStr}</span>
             </div>

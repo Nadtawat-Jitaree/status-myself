@@ -39,7 +39,7 @@ const CustomPieTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0];
     return (
-      <div className="rounded-xl border border-border/80 bg-popover/95 px-3 py-2 text-popover-foreground shadow-xl backdrop-blur-md">
+      <div className="rounded-xl border border-border/80 bg-popover/95 px-3 py-2 text-popover-foreground shadow-xl">
         <div className="flex items-center gap-2">
           <span
             className="h-2.5 w-2.5 rounded-full"
@@ -59,7 +59,7 @@ const CustomPieTooltip = ({ active, payload }: any) => {
 const CustomBarTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="rounded-xl border border-border/80 bg-popover/95 px-3 py-2 text-popover-foreground shadow-xl backdrop-blur-md">
+      <div className="rounded-xl border border-border/80 bg-popover/95 px-3 py-2 text-popover-foreground shadow-xl">
         <p className="text-xs font-semibold text-muted-foreground">{label}</p>
         <p className="mt-1 text-sm font-bold text-foreground">
           {payload[0].value} <span className="text-xs font-normal text-muted-foreground">บันทึก</span>

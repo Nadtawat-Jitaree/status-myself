@@ -122,7 +122,7 @@ export default function SharedCategoryView({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b px-6 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-30 bg-white/80 border-b px-6 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/note.webp"
@@ -319,7 +319,7 @@ export default function SharedCategoryView({
       {/* Reading Note Modal */}
       {readingNote && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-in fade-in"
           onClick={() => setReadingNote(null)}
         >
           <div

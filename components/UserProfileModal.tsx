@@ -86,7 +86,7 @@ export function UserProfileModal({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
       <div
         className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden text-slate-800 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
@@ -95,7 +95,7 @@ export function UserProfileModal({
         <div className="h-28 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
           <button
             onClick={onClose}
-            className="absolute top-3.5 right-3.5 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white backdrop-blur-xs transition"
+            className="absolute top-3.5 right-3.5 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition"
           >
             <X className="w-4 h-4" />
           </button>

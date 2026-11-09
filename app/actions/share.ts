@@ -44,6 +44,7 @@ export async function toggleShareNote(noteId: string) {
     throw new Error("ไม่สามารถเปลี่ยนสถานะการแชร์ได้: " + updateError.message);
   }
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -78,6 +79,7 @@ export async function regenerateNoteShareToken(noteId: string) {
 
   if (error) throw new Error("สร้างลิงก์ใหม่ไม่สำเร็จ: " + error.message);
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -130,6 +132,7 @@ export async function toggleShareCategory(categoryId: string) {
     throw new Error("ไม่สามารถเปลี่ยนสถานะการแชร์หมวดหมู่ได้: " + updateError.message);
   }
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
@@ -163,6 +166,7 @@ export async function regenerateCategoryShareToken(categoryId: string) {
 
   if (error) throw new Error("สร้างลิงก์ใหม่ไม่สำเร็จ: " + error.message);
 
+  revalidatePath("/board");
   revalidatePath("/notes");
   revalidatePath("/system/notes");
   revalidatePath("/system/notes/normal");
