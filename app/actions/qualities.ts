@@ -306,6 +306,14 @@ export async function syncNoteQualities(
     };
   });
 
+  const { error: txError } = await supabase
+    .from("quality_transactions")
+    .insert(transactionsInsert);
+
+  if (txError) {
+    console.error("Error inserting note quality transactions:", txError.message);
+  }
+
   revalidatePath("/system/qualities");
   revalidatePath("/system/notes");
   revalidatePath("/system/dashboard");

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowLeft, RefreshCw, HelpCircle, ShieldAlert } from "lucide-react";
+import { ArrowLeft, RefreshCw, ShieldAlert, Sparkles } from "lucide-react";
 import { NavbarLeft } from "@/components/navbar-left";
 import { NavbarRight } from "@/components/navbar-right";
 import { Footer } from "@/components/footer";
@@ -8,51 +8,68 @@ import { Footer } from "@/components/footer";
 export default function SubscriptionCancelPage() {
   return (
     <main className="min-h-screen flex flex-col items-center w-full bg-slate-50/50 dark:bg-slate-950">
-      {/* Navbar Header */}
-      <nav className="w-full flex justify-center border-b border-b-slate-200/80 dark:border-b-slate-800 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-40">
+      {/* Navbar */}
+      <nav className="w-full flex justify-center border-b border-slate-200/80 dark:border-slate-800 h-16 bg-white dark:bg-slate-900 sticky top-0 z-40">
         <div className="w-full max-w-7xl flex justify-between items-center p-2 sm:p-3 sm:px-5 text-sm">
-          <div className="flex gap-2 sm:gap-5 items-center font-semibold">
-            <Suspense fallback={<div className="w-10 h-10 animate-pulse bg-slate-200 rounded-xl" />}>
-              <NavbarLeft />
-            </Suspense>
-          </div>
+          <Suspense fallback={<div className="w-10 h-10 animate-pulse bg-slate-200 rounded-xl" />}>
+            <NavbarLeft />
+          </Suspense>
           <Suspense fallback={<div className="w-20 h-8 animate-pulse bg-slate-200 rounded-md" />}>
             <NavbarRight />
           </Suspense>
         </div>
       </nav>
 
-      {/* Main Container */}
+      {/* Content */}
       <div className="w-full flex-1 flex items-center justify-center p-4 py-16">
-        <div className="max-w-md w-full rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-xl text-center space-y-6">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 dark:bg-slate-800 text-slate-500 shadow-xs">
-            <ShieldAlert className="w-8 h-8 text-amber-500" />
+        <div className="max-w-sm w-full space-y-5 text-center">
+
+          {/* Icon */}
+          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-100 dark:bg-slate-800 mx-auto shadow-xs">
+            <ShieldAlert className="w-9 h-9 text-amber-500" />
           </div>
 
-          <div className="space-y-2">
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">
+          {/* Text */}
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold">
               การทำรายการถูกยกเลิก
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white">
+              ยังไม่มีการตัดเงิน
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              คุณได้ยกเลิกขั้นตอนการชำระเงินใน Stripe หรือปิดหน้าต่างก่อนทำรายการเสร็จ ยังไม่มีการตัดเงินจากบัตรหรือบัญชีของคุณ
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
+              คุณปิดหน้าต่างหรือยกเลิกขั้นตอนการชำระเงินก่อนทำรายการเสร็จ
+              ไม่มีการหักเงินจากบัตรหรือบัญชีของคุณ
             </p>
           </div>
 
-          <div className="flex flex-col gap-2.5 pt-2">
+          {/* Reminder */}
+          <div className="rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-800/40 p-4 text-left">
+            <p className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5 mb-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              Premium เริ่มต้นเพียง ฿50/เดือน
+            </p>
+            <p className="text-[11px] text-amber-700/80 dark:text-amber-300/70 leading-relaxed">
+              ปลดล็อคโน้ต โปรเจกต์ ปฏิทิน ทักษะ และ Dashboard ทั้งหมด
+              พร้อมรองรับ PromptPay & บัตรเครดิต
+            </p>
+          </div>
+
+          {/* CTAs */}
+          <div className="flex flex-col gap-2.5">
             <Link
               href="/subscription"
-              className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-md shadow-amber-500/25 transition-all active:scale-95"
+              className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition-transform duration-150 active:scale-95"
             >
               <RefreshCw className="w-4 h-4" />
-              <span>กลับไปเลือกแพ็กเกจใหม่</span>
+              กลับไปเลือกแพ็กเกจ
             </Link>
-
             <Link
               href="/board"
-              className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors"
+              className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>กลับไปยังหน้าบอร์ดชุมชน</span>
+              กลับหน้าบอร์ดชุมชน
             </Link>
           </div>
         </div>

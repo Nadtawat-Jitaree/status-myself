@@ -13,6 +13,7 @@ import { UserProfileModal, UserProfileData } from "./UserProfileModal";
 import { ReactionButtons } from "./ReactionButtons";
 import NoteContentRenderer from "./NoteContentRenderer";
 import { NoteFormModal, NoteCategoryItem } from "./NoteFormModal";
+import { Quality } from "@/app/actions/qualities";
 import Swal from "sweetalert2";
 import {
   Calendar,
@@ -40,6 +41,7 @@ interface BoardNoteCardProps {
   note: BoardNoteItem;
   rank?: number; // 1, 2, 3 สำหรับ Top Board
   categories?: NoteCategoryItem[];
+  availableQualities?: Quality[];
   isMyNotesView?: boolean;
 }
 
@@ -47,6 +49,7 @@ export function BoardNoteCard({
   note,
   rank,
   categories = [],
+  availableQualities = [],
   isMyNotesView = false,
 }: BoardNoteCardProps) {
   const router = useRouter();
@@ -595,6 +598,7 @@ export function BoardNoteCard({
           file_path: currentNote.file_path,
         }}
         categories={categories}
+        availableQualities={availableQualities}
         noteType={currentNote.category?.note_type as any}
         onSuccess={async (savedData) => {
           const selectedCat = categories.find((c) => c.id === savedData.category_id);

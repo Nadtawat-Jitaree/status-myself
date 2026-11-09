@@ -53,7 +53,7 @@ export default function SubscriptionPage({ searchParams }: SubscriptionPageProps
   return (
     <main className="min-h-screen flex flex-col items-center w-full bg-slate-50/50 dark:bg-slate-950">
       {/* Navbar Header */}
-      <nav className="w-full flex justify-center border-b border-b-slate-200/80 dark:border-b-slate-800 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-40">
+      <nav className="w-full flex justify-center border-b border-b-slate-200/80 dark:border-b-slate-800 h-16 bg-white dark:bg-slate-900 sticky top-0 z-40">
         <div className="w-full max-w-7xl flex justify-between items-center p-2 sm:p-3 sm:px-5 text-sm">
           <div className="flex gap-2 sm:gap-5 items-center font-semibold">
             <Suspense fallback={<div className="w-10 h-10 animate-pulse bg-slate-200 rounded-xl" />}>

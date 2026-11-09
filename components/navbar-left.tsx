@@ -66,9 +66,9 @@ export function NavbarLeft() {
           <Link
             href="/system/dashboard"
             title="Dashboard"
-            className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+            className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-colors duration-150 active:scale-95 ${
               pathname.startsWith("/system/dashboard")
-                ? "bg-blue-600 text-white shadow-sm shadow-blue-500/30 border border-transparent"
+                ? "bg-blue-600 text-white shadow-xs border border-transparent"
                 : "text-blue-600 bg-blue-500/10 hover:bg-blue-500/20 border-blue-200/50 border"
             }`}
           >
@@ -81,16 +81,16 @@ export function NavbarLeft() {
             disabled
             aria-disabled="true"
             title="Dashboard (สงวนสิทธิ์เฉพาะสมาชิก Premium เท่านั้น)"
-            className="relative flex h-10 items-center justify-center rounded-2xl px-2.5 sm:px-3 text-xs font-semibold border border-slate-200/70 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-800/40 cursor-not-allowed select-none overflow-hidden transition-opacity"
+            className="relative flex h-10 items-center justify-center rounded-2xl px-2.5 sm:px-3 text-xs font-semibold border border-slate-200/70 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-800/40 cursor-not-allowed select-none overflow-hidden"
           >
-            {/* เนื้อหาเดิมที่ถูกเบลอ */}
-            <div className="flex items-center gap-2 blur-[1.5px] opacity-30 grayscale select-none pointer-events-none">
+            {/* เนื้อหาเดิม */}
+            <div className="flex items-center gap-2 opacity-25 grayscale select-none pointer-events-none">
               <BarChart3 className="h-[18px] w-[18px]" />
               <span className="hidden md:inline-block">Dashboard</span>
             </div>
             {/* Icon กุญแจล็อคตรงกลาง */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/15 dark:bg-amber-400/20 text-amber-600 dark:text-amber-400 border border-amber-300/40 dark:border-amber-500/30 shadow-xs">
+              <div className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/15 dark:bg-amber-400/20 text-amber-600 dark:text-amber-400 border border-amber-300/40 dark:border-amber-500/30">
                 <Lock className="w-3.5 h-3.5" />
               </div>
             </div>
@@ -101,9 +101,9 @@ export function NavbarLeft() {
         <Link
           href="/board"
           title="Board กระดานสนทนา"
-          className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+          className={`flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-colors duration-150 active:scale-95 ${
             pathname.startsWith("/board")
-              ? "bg-rose-600 text-white shadow-sm shadow-rose-500/30 border border-transparent"
+              ? "bg-rose-600 text-white shadow-xs border border-transparent"
               : "text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border-rose-200/50 border"
           }`}
         >
@@ -116,27 +116,20 @@ export function NavbarLeft() {
           <button
             type="button"
             onClick={() => setOpenModalNavbar(true)}
-            className={`group relative flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-all duration-200 active:scale-95 shadow-xs ${
+            className={`group relative flex h-10 items-center gap-2 rounded-2xl px-2.5 sm:px-3 text-xs font-semibold transition-colors duration-150 active:scale-95 ${
               isWorkspaceActive
-                ? "bg-purple-600 text-white shadow-sm shadow-purple-500/30 border border-transparent"
+                ? "bg-purple-600 text-white shadow-xs border border-transparent"
                 : "text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-200/60"
             }`}
             title="เลือกพื้นที่ทำงาน (Menus)"
           >
-            <LayoutGrid className="h-[18px] w-[18px] transition-transform duration-200 group-hover:rotate-12" />
+            <LayoutGrid className="h-[18px] w-[18px]" />
             <span className="hidden md:inline-block">Menus</span>
-            <span className="relative flex h-2 w-2">
-              <span
-                className={`absolute inline-flex h-full w-full animate-ping rounded-full ${
-                  isWorkspaceActive ? "bg-white/80" : "bg-purple-400"
-                } opacity-75`}
-              />
-              <span
-                className={`relative inline-flex h-2 w-2 rounded-full ${
-                  isWorkspaceActive ? "bg-white" : "bg-purple-500"
-                }`}
-              />
-            </span>
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${
+                isWorkspaceActive ? "bg-white" : "bg-purple-500"
+              }`}
+            />
           </button>
         ) : (
           <button
@@ -144,16 +137,16 @@ export function NavbarLeft() {
             disabled
             aria-disabled="true"
             title="Menus (สงวนสิทธิ์เฉพาะสมาชิก Premium เท่านั้น)"
-            className="relative flex h-10 items-center justify-center rounded-2xl px-2.5 sm:px-3 text-xs font-semibold border border-slate-200/70 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-800/40 cursor-not-allowed select-none overflow-hidden transition-opacity"
+            className="relative flex h-10 items-center justify-center rounded-2xl px-2.5 sm:px-3 text-xs font-semibold border border-slate-200/70 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-800/40 cursor-not-allowed select-none overflow-hidden"
           >
-            {/* เนื้อหาเดิมที่ถูกเบลอ */}
-            <div className="flex items-center gap-2 blur-[1.5px] opacity-30 grayscale select-none pointer-events-none">
+            {/* เนื้อหาเดิม */}
+            <div className="flex items-center gap-2 opacity-25 grayscale select-none pointer-events-none">
               <LayoutGrid className="h-[18px] w-[18px]" />
               <span className="hidden md:inline-block">Menus</span>
             </div>
             {/* Icon กุญแจล็อคตรงกลาง */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/15 dark:bg-amber-400/20 text-amber-600 dark:text-amber-400 border border-amber-300/40 dark:border-amber-500/30 shadow-xs">
+              <div className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/15 dark:bg-amber-400/20 text-amber-600 dark:text-amber-400 border border-amber-300/40 dark:border-amber-500/30">
                 <Lock className="w-3.5 h-3.5" />
               </div>
             </div>

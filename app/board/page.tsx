@@ -8,6 +8,7 @@ import {
   getBoardStats,
 } from "@/app/actions/board";
 import { getAllUserCategories } from "@/app/actions/notes";
+import { getQualities } from "@/app/actions/qualities";
 import { TopBoardSection } from "@/components/TopBoardSection";
 import { BoardNoteCard } from "@/components/BoardNoteCard";
 import { BoardFilterBar } from "@/components/BoardFilterBar";
@@ -68,7 +69,7 @@ async function BoardContent({ searchParams }: BoardPageProps) {
   } = await supabase.auth.getUser();
 
   // ดึงข้อมูลโน้ต, สถิติ, Top 3 Notes และหมวดหมู่ของผู้ใช้พร้อมกันแบบ Parallel
-  const [boardData, topNotes, stats, userCategories] = await Promise.all([
+  const [boardData, topNotes, stats, userCategories, userQualities] = await Promise.all([
     getBoardNotes({
       page: currentPage,
       limit: 9,
@@ -80,6 +81,7 @@ async function BoardContent({ searchParams }: BoardPageProps) {
     getTopBoardNotes(),
     getBoardStats(),
     currentUser ? getAllUserCategories() : Promise.resolve([]),
+    currentUser ? getQualities() : Promise.resolve([]),
   ]);
 
   const { notes, totalCount, totalPages } = boardData;
@@ -192,6 +194,7 @@ async function BoardContent({ searchParams }: BoardPageProps) {
               key={note.id}
               note={note}
               categories={userCategories}
+              availableQualities={userQualities}
               isMyNotesView={filterParam === "mine"}
             />
           ))}
