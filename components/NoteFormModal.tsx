@@ -525,15 +525,15 @@ export function NoteFormModal({
                             <Folder className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-muted-foreground font-medium">
-                              แตะเพื่อเลือกหมวดหมู่...
+                            <p className="text-xs text-muted-foreground font-bold">
+                              แตะเพื่อเลือกหมวดหมู่
                             </p>
                             <p className="text-xs text-muted-foreground/60">
                               {categories.length} หมวดหมู่พร้อมใช้งาน
                             </p>
                           </div>
                           <span className="text-xs text-primary font-semibold shrink-0">
-                            เลือก →
+                            เลือก
                           </span>
                         </>
                       )}
