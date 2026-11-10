@@ -20,6 +20,7 @@ import {
 import type { ProjectSummary, ProjectsPagedResponse } from "@/app/actions/projects";
 import type { PaginationData } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 type StatusFilter = "all" | "in_progress" | "completed" | "empty";
 
@@ -364,10 +365,10 @@ export default function ProjectListClient({ initialData }: { initialData: Projec
               </button>
             )}
           </div>
-          <button
+          <Button
             type="submit"
             disabled={isPending}
-            className="h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 shrink-0 flex items-center gap-1.5"
+            className="h-10 px-4 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 shrink-0 flex items-center gap-1.5"
           >
             {isPending ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -375,7 +376,7 @@ export default function ProjectListClient({ initialData }: { initialData: Projec
               <Search className="w-3.5 h-3.5" />
             )}
             ค้นหา
-          </button>
+          </Button>
         </form>
 
         {/* Status Filter Tabs */}

@@ -16,6 +16,7 @@ import {
 import { QualityPicker } from "@/components/QualityPicker";
 import { QualityIconRenderer } from "@/lib/lucide-icons";
 import { SelectedQualityInput } from "@/app/actions/qualities";
+import { Button } from "@/components/ui/button";
 
 import {
   CheckCircle2,
@@ -79,31 +80,50 @@ export default function ProjectClient({
 
   // Project Target States (derive progress directly from tasks done)
   const [targetCount, setTargetCount] = useState<number | null>(
-    project.target_count ?? null
+    project.target_count ?? null,
   );
   const [targetLabel, setTargetLabel] = useState<string>(
-    project.target_label || "คลิป"
+    project.target_label || "คลิป",
   );
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [targetFormCount, setTargetFormCount] = useState<string>(
-    project.target_count ? String(project.target_count) : ""
+    project.target_count ? String(project.target_count) : "",
   );
   const [targetFormLabel, setTargetFormLabel] = useState<string>(
-    project.target_label || "คลิป"
+    project.target_label || "คลิป",
   );
   const [isUpdatingTarget, setIsUpdatingTarget] = useState(false);
 
   // Selected Task for Detail Modal / Drawer
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
-  const [selectedQualities, setSelectedQualities] = useState<SelectedQualityInput[]>([]);
+  const [modalStatus, setModalStatus] = useState<string>("todo");
+  const [selectedQualities, setSelectedQualities] = useState<
+    SelectedQualityInput[]
+  >([]);
   const [isSavingTaskDetail, setIsSavingTaskDetail] = useState(false);
+
+  // Loading states for Note/Task operations
+  const [updatingStatusTaskId, setUpdatingStatusTaskId] = useState<
+    string | null
+  >(null);
+  const [updatingStatusTarget, setUpdatingStatusTarget] = useState<
+    string | null
+  >(null);
+  const [savingTitleTaskId, setSavingTitleTaskId] = useState<string | null>(
+    null,
+  );
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [isUpdatingProject, setIsUpdatingProject] = useState(false);
 
   const openTaskDetail = (task: any) => {
     setSelectedTask(task);
-    const initialQualities: SelectedQualityInput[] = (task.qualities || []).map((q: any) => ({
-      quality_id: q.quality_id,
-      level: q.level as 1 | 3 | 5,
-    }));
+    setModalStatus(task.status || "todo");
+    const initialQualities: SelectedQualityInput[] = (task.qualities || []).map(
+      (q: any) => ({
+        quality_id: q.quality_id,
+        level: q.level as 1 | 3 | 5,
+      }),
+    );
     setSelectedQualities(initialQualities);
   };
 
@@ -115,7 +135,9 @@ export default function ProjectClient({
     setTasks(project.tasks || []);
     setTargetCount(project.target_count ?? null);
     setTargetLabel(project.target_label || "คลิป");
-    setTargetFormCount(project.target_count ? String(project.target_count) : "");
+    setTargetFormCount(
+      project.target_count ? String(project.target_count) : "",
+    );
     setTargetFormLabel(project.target_label || "คลิป");
   }, [project.tasks, project.target_count, project.target_label]);
 
@@ -152,8 +174,7 @@ export default function ProjectClient({
           medium: 2,
           low: 1,
         };
-        const diff =
-          (pWeights[b.priority] || 2) - (pWeights[a.priority] || 2);
+        const diff = (pWeights[b.priority] || 2) - (pWeights[a.priority] || 2);
         if (diff !== 0) return diff;
         return (
           new Date(b.created_at || 0).getTime() -
@@ -195,6 +216,14 @@ export default function ProjectClient({
     try {
       await createTask(project.id, formData);
       form.reset();
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "บันทึกข้อมูลเรียบร้อยแล้ว",
+        showConfirmButton: false,
+        timer: 1500,
+      });
     } catch (error) {
       console.error("Failed to create task:", error);
       Swal.fire({
@@ -237,14 +266,103 @@ export default function ProjectClient({
     });
 
     if (result.isConfirmed) {
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
-      await deleteTask(taskId, project.id);
+      setDeletingTaskId(taskId);
+      try {
+        setTasks((prev) => prev.filter((t) => t.id !== taskId));
+        await deleteTask(taskId, project.id);
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "ลบงานเรียบร้อยแล้ว",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      } catch (error) {
+        console.error("Failed to delete task:", error);
+        Swal.fire({
+          icon: "error",
+          title: "เกิดข้อผิดพลาด",
+          text: "ไม่สามารถลบงานได้ กรุณาลองใหม่อีกครั้ง",
+        });
+      } finally {
+        setDeletingTaskId(null);
+      }
     }
   };
 
-  const handleUpdateProject = async (formData: FormData) => {
-    await updateProject(project.id, formData);
-    setIsEditing(false);
+  const handleStatusChange = async (taskId: string, newStatus: string) => {
+    if (updatingStatusTaskId) return;
+    const currentTask = tasks.find((t) => t.id === taskId);
+    if (!currentTask || currentTask.status === newStatus) return;
+
+    const originalStatus = currentTask.status;
+    setUpdatingStatusTaskId(taskId);
+    setUpdatingStatusTarget(newStatus);
+
+    // Optimistic update
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)),
+    );
+
+    try {
+      await updateTaskStatus(taskId, newStatus, project.id);
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "เปลี่ยนสถานะเรียบร้อย",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      // Revert on error
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, status: originalStatus } : t,
+        ),
+      );
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: "ไม่สามารถเปลี่ยนสถานะได้ กรุณาลองใหม่อีกครั้ง",
+      });
+    } finally {
+      setUpdatingStatusTaskId(null);
+      setUpdatingStatusTarget(null);
+    }
+  };
+
+  const handleUpdateProject = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isUpdatingProject) return;
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    setIsUpdatingProject(true);
+    try {
+      await updateProject(project.id, formData);
+      setIsEditing(false);
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "บันทึกข้อมูลโปรเจกต์แล้ว",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch (error) {
+      console.error("Failed to update project:", error);
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: "ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
+      });
+    } finally {
+      setIsUpdatingProject(false);
+    }
   };
 
   const handleSaveTargetSettings = async (e: React.FormEvent) => {
@@ -286,7 +404,9 @@ export default function ProjectClient({
     }
   };
 
-  const handleSaveTaskDetailModal = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveTaskDetailModal = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
     if (!selectedTask || isSavingTaskDetail) return;
 
@@ -296,12 +416,19 @@ export default function ProjectClient({
     const description = (formData.get("description") as string)?.trim() || null;
     const priority = (formData.get("priority") as string) || "medium";
     const dueDateStr = formData.get("due_date") as string;
-    const due_date = dueDateStr && dueDateStr.trim() !== "" ? new Date(dueDateStr).toISOString() : null;
+    const due_date =
+      dueDateStr && dueDateStr.trim() !== ""
+        ? new Date(dueDateStr).toISOString()
+        : null;
 
     if (!title) return;
 
     setIsSavingTaskDetail(true);
     try {
+      if (modalStatus !== selectedTask.status) {
+        await updateTaskStatus(selectedTask.id, modalStatus, project.id);
+      }
+
       await updateTaskDetails(selectedTask.id, project.id, {
         title,
         description,
@@ -311,7 +438,9 @@ export default function ProjectClient({
       });
 
       const updatedQualities = selectedQualities.map((sq) => {
-        const qInfo = availableQualities.find((aq: any) => aq.id === sq.quality_id);
+        const qInfo = availableQualities.find(
+          (aq: any) => aq.id === sq.quality_id,
+        );
         return {
           quality_id: sq.quality_id,
           level: sq.level,
@@ -324,22 +453,29 @@ export default function ProjectClient({
       setTasks((prev) =>
         prev.map((t) =>
           t.id === selectedTask.id
-            ? { ...t, title, description, priority, due_date, qualities: updatedQualities }
-            : t
-        )
+            ? {
+                ...t,
+                title,
+                description,
+                priority,
+                due_date,
+                status: modalStatus,
+                qualities: updatedQualities,
+              }
+            : t,
+        ),
       );
 
-      setSelectedTask((prev: any) =>
-        prev ? { ...prev, title, description, priority, due_date, qualities: updatedQualities } : null
-      );
+      setSelectedTask(null);
 
       Swal.fire({
+        toast: true,
+        position: "top-end",
         icon: "success",
         title: "บันทึกรายละเอียดงานแล้ว",
-        timer: 1200,
+        timer: 1500,
         showConfirmButton: false,
       });
-      setSelectedTask(null);
     } catch (error) {
       console.error("Failed to update task details:", error);
       Swal.fire({
@@ -353,17 +489,42 @@ export default function ProjectClient({
   };
 
   const handleUpdateTaskTitle = async (
-    formData: FormData,
-    taskId: string
+    e: React.FormEvent<HTMLFormElement>,
+    taskId: string,
   ) => {
-    const newTitle = formData.get("title") as string;
-    if (newTitle && newTitle.trim() !== "") {
+    e.preventDefault();
+    if (savingTitleTaskId) return;
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const newTitle = (formData.get("title") as string)?.trim();
+    if (!newTitle) return;
+
+    setSavingTitleTaskId(taskId);
+    try {
       setTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, title: newTitle } : t))
+        prev.map((t) => (t.id === taskId ? { ...t, title: newTitle } : t)),
       );
       await updateTaskTitle(taskId, newTitle, project.id);
+      setEditingTaskId(null);
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "แก้ไขข้อมูลเรียบร้อย",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch (error) {
+      console.error("Failed to update task title:", error);
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: "ไม่สามารถแก้ไขได้ กรุณาลองใหม่อีกครั้ง",
+      });
+    } finally {
+      setSavingTitleTaskId(null);
     }
-    setEditingTaskId(null);
   };
 
   const handleDragEnd = async (result: DropResult) => {
@@ -389,7 +550,7 @@ export default function ProjectClient({
       updatedTasks.map((t: any) => ({
         id: t.id,
         order_index: t.order_index,
-      }))
+      })),
     );
   };
 
@@ -426,7 +587,7 @@ export default function ProjectClient({
       dueDate.getTime() < now.getTime() - 24 * 60 * 60 * 1000 &&
       status !== "done";
     const diffDays = Math.ceil(
-      (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
     );
     const isDueSoon = diffDays >= 0 && diffDays <= 2 && status !== "done";
 
@@ -504,7 +665,7 @@ export default function ProjectClient({
 
         <div className="p-4 sm:p-6 lg:p-8">
           {isEditing ? (
-            <form action={handleUpdateProject} className="space-y-4">
+            <form onSubmit={handleUpdateProject} className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">
                   ชื่อโปรเจกต์
@@ -514,7 +675,8 @@ export default function ProjectClient({
                   name="name"
                   defaultValue={project.name}
                   required
-                  className="h-11 w-full rounded-xl border border-input bg-background px-4 text-base font-semibold outline-none focus:ring-2 focus:ring-primary/30"
+                  disabled={isUpdatingProject}
+                  className="h-11 w-full rounded-xl border border-input bg-background px-4 text-base font-semibold outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
                 />
               </div>
 
@@ -525,26 +687,38 @@ export default function ProjectClient({
                 <textarea
                   name="description"
                   defaultValue={project.description}
-                  className="min-h-[100px] w-full resize-none rounded-xl border border-input bg-background p-4 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  disabled={isUpdatingProject}
+                  className="min-h-[100px] w-full resize-none rounded-xl border border-input bg-background p-4 text-sm outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
                 />
               </div>
 
               <div className="flex gap-2">
-                <button
+                <Button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                  disabled={isUpdatingProject}
+                  className="text-white"
                 >
-                  <Save className="h-4 w-4" />
-                  บันทึก
-                </button>
-                <button
+                  {isUpdatingProject ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      กำลังบันทึก...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      บันทึก
+                    </>
+                  )}
+                </Button>
+                <Button
                   type="button"
+                  disabled={isUpdatingProject}
                   onClick={() => setIsEditing(false)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border bg-background px-5 py-2.5 text-sm font-semibold hover:bg-muted"
+                  className="inline-flex items-center border bg-background text-sm font-semibold hover:bg-muted disabled:opacity-60 text-black"
                 >
                   <X className="h-4 w-4" />
                   ยกเลิก
-                </button>
+                </Button>
               </div>
             </form>
           ) : (
@@ -643,7 +817,9 @@ export default function ProjectClient({
                     className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-background text-xs font-semibold hover:bg-muted shadow-sm"
                   >
                     <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>{targetCount ? "ปรับแก้เป้าหมาย" : "ตั้งค่าเป้าหมาย"}</span>
+                    <span>
+                      {targetCount ? "ปรับแก้เป้าหมาย" : "ตั้งค่าเป้าหมาย"}
+                    </span>
                   </button>
                 </div>
 
@@ -707,7 +883,9 @@ export default function ProjectClient({
                           disabled={isUpdatingTarget}
                           className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-60 inline-flex items-center gap-1.5"
                         >
-                          {isUpdatingTarget && <Loader2 className="w-3 h-3 animate-spin" />}
+                          {isUpdatingTarget && (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          )}
                           บันทึกเป้าหมาย
                         </button>
                       </div>
@@ -733,20 +911,17 @@ export default function ProjectClient({
                         </div>
                         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
                           <span>
-                            สร้างงานแล้วทั้งหมด {totalTasks} {targetLabel} (ทำสำเร็จ {doneTasks} / {targetCount})
+                            สร้างงานแล้วทั้งหมด {totalTasks} {targetLabel}{" "}
+                            (ทำสำเร็จ {doneTasks} / {targetCount})
                           </span>
                         </p>
                         {doneTasks >= targetCount && (
                           <p className="text-xs font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> บรรลุเป้าหมายครบ {targetCount} {targetLabel} แล้ว! 🎉
+                            <CheckCircle2 className="w-3.5 h-3.5" />{" "}
+                            บรรลุเป้าหมายครบ {targetCount} {targetLabel} แล้ว!
+                            🎉
                           </p>
                         )}
-                      </div>
-
-                      <div className="flex items-center gap-2 self-start sm:self-auto">
-                        <div className="text-xs text-muted-foreground bg-background px-3 py-1.5 rounded-xl border">
-                          ⚡ อัปเดตอัตโนมัติตามสถานะงานเสร็จ
-                        </div>
                       </div>
                     </div>
 
@@ -761,7 +936,7 @@ export default function ProjectClient({
                         style={{
                           width: `${Math.min(
                             100,
-                            Math.round((doneTasks / targetCount) * 100)
+                            Math.round((doneTasks / targetCount) * 100),
                           )}%`,
                         }}
                       />
@@ -770,7 +945,9 @@ export default function ProjectClient({
                 ) : (
                   !isEditingTarget && (
                     <div className="py-2 text-xs text-muted-foreground">
-                      โปรเจกต์นี้ยังไม่ได้กำหนดเป้าหมายเชิงจำนวน (สามารถกดปุ่ม <strong>ตั้งค่าเป้าหมาย</strong> ด้านบนเพื่อเปิดใช้งาน เช่น 100 คลิป)
+                      โปรเจกต์นี้ยังไม่ได้กำหนดเป้าหมายเชิงจำนวน (สามารถกดปุ่ม{" "}
+                      <strong>ตั้งค่าเป้าหมาย</strong> ด้านบนเพื่อเปิดใช้งาน
+                      เช่น 100 คลิป)
                     </div>
                   )
                 )}
@@ -794,7 +971,9 @@ export default function ProjectClient({
               <p className="text-xs text-muted-foreground">
                 {sortBy === "custom" && filterStatus === "all" ? (
                   <span>
-                    สามารถลากสัญลักษณ์ <GripVertical className="inline w-3.5 h-3.5" /> เพื่อเรียงลำดับขั้นตอนได้
+                    สามารถลากสัญลักษณ์{" "}
+                    <GripVertical className="inline w-3.5 h-3.5" />{" "}
+                    เพื่อเรียงลำดับขั้นตอนได้
                   </span>
                 ) : (
                   <span>
@@ -856,7 +1035,8 @@ export default function ProjectClient({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                กำลังทำ ({tasks.filter((t) => t.status === "in_progress").length})
+                กำลังทำ (
+                {tasks.filter((t) => t.status === "in_progress").length})
               </button>
               <button
                 type="button"
@@ -881,8 +1061,7 @@ export default function ProjectClient({
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
                     <span>
-                      เรียงตาม:{" "}
-                      {sortBy === "newest" && "งานล่าสุด"}
+                      เรียงตาม: {sortBy === "newest" && "งานล่าสุด"}
                       {sortBy === "oldest" && "งานเก่าสุด"}
                       {sortBy === "priority" && "ความสำคัญ"}
                       {sortBy === "due_date" && "วันครบกำหนด"}
@@ -968,7 +1147,7 @@ export default function ProjectClient({
                 required
                 disabled={isAddingTask}
                 placeholder="เพิ่มขั้นตอนใหม่ / รายการเป้าหมาย..."
-                className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
+                className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-xs outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
               />
             </div>
 
@@ -982,7 +1161,7 @@ export default function ProjectClient({
                 >
                   <option value="low">ความสำคัญ: ทั่วไป</option>
                   <option value="medium">ความสำคัญ: ปานกลาง</option>
-                  <option value="high">ความสำคัญ: ด่วนมาก 🔥</option>
+                  <option value="high">ความสำคัญ: ด่วนมาก</option>
                 </select>
               </div>
 
@@ -995,10 +1174,10 @@ export default function ProjectClient({
                 />
               </div>
 
-              <button
+              <Button
                 type="submit"
                 disabled={isAddingTask}
-                className="flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="text-white mt-0.5    "
               >
                 {isAddingTask ? (
                   <>
@@ -1011,7 +1190,7 @@ export default function ProjectClient({
                     <span>เพิ่มงาน</span>
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -1059,9 +1238,29 @@ export default function ProjectClient({
                   {...provided.droppableProps}
                   className="space-y-3"
                 >
+                  {/* Creating Note/Task Loading State Card */}
+                  {isAddingTask && (
+                    <div className="flex items-center gap-3 p-4 rounded-2xl border border-primary/30 bg-primary/5 animate-pulse shadow-xs">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-semibold text-primary">
+                          กำลังบันทึกข้อมูลงาน / โน้ตใหม่...
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูล
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {processedTasks.map((task: any, index: number) => {
                     const isDragEnabled =
                       sortBy === "custom" && filterStatus === "all";
+                    const isStatusUpdating = updatingStatusTaskId === task.id;
+                    const isTitleSaving = savingTitleTaskId === task.id;
+                    const isDeleting = deletingTaskId === task.id;
 
                     return (
                       <Draggable
@@ -1074,13 +1273,13 @@ export default function ProjectClient({
                           <div
                             ref={dragProvided.innerRef}
                             {...dragProvided.draggableProps}
-                            className={`group rounded-2xl border p-3.5 sm:p-4 ${getTaskStyle(
-                              task.status
+                            className={`group rounded-2xl border p-3.5 sm:p-4 transition-all duration-200 ${getTaskStyle(
+                              task.status,
                             )} ${
                               snapshot.isDragging
                                 ? "shadow-lg ring-2 ring-primary/30"
                                 : ""
-                            }`}
+                            } ${isStatusUpdating ? "ring-2 ring-primary/40" : ""}`}
                           >
                             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                               {/* Drag Handle & Index */}
@@ -1108,19 +1307,23 @@ export default function ProjectClient({
                                     task.status === "done"
                                       ? "bg-emerald-200 text-emerald-800"
                                       : task.status === "in_progress"
-                                      ? "bg-blue-200 text-blue-800"
-                                      : "bg-primary/10 text-primary"
+                                        ? "bg-blue-200 text-blue-800"
+                                        : "bg-primary/10 text-primary"
                                   }`}
                                 >
-                                  {index + 1}
+                                  {isStatusUpdating ? (
+                                    <Loader2 className="w-4 h-4 animate-spin text-current" />
+                                  ) : (
+                                    index + 1
+                                  )}
                                 </div>
 
                                 {/* Task Title & Meta Info */}
                                 <div className="min-w-0 flex-1 pt-1">
                                   {editingTaskId === task.id ? (
                                     <form
-                                      action={(formData) =>
-                                        handleUpdateTaskTitle(formData, task.id)
+                                      onSubmit={(e) =>
+                                        handleUpdateTaskTitle(e, task.id)
                                       }
                                       className="flex flex-col gap-2 sm:flex-row"
                                     >
@@ -1130,19 +1333,32 @@ export default function ProjectClient({
                                         defaultValue={task.title}
                                         autoFocus
                                         required
-                                        className="h-9 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                                        disabled={isTitleSaving}
+                                        className="h-9 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
                                       />
                                       <div className="flex gap-2">
                                         <button
                                           type="submit"
-                                          className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                                          disabled={isTitleSaving}
+                                          className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                                          title="บันทึกการแก้ไข"
                                         >
-                                          <Save className="h-3.5 w-3.5" />
+                                          {isTitleSaving ? (
+                                            <>
+                                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                              <span className="hidden sm:inline">
+                                                กำลังบันทึก...
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <Save className="h-3.5 w-3.5" />
+                                          )}
                                         </button>
                                         <button
                                           type="button"
+                                          disabled={isTitleSaving}
                                           onClick={() => setEditingTaskId(null)}
-                                          className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-secondary px-3 text-xs font-medium hover:bg-secondary/80"
+                                          className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-secondary px-3 text-xs font-medium hover:bg-secondary/80 disabled:opacity-60"
                                         >
                                           <X className="h-3.5 w-3.5" />
                                         </button>
@@ -1177,10 +1393,12 @@ export default function ProjectClient({
                                       <div className="flex flex-wrap items-center gap-2 pt-1">
                                         {renderPriorityBadge(task.priority)}
                                         {renderDueDateBadge(
-                                           task.due_date,
-                                           task.status
-                                         )}
-                                        {renderCreatedDateBadge(task.created_at)}
+                                          task.due_date,
+                                          task.status,
+                                        )}
+                                        {renderCreatedDateBadge(
+                                          task.created_at,
+                                        )}
                                         <button
                                           type="button"
                                           onClick={() => openTaskDetail(task)}
@@ -1188,35 +1406,42 @@ export default function ProjectClient({
                                         >
                                           <FileText className="w-3 h-3" />
                                           <span>
-                                            {task.description ? "รายละเอียด & โน้ต" : "+ รายละเอียด"}
+                                            {task.description
+                                              ? "รายละเอียด & โน้ต"
+                                              : "+ รายละเอียด"}
                                           </span>
                                         </button>
                                       </div>
 
                                       {/* Quality Badges */}
-                                      {task.qualities && task.qualities.length > 0 && (
-                                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                                          {task.qualities.map((q: any) => (
-                                            <span
-                                              key={q.quality_id}
-                                              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium border"
-                                              style={{
-                                                borderColor: `${q.color || "#6366f1"}40`,
-                                                backgroundColor: `${q.color || "#6366f1"}15`,
-                                                color: q.color || "#6366f1",
-                                              }}
-                                              title={`${q.name} (+${q.level})`}
-                                            >
-                                              <QualityIconRenderer
-                                                iconName={q.icon || "Star"}
-                                                className="w-3 h-3 flex-shrink-0"
-                                              />
-                                              <span className="truncate max-w-[120px]">{q.name}</span>
-                                              <span className="font-bold text-[10px] opacity-90">+{q.level}</span>
-                                            </span>
-                                          ))}
-                                        </div>
-                                      )}
+                                      {task.qualities &&
+                                        task.qualities.length > 0 && (
+                                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                            {task.qualities.map((q: any) => (
+                                              <span
+                                                key={q.quality_id}
+                                                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium border"
+                                                style={{
+                                                  borderColor: `${q.color || "#6366f1"}40`,
+                                                  backgroundColor: `${q.color || "#6366f1"}15`,
+                                                  color: q.color || "#6366f1",
+                                                }}
+                                                title={`${q.name} (+${q.level})`}
+                                              >
+                                                <QualityIconRenderer
+                                                  iconName={q.icon || "Star"}
+                                                  className="w-3 h-3 flex-shrink-0"
+                                                />
+                                                <span className="truncate max-w-[120px]">
+                                                  {q.name}
+                                                </span>
+                                                <span className="font-bold text-[10px] opacity-90">
+                                                  +{q.level}
+                                                </span>
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
                                     </div>
                                   )}
                                 </div>
@@ -1226,75 +1451,94 @@ export default function ProjectClient({
                               {editingTaskId !== task.id && (
                                 <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
                                   <div className="grid w-full grid-cols-3 gap-1 rounded-xl border bg-muted/40 p-1 lg:w-auto">
-                                    <form
-                                      action={updateTaskStatus.bind(
-                                        null,
-                                        task.id,
-                                        "todo",
-                                        project.id
-                                      )}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleStatusChange(task.id, "todo")
+                                      }
+                                      disabled={isStatusUpdating}
+                                      className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium sm:px-3 transition-colors ${
+                                        task.status === "todo"
+                                          ? "bg-background text-foreground shadow-sm"
+                                          : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                                      } ${isStatusUpdating ? "opacity-70 cursor-not-allowed" : ""}`}
                                     >
-                                      <button
-                                        type="submit"
-                                        className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium sm:px-3 ${
-                                          task.status === "todo"
-                                            ? "bg-background text-foreground shadow-sm"
-                                            : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
-                                        }`}
-                                      >
+                                      {isStatusUpdating &&
+                                      updatingStatusTarget === "todo" ? (
+                                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
+                                      ) : (
                                         <Circle className="h-3.5 w-3.5 shrink-0" />
-                                        <span>รอทำ</span>
-                                      </button>
-                                    </form>
-
-                                    <form
-                                      action={updateTaskStatus.bind(
-                                        null,
-                                        task.id,
-                                        "in_progress",
-                                        project.id
                                       )}
+                                      <span>
+                                        {isStatusUpdating &&
+                                        updatingStatusTarget === "todo"
+                                          ? "กำลังเปลี่ยน..."
+                                          : "รอทำ"}
+                                      </span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleStatusChange(
+                                          task.id,
+                                          "in_progress",
+                                        )
+                                      }
+                                      disabled={isStatusUpdating}
+                                      className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium sm:px-3 transition-colors ${
+                                        task.status === "in_progress"
+                                          ? "bg-blue-100 text-blue-700 font-semibold dark:bg-blue-950/60 dark:text-blue-300"
+                                          : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                                      } ${isStatusUpdating ? "opacity-70 cursor-not-allowed" : ""}`}
                                     >
-                                      <button
-                                        type="submit"
-                                        className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium sm:px-3 ${
-                                          task.status === "in_progress"
-                                            ? "bg-blue-100 text-blue-700 font-semibold"
-                                            : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
-                                        }`}
-                                      >
+                                      {isStatusUpdating &&
+                                      updatingStatusTarget === "in_progress" ? (
+                                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-blue-600" />
+                                      ) : (
                                         <Timer className="h-3.5 w-3.5 shrink-0" />
-                                        <span>กำลังทำ</span>
-                                      </button>
-                                    </form>
-
-                                    <form
-                                      action={updateTaskStatus.bind(
-                                        null,
-                                        task.id,
-                                        "done",
-                                        project.id
                                       )}
+                                      <span>
+                                        {isStatusUpdating &&
+                                        updatingStatusTarget === "in_progress"
+                                          ? "กำลังเปลี่ยน..."
+                                          : "กำลังทำ"}
+                                      </span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleStatusChange(task.id, "done")
+                                      }
+                                      disabled={isStatusUpdating}
+                                      className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium sm:px-3 transition-colors ${
+                                        task.status === "done"
+                                          ? "bg-emerald-100 text-emerald-700 font-semibold dark:bg-emerald-950/60 dark:text-emerald-300"
+                                          : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                                      } ${isStatusUpdating ? "opacity-70 cursor-not-allowed" : ""}`}
                                     >
-                                      <button
-                                        type="submit"
-                                        className={`flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium sm:px-3 ${
-                                          task.status === "done"
-                                            ? "bg-emerald-100 text-emerald-700 font-semibold"
-                                            : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
-                                        }`}
-                                      >
+                                      {isStatusUpdating &&
+                                      updatingStatusTarget === "done" ? (
+                                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-emerald-600" />
+                                      ) : (
                                         <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                                        <span>เสร็จ</span>
-                                      </button>
-                                    </form>
+                                      )}
+                                      <span>
+                                        {isStatusUpdating &&
+                                        updatingStatusTarget === "done"
+                                          ? "กำลังเปลี่ยน..."
+                                          : "เสร็จ"}
+                                      </span>
+                                    </button>
                                   </div>
 
                                   <div className="flex w-full gap-1.5 lg:w-auto items-center">
                                     <button
                                       type="button"
+                                      disabled={isStatusUpdating}
                                       onClick={() => openTaskDetail(task)}
-                                      className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-primary/5 px-3 text-xs font-semibold text-primary hover:bg-primary/10 hover:border-primary/40 transition-all shadow-2xs lg:flex-none"
+                                      className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-primary/5 px-3 text-xs font-semibold text-primary hover:bg-primary/10 hover:border-primary/40 transition-all shadow-2xs lg:flex-none disabled:opacity-50"
                                       title="แก้ไขรายละเอียดและคุณสมบัติงาน"
                                     >
                                       <Pencil className="h-3.5 w-3.5 shrink-0" />
@@ -1303,11 +1547,16 @@ export default function ProjectClient({
 
                                     <button
                                       type="button"
+                                      disabled={isDeleting || isStatusUpdating}
                                       onClick={() => handleDeleteTask(task.id)}
-                                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-xs font-medium text-red-600 hover:bg-red-100 hover:border-red-300 transition-colors"
+                                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-xs font-medium text-red-600 hover:bg-red-100 hover:border-red-300 transition-colors disabled:opacity-50"
                                       title="ลบงาน"
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" />
+                                      {isDeleting ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      )}
                                     </button>
                                   </div>
                                 </div>
@@ -1348,163 +1597,199 @@ export default function ProjectClient({
           </div>
         )}
       </section>
-    
+
       {/* Task Detail Modal */}
-      {selectedTask && isMounted && createPortal(
-        <div
-          className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] !m-0 flex items-center justify-center p-3 sm:p-6 bg-black/70 animate-in fade-in duration-150"
-          onClick={() => setSelectedTask(null)}
-        >
+      {selectedTask &&
+        isMounted &&
+        createPortal(
           <div
-            className="relative w-full max-w-lg sm:max-w-xl max-h-[90vh] rounded-2xl sm:rounded-3xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] !m-0 flex items-center justify-center p-3 sm:p-6 bg-black/70 animate-in fade-in duration-150"
+            onClick={() => setSelectedTask(null)}
           >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between gap-3 border-b border-border p-4 sm:p-5 bg-card shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-foreground">
-                    รายละเอียดงาน (Task Details)
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    ดูและแก้ไขข้อมูลรายละเอียดขั้นตอนงาน และคุณสมบัติ
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedTask(null)}
-                className="rounded-xl p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                title="ปิด"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Form */}
-            <form onSubmit={handleSaveTaskDetailModal} className="flex flex-col flex-1 overflow-hidden min-h-0">
-              {/* Scrollable Form Body */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
-                    ชื่องาน / หัวข้อ <span className="text-destructive">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="title"
-                    defaultValue={selectedTask.title}
-                    required
-                    disabled={isSavingTaskDetail}
-                    className="w-full h-10 rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1.5">
-                    รายละเอียดเชิงลึก / บันทึก (Notes)
-                  </label>
-                  <textarea
-                    name="description"
-                    defaultValue={selectedTask.description || ""}
-                    rows={4}
-                    disabled={isSavingTaskDetail}
-                    placeholder="เขียนสรุป ข้อมูลอ้างอิง ลิงก์ สิ่งที่ต้องระวัง หรือขั้นตอนย่อย..."
-                    className="w-full rounded-xl border bg-background p-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1.5">
-                      ความสำคัญ
-                    </label>
-                    <select
-                      name="priority"
-                      defaultValue={selectedTask.priority || "medium"}
-                      disabled={isSavingTaskDetail}
-                      className="w-full h-10 rounded-xl border bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
-                    >
-                      <option value="low">ทั่วไป</option>
-                      <option value="medium">ปานกลาง</option>
-                      <option value="high">ด่วนมาก 🔥</option>
-                    </select>
+            <div
+              className="relative w-full max-w-lg sm:max-w-xl max-h-[90vh] rounded-2xl sm:rounded-3xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between gap-3 border-b border-border p-4 sm:p-5 bg-card shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                    <FileText className="w-5 h-5" />
                   </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-foreground">
+                      รายละเอียดงาน (Task Details)
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      ดูและแก้ไขข้อมูลรายละเอียดขั้นตอนงาน และคุณสมบัติ
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTask(null)}
+                  disabled={isSavingTaskDetail}
+                  className="rounded-xl p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
+                  title="ปิด"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
+              {isSavingTaskDetail && (
+                <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex items-center justify-center gap-2 text-xs text-primary font-medium animate-pulse">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>กำลังบันทึกข้อมูลและอัปเดตสถานะ...</span>
+                </div>
+              )}
+
+              {/* Modal Form */}
+              <form
+                onSubmit={handleSaveTaskDetailModal}
+                className="flex flex-col flex-1 overflow-hidden min-h-0"
+              >
+                {/* Scrollable Form Body */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                   <div>
                     <label className="text-xs font-semibold text-foreground block mb-1.5">
-                      วันครบกำหนด
+                      ชื่องาน / หัวข้อ{" "}
+                      <span className="text-destructive">*</span>
                     </label>
                     <input
-                      type="date"
-                      name="due_date"
-                      defaultValue={
-                        selectedTask.due_date
-                          ? new Date(selectedTask.due_date).toISOString().split("T")[0]
-                          : ""
-                      }
+                      type="text"
+                      name="title"
+                      defaultValue={selectedTask.title}
+                      required
                       disabled={isSavingTaskDetail}
-                      className="w-full h-10 rounded-xl border bg-background px-3 text-xs text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
+                      className="w-full h-10 rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
                     />
                   </div>
-                </div>
 
-                {/* Quality Picker */}
-                {availableQualities.length > 0 && (
                   <div>
-                    <QualityPicker
-                      qualities={availableQualities}
-                      value={selectedQualities}
-                      onChange={setSelectedQualities}
-                      label="คุณสมบัติที่จะได้รับจากงานนี้"
-                      sublabel="ติ๊กเพื่อรับแต้มเมื่อทำสถานะสำเร็จ"
+                    <label className="text-xs font-semibold text-foreground block mb-1.5">
+                      รายละเอียดเชิงลึก / บันทึก (Notes)
+                    </label>
+                    <textarea
+                      name="description"
+                      defaultValue={selectedTask.description || ""}
+                      rows={4}
+                      disabled={isSavingTaskDetail}
+                      placeholder="เขียนสรุป ข้อมูลอ้างอิง ลิงก์ สิ่งที่ต้องระวัง หรือขั้นตอนย่อย..."
+                      className="w-full rounded-xl border bg-background p-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-primary/20 resize-none disabled:opacity-60"
                     />
                   </div>
-                )}
-              </div>
 
-              {/* Modal Footer (Sticky at bottom) */}
-              <div className="flex items-center justify-between gap-3 border-t border-border p-4 sm:p-5 bg-card shrink-0">
-                <span className="text-[11px] text-muted-foreground truncate">
-                  สร้างเมื่อ: {selectedTask.created_at ? new Date(selectedTask.created_at).toLocaleDateString("th-TH") : "-"}
-                </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-foreground block mb-1.5">
+                        สถานะ
+                      </label>
+                      <select
+                        value={modalStatus}
+                        onChange={(e) => setModalStatus(e.target.value)}
+                        disabled={isSavingTaskDetail}
+                        className="w-full h-10 rounded-xl border bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
+                      >
+                        <option value="todo">รอทำ</option>
+                        <option value="in_progress">กำลังทำ</option>
+                        <option value="done">เสร็จสิ้น</option>
+                      </select>
+                    </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTask(null)}
-                    disabled={isSavingTaskDetail}
-                    className="px-4 py-2 rounded-xl border bg-background text-xs font-medium hover:bg-muted transition-colors"
-                  >
-                    ปิด
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSavingTaskDetail}
-                    className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-60 inline-flex items-center gap-1.5 shadow-sm transition-colors"
-                  >
-                    {isSavingTaskDetail ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>กำลังบันทึก...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-3.5 h-3.5" />
-                        <span>บันทึกการเปลี่ยนแปลง</span>
-                      </>
-                    )}
-                  </button>
+                    <div>
+                      <label className="text-xs font-semibold text-foreground block mb-1.5">
+                        ความสำคัญ
+                      </label>
+                      <select
+                        name="priority"
+                        defaultValue={selectedTask.priority || "medium"}
+                        disabled={isSavingTaskDetail}
+                        className="w-full h-10 rounded-xl border bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
+                      >
+                        <option value="low">ทั่วไป</option>
+                        <option value="medium">ปานกลาง</option>
+                        <option value="high">ด่วนมาก 🔥</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-foreground block mb-1.5">
+                        วันครบกำหนด
+                      </label>
+                      <input
+                        type="date"
+                        name="due_date"
+                        defaultValue={
+                          selectedTask.due_date
+                            ? new Date(selectedTask.due_date)
+                                .toISOString()
+                                .split("T")[0]
+                            : ""
+                        }
+                        disabled={isSavingTaskDetail}
+                        className="w-full h-10 rounded-xl border bg-background px-3 text-xs text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quality Picker */}
+                  {availableQualities.length > 0 && (
+                    <div>
+                      <QualityPicker
+                        qualities={availableQualities}
+                        value={selectedQualities}
+                        onChange={setSelectedQualities}
+                        label="คุณสมบัติที่จะได้รับจากงานนี้"
+                        sublabel="ติ๊กเพื่อรับแต้มเมื่อทำสถานะสำเร็จ"
+                      />
+                    </div>
+                  )}
                 </div>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
 
+                {/* Modal Footer (Sticky at bottom) */}
+                <div className="flex items-center justify-between gap-3 border-t border-border p-4 sm:p-5 bg-card shrink-0">
+                  <span className="text-[11px] text-muted-foreground truncate">
+                    สร้างเมื่อ:{" "}
+                    {selectedTask.created_at
+                      ? new Date(selectedTask.created_at).toLocaleDateString(
+                          "th-TH",
+                        )
+                      : "-"}
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTask(null)}
+                      disabled={isSavingTaskDetail}
+                      className="px-4 py-2 rounded-xl border bg-background text-xs font-medium hover:bg-muted transition-colors"
+                    >
+                      ปิด
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingTaskDetail}
+                      className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-60 inline-flex items-center gap-1.5 shadow-sm transition-colors"
+                    >
+                      {isSavingTaskDetail ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>กำลังบันทึก...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3.5 h-3.5" />
+                          <span>บันทึกการเปลี่ยนแปลง</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

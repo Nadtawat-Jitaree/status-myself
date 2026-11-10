@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2, Target, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Loader2, Target, ChevronDown, ChevronUp,  Save } from "lucide-react";
 import { createProject } from "@/app/actions/projects";
 import Swal from "sweetalert2";
+import { Button } from "@/components/ui/button";
 
 export default function CreateProjectForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,7 +53,9 @@ export default function CreateProjectForm() {
           }`}
         >
           <Target className="w-3.5 h-3.5" />
-          <span>{showTargetInput ? "ซ่อนเป้าหมาย" : "+ กำหนดเป้าหมาย (Target)"}</span>
+          <span>
+            {showTargetInput ? "ซ่อนเป้าหมาย" : "+ กำหนดเป้าหมาย (Target)"}
+          </span>
           {showTargetInput ? (
             <ChevronUp className="w-3 h-3 ml-0.5" />
           ) : (
@@ -64,7 +67,9 @@ export default function CreateProjectForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-xs sm:text-sm font-medium">ชื่อโปรเจกต์ <span className="text-destructive">*</span></label>
+            <label className="text-xs sm:text-sm font-medium">
+              ชื่อโปรเจกต์ <span className="text-destructive">*</span>
+            </label>
             <input
               type="text"
               name="name"
@@ -76,7 +81,7 @@ export default function CreateProjectForm() {
           </div>
           <div className="space-y-1.5">
             <label className="text-xs sm:text-sm font-medium">
-              รายละเอียด (ไม่บังคับ)
+              รายละเอียด
             </label>
             <input
               type="text"
@@ -95,9 +100,6 @@ export default function CreateProjectForm() {
               <Target className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-foreground">
                 การตั้งเป้าหมายเชิงจำนวน (Target Tracker)
-              </span>
-              <span className="text-[11px] text-muted-foreground">
-                (ไม่บังคับ - แยกตามประเภทของโปรเจกต์)
               </span>
             </div>
 
@@ -130,27 +132,21 @@ export default function CreateProjectForm() {
                 />
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-2">
-              💡 ตัวเลขนับจะคำนวณอัตโนมัติจากงานย่อย (Tasks) ที่ทำสำเร็จ (เช่น ทำเสร็จ 1 งาน ก็นับเป็น 1/100 ทันที)
-            </p>
           </div>
         )}
 
         <div className="flex justify-end pt-1">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="h-10 px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed rounded-xl font-medium inline-flex items-center justify-center gap-2"
-          >
+          <Button type="submit" disabled={isSubmitting} className="text-white">
+            <Save className="h-4 w-4" />
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>กำลังบันทึก...</span>
               </>
             ) : (
-              "บันทึกโปรเจกต์"
+              "บันทึก"
             )}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
