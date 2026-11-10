@@ -82,7 +82,7 @@ export function Footer({ variant = "default", className = "" }: FooterProps) {
             </p>
 
             <div className="text-[11px] text-slate-400 mt-1">
-              Version 2.0
+              Version 3.0
             </div>
           </div>
 
