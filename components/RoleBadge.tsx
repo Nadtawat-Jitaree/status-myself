@@ -126,11 +126,6 @@ export function RoleBadge({ subscription }: RoleBadgeProps) {
                 <p className="text-xs font-black text-white leading-none">
                   {permissions.title}
                 </p>
-                {isPremium && (
-                  <p className="text-[10px] text-white/70 mt-0.5 font-medium">
-                    {plan === "yearly" ? "รายปี · 365 วัน" : "รายเดือน · 30 วัน"}
-                  </p>
-                )}
               </div>
             </div>
             <button
@@ -181,11 +176,6 @@ export function RoleBadge({ subscription }: RoleBadgeProps) {
                         day: "numeric",
                       })}
                     </p>
-                    {daysLeft !== null && !isExpired && (
-                      <p className="text-[10px] text-amber-500 font-bold mt-0.5">
-                        เหลือ {daysLeft} วัน
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
@@ -233,8 +223,7 @@ export function RoleBadge({ subscription }: RoleBadgeProps) {
                   onClick={() => setIsOpen(false)}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-2.5 px-4 text-xs font-bold text-white shadow-sm shadow-amber-500/30 hover:opacity-95 transition-all active:scale-95"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>อัปเกรด Premium — เริ่มต้น ฿50/เดือน</span>
+                  <span>อัปเกรด Premium</span>
                   <ChevronRight className="w-3.5 h-3.5 ml-auto" />
                 </Link>
               </div>
@@ -254,8 +243,7 @@ export function RoleBadge({ subscription }: RoleBadgeProps) {
                   onClick={() => setIsOpen(false)}
                   className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 py-2 px-3 text-xs font-bold transition-colors"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>ต่ออายุ — บวกวันสะสม</span>
+                  <span>ต่ออายุ </span>
                   <ChevronRight className="w-3.5 h-3.5 ml-auto" />
                 </Link>
               </div>

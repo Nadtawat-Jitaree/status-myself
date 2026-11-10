@@ -29,10 +29,11 @@ interface SubscriptionClientProps {
 // รายการ feature เหมือนกันทั้งสองแพ็กเกจ — ต่างแค่จำนวนวัน
 const PREMIUM_FEATURES = [
   "ปลดล็อคทุกฟีเจอร์ในระบบ",
-  "โน้ตทั่วไป & โน้ตมหาวิทยาลัย ไม่จำกัด",
-  "จัดการโปรเจกต์ & Kanban Board",
-  "ปฏิทิน & Daily Logs",
-  "บันทึกทักษะ & ระบบเลเวล (Qualities)",
+  "โน้ตทั่วไป",
+  "โน้ตมหาวิทยาลัย",
+  "โปรเจกต์จัดการไทม์ไลน์งาน",
+  "ระบบปฏิทิน & จัดตารางงาน",
+  "ระบบบันทึกทักษะ & แต้มประสบการณ์",
   "Dashboard สรุปภาพรวม & สถิติ",
   "Role Premium แสดงบน Navbar",
 ];
@@ -44,11 +45,12 @@ const FREE_CAN = [
 ];
 
 const FREE_CANNOT = [
-  "ระบบโน้ตทั่วไป & มหาวิทยาลัย",
-  "โปรเจกต์ & Kanban Tasks",
-  "ปฏิทิน & Daily Logs",
-  "ระบบสะสมทักษะ (Qualities)",
-  "Dashboard & สถิติ",
+  "โน้ตทั่วไป",
+  "โน้ตมหาวิทยาลัย",
+  "โปรเจกต์จัดการไทม์ไลน์งาน",
+  "ระบบปฏิทิน & จัดตารางงาน",
+  "ระบบบันทึกทักษะ & แต้มประสบการณ์",
+  "Dashboard สรุปภาพรวม & สถิติ",
 ];
 
 const FAQ = [
@@ -152,7 +154,6 @@ export function SubscriptionClient({
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] text-slate-400 font-medium">สถานะ:</span>
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                   isPremium
                     ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
@@ -160,7 +161,7 @@ export function SubscriptionClient({
                     ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
                     : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                 }`}>
-                  {isPremium ? `Premium · ${subscription.plan === "yearly" ? "รายปี" : "รายเดือน"}` : isExpired ? "หมดอายุ" : "Member"}
+                  {isPremium ? `Premium` : isExpired ? "หมดอายุ" : "Member"}
                 </span>
               </div>
               <p className="text-xs text-slate-700 dark:text-slate-300 font-medium mt-1">
@@ -184,10 +185,6 @@ export function SubscriptionClient({
 
       {/* Headline */}
       <div className="text-center space-y-2.5">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-bold border border-amber-300/40">
-          <Sparkles className="w-3.5 h-3.5" />
-          NJ Notes Premium
-        </div>
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
           ปลดล็อคทุกศักยภาพ
         </h1>
@@ -269,9 +266,9 @@ export function SubscriptionClient({
             {loadingPlan === "monthly" ? (
               <span>กำลังเปิดหน้าชำระเงิน...</span>
             ) : isPremium ? (
-              <><Zap className="w-4 h-4" /> ต่ออายุ +30 วัน (฿50)</>
+              <><Zap className="w-4 h-4" /> ต่ออายุ +30 วัน</>
             ) : (
-              <><Zap className="w-4 h-4" /> สมัครรายเดือน (฿50)</>
+              <><Zap className="w-4 h-4" /> สมัครรายเดือน</>
             )}
           </button>
         </div>
@@ -313,9 +310,9 @@ export function SubscriptionClient({
             {loadingPlan === "yearly" ? (
               <span>กำลังเปิดหน้าชำระเงิน...</span>
             ) : isPremium ? (
-              <><Crown className="w-4 h-4" /> ต่ออายุ +365 วัน (฿500)</>
+              <><Crown className="w-4 h-4" /> ต่ออายุ +365 วัน</>
             ) : (
-              <><Crown className="w-4 h-4" /> สมัครรายปี (฿500) · สุดคุ้ม</>
+              <><Crown className="w-4 h-4" /> สมัครรายปี · สุดคุ้ม</>
             )}
           </button>
         </div>
@@ -323,7 +320,7 @@ export function SubscriptionClient({
 
       {/* Payment methods */}
       <div className="max-w-2xl mx-auto rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-6 py-4 text-center">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">ช่องทางชำระเงิน · ปลอดภัยโดย Stripe</p>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">ช่องทางชำระเงิน</p>
         <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-slate-600 dark:text-slate-300 font-semibold">
           <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">
             <QrCode className="w-3.5 h-3.5 text-blue-600" />

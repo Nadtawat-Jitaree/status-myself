@@ -39,13 +39,17 @@ async function SuccessFulfillment({
 }
 
 const UNLOCKED = [
-  "Workspace โน้ตทั่วไป & โน้ตมหาวิทยาลัย",
-  "สร้างโปรเจกต์ & ติดตามงาน",
-  "ปฏิทิน & Daily Logs",
-  "สะสมทักษะ & ดูสถิติใน Dashboard",
+  "ระบบโน้ตทั่วไป",
+  "ระบบโน้ตมหาวิทยาลัย",
+  "ระบบโปรเจกต์จัดการไทม์ไลน์งาน",
+  "ระบบปฏิทิน & จัดตารางงาน",
+  "ระบบบันทึกทักษะ & แต้มประสบการณ์",
+  "Dashboard สรุปผลภาพรวม",
 ];
 
-export default function SubscriptionSuccessPage({ searchParams }: SuccessPageProps) {
+export default function SubscriptionSuccessPage({
+  searchParams,
+}: SuccessPageProps) {
   return (
     <main className="min-h-screen flex flex-col items-center w-full bg-slate-50/50 dark:bg-slate-950">
       <CleanSessionUrl />
@@ -59,7 +63,6 @@ export default function SubscriptionSuccessPage({ searchParams }: SuccessPagePro
       {/* Content */}
       <div className="w-full flex-1 flex items-center justify-center p-4 py-16">
         <div className="max-w-sm w-full space-y-5 text-center">
-
           {/* Icon */}
           <div className="relative mx-auto w-fit">
             <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white shadow-md">
@@ -79,7 +82,8 @@ export default function SubscriptionSuccessPage({ searchParams }: SuccessPagePro
               ยินดีต้อนรับสู่ Premium!
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
-              บัญชีของคุณได้รับการอัปเกรดเป็น <strong>Premium</strong> แล้ว ฟีเจอร์ทั้งหมดพร้อมใช้งานทันที
+              บัญชีของคุณได้รับการอัปเกรดเป็น <strong>Premium</strong> แล้ว
+              ฟีเจอร์ทั้งหมดพร้อมใช้งานทันที
             </p>
           </div>
 
@@ -91,7 +95,10 @@ export default function SubscriptionSuccessPage({ searchParams }: SuccessPagePro
             </p>
             <ul className="space-y-1.5">
               {UNLOCKED.map((item, i) => (
-                <li key={i} className="flex items-center gap-2 text-xs text-amber-900/80 dark:text-amber-200/80">
+                <li
+                  key={i}
+                  className="flex items-center gap-2 text-xs text-amber-900/80 dark:text-amber-200/80"
+                >
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                   {item}
                 </li>

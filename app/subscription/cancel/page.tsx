@@ -32,18 +32,6 @@ export default function SubscriptionCancelPage() {
             </p>
           </div>
 
-          {/* Reminder */}
-          <div className="rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-800/40 p-4 text-left">
-            <p className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5 mb-2">
-              <Sparkles className="w-3.5 h-3.5" />
-              Premium เริ่มต้นเพียง ฿50/เดือน
-            </p>
-            <p className="text-[11px] text-amber-700/80 dark:text-amber-300/70 leading-relaxed">
-              ปลดล็อคโน้ต โปรเจกต์ ปฏิทิน ทักษะ และ Dashboard ทั้งหมด
-              พร้อมรองรับ PromptPay & บัตรเครดิต
-            </p>
-          </div>
-
           {/* CTAs */}
           <div className="flex flex-col gap-2.5">
             <Link
