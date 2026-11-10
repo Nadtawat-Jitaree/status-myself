@@ -128,7 +128,14 @@ export function BoardFilterBar({
   );
 
   return (
-    <div className="w-full space-y-3 mb-8">
+    <div className={cn("w-full space-y-3 mb-8 transition-opacity duration-200", isPending && "opacity-90")}>
+      {/* Loading Progress Bar Indicator (แสดงเมื่อมีการค้นหาหรือเปลี่ยนหน้า) */}
+      {isPending && (
+        <div className="w-full h-1 bg-indigo-100 overflow-hidden rounded-full animate-in fade-in duration-150">
+          <div className="h-full bg-indigo-600 animate-pulse w-full" />
+        </div>
+      )}
+
       {/* แท็บสลับมุมมองระหว่างบอร์ดสาธารณะ และโน้ตของฉัน (เมื่อล็อกอิน) */}
       {isLoggedIn && (
         <div className="flex items-center gap-3 pb-1 flex-wrap">
@@ -223,13 +230,14 @@ export function BoardFilterBar({
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="ค้นหาตามหัวข้อโน้ต, เนื้อหา, หรือคีย์เวิร์ด..."
-            className="w-full pl-11 pr-24 py-2.5 sm:py-3 rounded-2xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-800 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            disabled={isPending}
+            className="w-full pl-11 pr-28 py-2.5 sm:py-3 rounded-2xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-800 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-75 transition-colors"
           />
-          {searchInput && (
+          {searchInput && !isPending && (
             <button
               type="button"
               onClick={handleClearSearch}
-              className="absolute right-20 p-1 text-slate-400 hover:text-slate-600 transition-colors"
+              className="absolute right-24 p-1 text-slate-400 hover:text-slate-600 transition-colors"
               title="ล้างข้อความ"
             >
               <X className="w-3.5 h-3.5" />
@@ -237,9 +245,13 @@ export function BoardFilterBar({
           )}
           <button
             type="submit"
-            className="absolute right-2 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-semibold transition-colors"
+            disabled={isPending}
+            className="absolute right-2 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600 disabled:bg-slate-400 text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
           >
-            ค้นหา
+            {isPending && (
+              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            )}
+            <span>{isPending ? "ค้นหา..." : "ค้นหา"}</span>
           </button>
         </form>
 

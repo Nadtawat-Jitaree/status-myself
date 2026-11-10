@@ -3,7 +3,6 @@ import { getSharedNote } from "@/app/actions/share";
 import { getUserProfile } from "@/app/actions/profile";
 import { createClient } from "@/lib/supabase/server";
 import { SharedNoteInteractions } from "./SharedNoteInteractions";
-import Image from "next/image";
 import Link from "next/link";
 import {
   FileText,
@@ -11,10 +10,10 @@ import {
   Download,
   Calendar,
   Lock,
-  MessagesSquare,
 } from "lucide-react";
 import CopyButton from "./CopyButton";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
+import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 
 interface PageProps {
@@ -90,7 +89,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 function NoteSkeleton() {
   return (
-    <div className="max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-10 flex flex-col gap-6 animate-pulse">
+    <div className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-10 flex flex-col gap-6 animate-pulse">
       <div className="bg-white rounded-3xl border border-slate-200 p-8 flex flex-col gap-6">
         <div className="h-6 bg-slate-200 rounded-md w-32" />
         <div className="h-10 bg-slate-200 rounded-lg w-2/3" />
@@ -110,7 +109,7 @@ async function SharedNoteContent({ params }: PageProps) {
 
   if (!note) {
     return (
-      <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-3xl p-8 border shadow-sm text-center flex flex-col items-center">
           <div className="w-16 h-16 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-4">
             <Lock className="w-8 h-8" />
@@ -197,66 +196,12 @@ async function SharedNoteContent({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <>
       {/* JSON-LD */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-white/80 border-b px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="/note.webp"
-              alt="Logo"
-              width={32}
-              height={32}
-              className="object-contain"
-              unoptimized
-            />
-            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-              NJ Notes
-            </span>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 font-medium ml-1">
-              แชร์สาธารณะ
-            </span>
-          </Link>
-
-          <Link
-            href="/board"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition ml-3"
-          >
-            <MessagesSquare className="w-3.5 h-3.5" />
-            <span>กระดานสนทนา</span>
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link
-            href="/board"
-            className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-semibold"
-          >
-            <MessagesSquare className="w-3.5 h-3.5" />
-            <span>บอร์ด</span>
-          </Link>
-          {user ? (
-            <Link
-              href="/system/dashboard"
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition"
-            >
-              Workspace
-            </Link>
-          ) : (
-            <Link
-              href="/auth/login"
-              className="text-xs text-muted-foreground hover:text-foreground font-medium transition"
-            >
-              เข้าสู่ระบบ
-            </Link>
-          )}
-        </div>
-      </header>
 
       {/* Main Container */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-10 flex flex-col gap-6">
@@ -392,17 +337,18 @@ async function SharedNoteContent({ params }: PageProps) {
           />
         </div>
       </main>
-
-      {/* Footer */}
-      <Footer variant="compact" />
-    </div>
+    </>
   );
 }
 
 export default function SharedNotePage({ params }: PageProps) {
   return (
-    <Suspense fallback={<NoteSkeleton />}>
-      <SharedNoteContent params={params} />
-    </Suspense>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      <Navbar />
+      <Suspense fallback={<NoteSkeleton />}>
+        <SharedNoteContent params={params} />
+      </Suspense>
+      <Footer variant="compact" />
+    </div>
   );
 }

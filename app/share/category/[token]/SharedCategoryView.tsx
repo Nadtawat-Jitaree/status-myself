@@ -120,33 +120,7 @@ export default function SharedCategoryView({
   }, [notes, statusFilter, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-white/80 border-b px-6 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/note.webp"
-            alt="Logo"
-            width={32}
-            height={32}
-            className="object-contain"
-            unoptimized
-          />
-          <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-            NJ Notes
-          </span>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 font-medium ml-1">
-            แชร์หมวดหมู่
-          </span>
-        </Link>
-        <Link
-          href="/auth/login"
-          className="text-xs text-muted-foreground hover:text-foreground font-medium transition"
-        >
-          เข้าสู่ระบบ
-        </Link>
-      </header>
-
+    <div className="flex-1 flex flex-col">
       {/* Hero Category Banner */}
       <div className="bg-white border-b py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center sm:items-start gap-5">

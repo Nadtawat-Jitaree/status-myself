@@ -2,6 +2,11 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import {
+  type PaginationItem,
+  type PaginationData,
+  buildPaginationData,
+} from "@/lib/pagination";
 
 export interface BoardNoteItem {
   id: string;
@@ -46,6 +51,7 @@ export interface BoardResponse {
   currentPage: number;
   totalPages: number;
   pageSize: number;
+  pagination: PaginationData;
 }
 
 /**
@@ -59,6 +65,7 @@ export async function getBoardNotes(params: {
   sortBy?: "latest" | "popular" | "comments";
   filter?: "all" | "mine";
   shareStatus?: "all" | "shared" | "unshared";
+  currentUserId?: string;
 }): Promise<BoardResponse> {
   const page = Math.max(1, params.page || 1);
   const limit = params.limit || 9;
@@ -66,23 +73,28 @@ export async function getBoardNotes(params: {
 
   const supabase = await createClient();
 
-  // ดึง Current User (ถ้ามี)
-  const {
-    data: { user: currentUser },
-  } = await supabase.auth.getUser();
+  // ดึง Current User (ถ้ามีการส่งมาแล้วไม่ต้อง query ซ้ำ)
+  let resolvedUserId = params.currentUserId;
+  if (resolvedUserId === undefined) {
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+    resolvedUserId = currentUser?.id;
+  }
 
   // หากเลือก filter 'mine' แต่ยังไม่ได้เข้าสู่ระบบ ให้ส่งผลลัพธ์ว่างกลับไป
-  if (params.filter === "mine" && !currentUser) {
+  if (params.filter === "mine" && !resolvedUserId) {
     return {
       notes: [],
       totalCount: 0,
       currentPage: page,
       totalPages: 1,
       pageSize: limit,
+      pagination: buildPaginationData(page, 0, limit),
     };
   }
 
-  // 1. Query โน้ตบนกระดาน (ถ้าเป็น 'mine' จะดึงโน้ตของผู้ใช้เองเพื่อจัดการเปิด/ปิดแชร์ได้ หากเป็นทั่วไปจะดึง is_shared = true)
+  // 1. Query โน้ตบนกระดาน
   let query = supabase
     .from("notes")
     .select(
@@ -108,8 +120,8 @@ export async function getBoardNotes(params: {
       { count: "exact" }
     );
 
-  if (params.filter === "mine" && currentUser) {
-    query = query.eq("user_id", currentUser.id);
+  if (params.filter === "mine" && resolvedUserId) {
+    query = query.eq("user_id", resolvedUserId);
 
     // กรองสถานะการแชร์ในโน้ตของฉัน
     if (params.shareStatus === "shared") {
@@ -132,8 +144,8 @@ export async function getBoardNotes(params: {
 
   const isCustomSort = params.sortBy === "popular" || params.sortBy === "comments";
 
-  let rawNotes: any[] = [];
-  let count: number = 0;
+  // คอลัมน์ของ profile ที่จำเป็นสำหรับ Author badge (ลด DB payload)
+  const PROFILE_COLUMNS = "id, username, display_name, avatar_type, avatar_icon, avatar_url, instagram_url, facebook_url, youtube_url, tiktok_url, created_at";
 
   if (isCustomSort) {
     // ดึงโน้ตที่ตรงเงื่อนไขเพื่อมาจัดเรียงตาม Reactions / Comments
@@ -149,36 +161,148 @@ export async function getBoardNotes(params: {
         currentPage: page,
         totalPages: 1,
         pageSize: limit,
+        pagination: buildPaginationData(page, 0, limit),
       };
     }
-    rawNotes = data;
-    count = c || data.length;
-  } else {
-    const { data, count: c, error } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
 
-    if (error || !data) {
-      console.error("Error fetching board notes:", error);
-      return {
-        notes: [],
-        totalCount: 0,
-        currentPage: page,
-        totalPages: 1,
-        pageSize: limit,
-      };
+    const candidateNotes = data;
+    const totalCount = c || candidateNotes.length;
+    const candidateIds = candidateNotes.map((n) => n.id);
+
+    // ดึง reactions และ comments เฉพาะ candidateIds เพื่อคำนวณคะแนน
+    const [reactionsRes, commentsRes] = await Promise.all([
+      candidateIds.length > 0
+        ? supabase
+            .from("note_reactions")
+            .select("note_id, user_id, type")
+            .in("note_id", candidateIds)
+        : Promise.resolve({ data: [] }),
+      candidateIds.length > 0
+        ? supabase
+            .from("note_comments")
+            .select("note_id")
+            .in("note_id", candidateIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const likesMap = new Map<string, number>();
+    const dislikesMap = new Map<string, number>();
+    const userReactionsMap = new Map<string, "like" | "dislike">();
+
+    (reactionsRes.data || []).forEach((r: any) => {
+      if (r.type === "like") {
+        likesMap.set(r.note_id, (likesMap.get(r.note_id) || 0) + 1);
+      } else if (r.type === "dislike") {
+        dislikesMap.set(r.note_id, (dislikesMap.get(r.note_id) || 0) + 1);
+      }
+
+      if (resolvedUserId && r.user_id === resolvedUserId) {
+        userReactionsMap.set(r.note_id, r.type as "like" | "dislike");
+      }
+    });
+
+    const commentsMap = new Map<string, number>();
+    (commentsRes.data || []).forEach((c: any) => {
+      commentsMap.set(c.note_id, (commentsMap.get(c.note_id) || 0) + 1);
+    });
+
+    // เรียงลำดับ candidateNotes
+    if (params.sortBy === "popular") {
+      candidateNotes.sort(
+        (a, b) =>
+          (likesMap.get(b.id) || 0) - (likesMap.get(a.id) || 0) ||
+          (commentsMap.get(b.id) || 0) - (commentsMap.get(a.id) || 0)
+      );
+    } else if (params.sortBy === "comments") {
+      candidateNotes.sort(
+        (a, b) =>
+          (commentsMap.get(b.id) || 0) - (commentsMap.get(a.id) || 0) ||
+          (likesMap.get(b.id) || 0) - (likesMap.get(a.id) || 0)
+      );
     }
-    rawNotes = data;
-    count = c || 0;
+
+    // Performance Optimization: Slice หน้าปัจจุบันก่อน แล้วดึง Profiles เฉพาะหน้าที่มี 9 รายการ!
+    const pagedRawNotes = candidateNotes.slice(offset, offset + limit);
+    const pagedUserIds = Array.from(new Set(pagedRawNotes.map((n) => n.user_id)));
+
+    const profilesRes = pagedUserIds.length > 0
+      ? await supabase.from("profiles").select(PROFILE_COLUMNS).in("id", pagedUserIds)
+      : { data: [] };
+
+    const profilesMap = new Map<string, any>();
+    (profilesRes.data || []).forEach((p: any) => profilesMap.set(p.id, p));
+
+    const notes: BoardNoteItem[] = pagedRawNotes.map((n) => {
+      const cat = Array.isArray(n.note_categories)
+        ? n.note_categories[0]
+        : n.note_categories;
+      const authorProfile = profilesMap.get(n.user_id);
+
+      return {
+        id: n.id,
+        title: n.title,
+        content: n.content,
+        file_path: n.file_path,
+        status: n.status,
+        share_token: n.share_token,
+        is_shared: n.is_shared ?? true,
+        isOwner: Boolean(resolvedUserId && resolvedUserId === n.user_id),
+        created_at: n.created_at,
+        updated_at: n.updated_at,
+        user_id: n.user_id,
+        category: cat || null,
+        author: authorProfile || {
+          id: n.user_id,
+          username: "user",
+          display_name: "ผู้ใช้งาน",
+          avatar_type: "icon",
+          avatar_icon: "User",
+        },
+        likeCount: likesMap.get(n.id) || 0,
+        dislikeCount: dislikesMap.get(n.id) || 0,
+        commentCount: commentsMap.get(n.id) || 0,
+        currentUserReaction: userReactionsMap.get(n.id) || null,
+      };
+    });
+
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+
+    return {
+      notes,
+      totalCount,
+      currentPage: page,
+      totalPages,
+      pageSize: limit,
+      pagination: buildPaginationData(page, totalCount, limit),
+    };
   }
 
+  // ─── Default Sort (เรียงจากล่าสุด) ───
+  const { data, count: c, error } = await query
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error || !data) {
+    console.error("Error fetching board notes:", error);
+    return {
+      notes: [],
+      totalCount: 0,
+      currentPage: page,
+      totalPages: 1,
+      pageSize: limit,
+      pagination: buildPaginationData(page, 0, limit),
+    };
+  }
+
+  const rawNotes = data;
+  const totalCount = c || 0;
   const noteIds = rawNotes.map((n) => n.id);
   const userIds = Array.from(new Set(rawNotes.map((n) => n.user_id)));
 
-  // 2-4. ดึงข้อมูล Authors (Profiles), Reactions และ Comments แบบ Parallel เพื่อลด Network Roundtrips (~150-250ms)
+  // ดึงข้อมูล Authors (Profiles), Reactions และ Comments แบบ Parallel เฉพาะ 9 รายการ
   const [profilesRes, reactionsRes, commentsRes] = await Promise.all([
     userIds.length > 0
-      ? supabase.from("profiles").select("*").in("id", userIds)
+      ? supabase.from("profiles").select(PROFILE_COLUMNS).in("id", userIds)
       : Promise.resolve({ data: [] }),
     noteIds.length > 0
       ? supabase
@@ -208,7 +332,7 @@ export async function getBoardNotes(params: {
       dislikesMap.set(r.note_id, (dislikesMap.get(r.note_id) || 0) + 1);
     }
 
-    if (currentUser && r.user_id === currentUser.id) {
+    if (resolvedUserId && r.user_id === resolvedUserId) {
       userReactionsMap.set(r.note_id, r.type as "like" | "dislike");
     }
   });
@@ -218,8 +342,7 @@ export async function getBoardNotes(params: {
     commentsMap.set(c.note_id, (commentsMap.get(c.note_id) || 0) + 1);
   });
 
-  // 5. รวมผลลัพธ์
-  let notes: BoardNoteItem[] = rawNotes.map((n) => {
+  const notes: BoardNoteItem[] = rawNotes.map((n) => {
     const cat = Array.isArray(n.note_categories)
       ? n.note_categories[0]
       : n.note_categories;
@@ -233,7 +356,7 @@ export async function getBoardNotes(params: {
       status: n.status,
       share_token: n.share_token,
       is_shared: n.is_shared ?? true,
-      isOwner: Boolean(currentUser && currentUser.id === n.user_id),
+      isOwner: Boolean(resolvedUserId && resolvedUserId === n.user_id),
       created_at: n.created_at,
       updated_at: n.updated_at,
       user_id: n.user_id,
@@ -252,17 +375,6 @@ export async function getBoardNotes(params: {
     };
   });
 
-  if (params.sortBy === "popular") {
-    notes.sort((a, b) => b.likeCount - a.likeCount || b.commentCount - a.commentCount);
-  } else if (params.sortBy === "comments") {
-    notes.sort((a, b) => b.commentCount - a.commentCount || b.likeCount - a.likeCount);
-  }
-
-  if (isCustomSort) {
-    notes = notes.slice(offset, offset + limit);
-  }
-
-  const totalCount = count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
   return {
@@ -271,6 +383,7 @@ export async function getBoardNotes(params: {
     currentPage: page,
     totalPages,
     pageSize: limit,
+    pagination: buildPaginationData(page, totalCount, limit),
   };
 }
 

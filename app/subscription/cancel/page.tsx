@@ -1,24 +1,13 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft, RefreshCw, ShieldAlert, Sparkles } from "lucide-react";
-import { NavbarLeft } from "@/components/navbar-left";
-import { NavbarRight } from "@/components/navbar-right";
+import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 
 export default function SubscriptionCancelPage() {
   return (
     <main className="min-h-screen flex flex-col items-center w-full bg-slate-50/50 dark:bg-slate-950">
       {/* Navbar */}
-      <nav className="w-full flex justify-center border-b border-slate-200/80 dark:border-slate-800 h-16 bg-white dark:bg-slate-900 sticky top-0 z-40">
-        <div className="w-full max-w-7xl flex justify-between items-center p-2 sm:p-3 sm:px-5 text-sm">
-          <Suspense fallback={<div className="w-10 h-10 animate-pulse bg-slate-200 rounded-xl" />}>
-            <NavbarLeft />
-          </Suspense>
-          <Suspense fallback={<div className="w-20 h-8 animate-pulse bg-slate-200 rounded-md" />}>
-            <NavbarRight />
-          </Suspense>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Content */}
       <div className="w-full flex-1 flex items-center justify-center p-4 py-16">

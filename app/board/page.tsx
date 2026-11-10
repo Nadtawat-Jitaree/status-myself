@@ -5,20 +5,17 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getBoardNotes,
   getTopBoardNotes,
-  getBoardStats,
 } from "@/app/actions/board";
 import { getAllUserCategories } from "@/app/actions/notes";
 import { getQualities } from "@/app/actions/qualities";
 import { TopBoardSection } from "@/components/TopBoardSection";
 import { BoardNoteCard } from "@/components/BoardNoteCard";
 import { BoardFilterBar } from "@/components/BoardFilterBar";
+import { BoardPagination } from "@/components/BoardPagination";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import {
   MessagesSquare,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
   BookOpen,
   PlusCircle,
   FileText,
@@ -68,8 +65,8 @@ async function BoardContent({ searchParams }: BoardPageProps) {
   const isDefaultView =
     currentPage === 1 && !searchQuery && sortParam === "latest" && filterParam === "all";
 
-  // ดึงข้อมูลโน้ต, สถิติ, Top 3 Notes (เฉพาะ Default View) และหมวดหมู่ของผู้ใช้พร้อมกันแบบ Parallel
-  const [boardData, topNotes, stats, userCategories, userQualities] = await Promise.all([
+  // ดึงข้อมูลโน้ต, Top 3 Notes (เฉพาะ Default View) และหมวดหมู่ของผู้ใช้พร้อมกันแบบ Parallel
+  const [boardData, topNotes, userCategories, userQualities] = await Promise.all([
     getBoardNotes({
       page: currentPage,
       limit: 9,
@@ -77,26 +74,14 @@ async function BoardContent({ searchParams }: BoardPageProps) {
       sortBy: sortParam,
       filter: filterParam,
       shareStatus: shareStatusParam,
+      currentUserId: currentUser?.id,
     }),
     isDefaultView ? getTopBoardNotes() : Promise.resolve([]),
-    getBoardStats(),
     currentUser ? getAllUserCategories() : Promise.resolve([]),
     currentUser ? getQualities() : Promise.resolve([]),
   ]);
 
-  const { notes, totalCount, totalPages } = boardData;
-
-  // ฟังก์ชันสร้าง URL สำหรับ Pagination
-  const buildPageUrl = (pageNumber: number) => {
-    const params = new URLSearchParams();
-    if (pageNumber > 1) params.set("page", pageNumber.toString());
-    if (searchQuery) params.set("q", searchQuery);
-    if (sortParam && sortParam !== "latest") params.set("sort", sortParam);
-    if (filterParam && filterParam !== "all") params.set("filter", filterParam);
-    if (shareStatusParam && shareStatusParam !== "all") params.set("shareStatus", shareStatusParam);
-    const qs = params.toString();
-    return qs ? `/board?${qs}` : "/board";
-  };
+  const { notes, totalCount, totalPages, pagination } = boardData;
 
   return (
     <>
@@ -199,66 +184,15 @@ async function BoardContent({ searchParams }: BoardPageProps) {
       )}
 
       {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <nav
-          aria-label="Pagination"
-          className="flex items-center justify-center gap-2 mt-12"
-        >
-          {/* Prev Button */}
-          <Link
-            href={buildPageUrl(Math.max(1, currentPage - 1))}
-            className={`p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors ${
-              currentPage <= 1 ? "pointer-events-none opacity-40" : ""
-            }`}
-            title="หน้าก่อนหน้า"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Link>
-
-          {/* Page Number Pills */}
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
-            if (
-              p === 1 ||
-              p === totalPages ||
-              (p >= currentPage - 1 && p <= currentPage + 1)
-            ) {
-              const isActive = currentPage === p;
-              return (
-                <Link
-                  key={p}
-                  href={buildPageUrl(p)}
-                  className={`w-9 h-9 flex items-center justify-center rounded-xl text-xs font-semibold transition-colors ${
-                    isActive
-                      ? "bg-slate-900 text-white"
-                      : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  {p}
-                </Link>
-              );
-            }
-            if (p === currentPage - 2 || p === currentPage + 2) {
-              return (
-                <span key={p} className="text-slate-400 px-1 text-xs">
-                  ...
-                </span>
-              );
-            }
-            return null;
-          })}
-
-          {/* Next Button */}
-          <Link
-            href={buildPageUrl(Math.min(totalPages, currentPage + 1))}
-            className={`p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors ${
-              currentPage >= totalPages ? "pointer-events-none opacity-40" : ""
-            }`}
-            title="หน้าถัดไป"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </nav>
-      )}
+      <BoardPagination
+        pagination={pagination}
+        searchParams={{
+          q: searchQuery,
+          sort: sortParam,
+          filter: filterParam,
+          shareStatus: shareStatusParam,
+        }}
+      />
     </>
   );
 }
@@ -293,7 +227,10 @@ function BoardSkeleton() {
   );
 }
 
-export default function BoardPage({ searchParams }: BoardPageProps) {
+export default async function BoardPage({ searchParams }: BoardPageProps) {
+  const resolvedParams = await searchParams;
+  const suspenseKey = `${resolvedParams.page || 1}-${resolvedParams.q || ""}-${resolvedParams.sort || "latest"}-${resolvedParams.filter || "all"}-${resolvedParams.shareStatus || "all"}`;
+
   return (
     <div className="min-h-screen bg-slate-50/30 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* Top Navbar */}
@@ -333,7 +270,7 @@ export default function BoardPage({ searchParams }: BoardPageProps) {
 
       {/* Main Board Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-8">
-        <Suspense fallback={<BoardSkeleton />}>
+        <Suspense key={suspenseKey} fallback={<BoardSkeleton />}>
           <BoardContent searchParams={searchParams} />
         </Suspense>
       </main>

@@ -3,6 +3,7 @@ import { getSharedCategory } from "@/app/actions/share";
 import SharedCategoryView from "./SharedCategoryView";
 import Link from "next/link";
 import { Lock } from "lucide-react";
+import { Navbar } from "@/components/navbar";
 
 interface PageProps {
   params: Promise<{
@@ -85,7 +86,7 @@ async function SharedCategoryContent({ params }: PageProps) {
 
   if (!result || !result.category) {
     return (
-      <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-3xl p-8 border shadow-sm text-center flex flex-col items-center">
           <div className="w-16 h-16 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-4">
             <Lock className="w-8 h-8" />
@@ -120,8 +121,11 @@ async function SharedCategoryContent({ params }: PageProps) {
 
 export default function SharedCategoryPage({ params }: PageProps) {
   return (
-    <Suspense fallback={<CategorySkeleton />}>
-      <SharedCategoryContent params={params} />
-    </Suspense>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      <Navbar />
+      <Suspense fallback={<CategorySkeleton />}>
+        <SharedCategoryContent params={params} />
+      </Suspense>
+    </div>
   );
 }
