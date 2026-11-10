@@ -53,7 +53,7 @@ export function RoleBadge({ subscription }: RoleBadgeProps) {
     permKey = "premium";
     badgeClasses = isOpen
       ? "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-md shadow-amber-500/40 border border-amber-400/60 scale-95"
-      : "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-xs shadow-amber-500/30 hover:shadow-md hover:shadow-amber-500/40 border border-amber-400/40";
+      : "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-xs shadow-amber-500/30 border border-amber-400/40";
     iconNode = <Crown className="w-3.5 h-3.5 fill-amber-100/40" />;
     labelText = "Premium";
   } else if (isExpired) {
