@@ -12,7 +12,23 @@ interface CacheEntry {
 
 // In-Memory Hash Map สำหรับแคชข้อมูลหน้า Notes ในหน่วยความจำของเบราว์เซอร์
 const notesMemoryCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 60 * 1000; // อายุแคช 60 วินาที
+const CACHE_FRESH_MS = 30 * 1000;    // 30 วินาที: ถือว่าสดใหม่ ไม่ต้อง refetch
+const CACHE_STALE_MS = 5 * 60 * 1000; // 5 นาที: ถือว่า stale ใช้แสดงผลได้ทันทีแต่ควร background revalidate
+
+/**
+ * ดึงสถานะของแคช:
+ * - 'fresh': ข้อมูลใหม่ล่าสุด (< 30s) ไม่ต้องยิงเน็ต
+ * - 'stale': ข้อมูลพร้อมใช้ได้ทันที (30s - 5m) และแนะนำให้ background sync
+ * - 'invalid': ไม่มีแคชหรือเก่าเกิน 5 นาที
+ */
+export function getCacheState(noteType: string): "fresh" | "stale" | "invalid" {
+  const entry = notesMemoryCache.get(noteType);
+  if (!entry) return "invalid";
+  const age = Date.now() - entry.timestamp;
+  if (age < CACHE_FRESH_MS) return "fresh";
+  if (age < CACHE_STALE_MS) return "stale";
+  return "invalid";
+}
 
 /**
  * ดึงข้อมูลโน้ตจาก In-Memory Cache (ความเร็ว O(1) ใช้เวลา ~0ms)
@@ -24,12 +40,12 @@ export function getCachedNotes(noteType: string): CachedNotesData | null {
 }
 
 /**
- * ตรวจสอบว่าแคชยังสดใหม่อยู่หรือไม่
+ * ตรวจสอบว่าแคชยังสดใหม่อยู่หรือไม่ (Backward compatible)
  */
 export function isCacheFresh(noteType: string): boolean {
   const entry = notesMemoryCache.get(noteType);
   if (!entry) return false;
-  return Date.now() - entry.timestamp < CACHE_TTL_MS;
+  return Date.now() - entry.timestamp < CACHE_FRESH_MS;
 }
 
 /**

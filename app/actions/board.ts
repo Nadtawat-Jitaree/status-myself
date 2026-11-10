@@ -675,19 +675,29 @@ export interface NoteCommentItem {
 }
 
 /**
- * ดึงความคิดเห็นทั้งหมดของโน้ต (Flat 1 ระดับ)
+ * ดึงความคิดเห็นของโน้ต พร้อมรองรับการแบ่งหน้า (Pagination) หรือดึงทั้งหมด
  */
-export async function getNoteComments(noteId: string): Promise<NoteCommentItem[]> {
+export async function getNoteComments(
+  noteId: string,
+  params?: { limit?: number; offset?: number }
+): Promise<NoteCommentItem[]> {
   const supabase = await createClient();
   const {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
 
-  const { data: rawComments, error } = await supabase
+  let query = supabase
     .from("note_comments")
     .select("*")
     .eq("note_id", noteId)
     .order("created_at", { ascending: true });
+
+  if (params?.limit) {
+    const offset = params.offset || 0;
+    query = query.range(offset, offset + params.limit - 1);
+  }
+
+  const { data: rawComments, error } = await query;
 
   if (error || !rawComments) return [];
 

@@ -131,8 +131,9 @@ async function DashboardData() {
     );
   }
 
-  // ดึงข้อมูลพร้อมกันแบบ Parallel
-  const [notesRes, categoriesRes, projectsRes, profileRes] = await Promise.all([
+  // ดึงข้อมูลพร้อมกันแบบ Parallel โดยแยกโน้ตล่าสุด 5 รายการ และดึงเฉพาะฟิลด์ที่จำเป็นสำหรับการนับสถิติเพื่อลด Payload
+  const [recentNotesRes, notesStatsRes, categoriesRes, projectsRes, profileRes] = await Promise.all([
+    // 1. ดึงโน้ตล่าสุดเพียง 5 รายการสำหรับแสดงผลใน Recent Notes
     supabase
       .from("notes")
       .select(
@@ -140,11 +141,22 @@ async function DashboardData() {
       )
       .eq("user_id", user.id)
       .order("is_pinned", { ascending: false })
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(5),
+
+    // 2. ดึงเฉพาะ category_id และ status สำหรับนำมาคำนวณสถิติและกราฟ (ไม่ดึง content, file_path หรือ relations ซ้อน)
+    supabase
+      .from("notes")
+      .select("status, category_id")
+      .eq("user_id", user.id),
+
+    // 3. หมวดหมู่ทั้งหมดของผู้ใช้
     supabase
       .from("note_categories")
       .select("id, name, note_type")
       .eq("user_id", user.id),
+
+    // 4. โปรเจกต์ของผู้ใช้
     supabase
       .from("projects")
       .select(
@@ -152,6 +164,8 @@ async function DashboardData() {
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
+
+    // 5. ข้อมูลโปรไฟล์
     supabase
       .from("profiles")
       .select("fname, lname, username")
@@ -159,17 +173,24 @@ async function DashboardData() {
       .maybeSingle(),
   ]);
 
-  const notes = notesRes.data || [];
+  const recentNotes = recentNotesRes.data || [];
+  const notesMeta = notesStatsRes.data || [];
   const categories = categoriesRes.data || [];
   const projects = projectsRes.data || [];
   const profile = profileRes.data;
+
+  // Map หมวดหมู่แบบ O(1) Lookup
+  const categoryMap = new Map<string, { id: string; name: string; note_type: string }>();
+  categories.forEach((c) => {
+    categoryMap.set(c.id, c);
+  });
 
   // ชื่อผู้ใช้งานสำหรับทักทาย
   const displayName = profile?.fname
     ? `${profile.fname} ${profile.lname || ""}`.trim()
     : profile?.username || user.email?.split("@")[0] || "คุณ";
 
-  // สรุปสถานะโน้ต
+  // สรุปสถานะโน้ตและนับจำนวน
   const statusCounts = {
     ทั่วไป: 0,
     สำคัญ: 0,
@@ -181,13 +202,13 @@ async function DashboardData() {
   let normalNotesCount = 0;
   let schoolNotesCount = 0;
 
-  notes.forEach((note) => {
+  notesMeta.forEach((note) => {
     const status = note.status || "ทั่วไป";
     if (status in statusCounts) {
       statusCounts[status as keyof typeof statusCounts]++;
     }
 
-    const catData = note.note_categories as any;
+    const catData = note.category_id ? categoryMap.get(note.category_id) : undefined;
     const catName = catData?.name || "ไม่มีหมวดหมู่";
     categoryCounts[catName] = (categoryCounts[catName] || 0) + 1;
 
@@ -198,7 +219,7 @@ async function DashboardData() {
     }
   });
 
-  const totalNotes = notes.length;
+  const totalNotes = notesMeta.length;
   const completionRate =
     totalNotes > 0
       ? Math.round((statusCounts["เสร็จสิ้น"] / totalNotes) * 100)
@@ -217,9 +238,6 @@ async function DashboardData() {
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
-
-  // โน้ตล่าสุด 5 รายการ
-  const recentNotes = notes.slice(0, 5);
 
   // ข้อมูลโปรเจกต์
   const activeProjects = projects.slice(0, 4).map((p) => {

@@ -18,6 +18,7 @@ import {
 import {
   getCachedNotes,
   isCacheFresh,
+  getCacheState,
   setCachedNotes,
   invalidateNotesCache,
   invalidateNoteQualitiesCache,
@@ -472,15 +473,31 @@ export default function NotesPage({ noteType, initialData }: Props) {
   }, [noteType]);
 
   const initData = async (forceRefresh = false) => {
-    // 1. ตรวจสอบ In-Memory Hash Cache เพื่อ Instant Render 0ms
+    // 1. ตรวจสอบ In-Memory Hash Cache พร้อม Stale-While-Revalidate (SWR)
     if (!forceRefresh) {
+      const cacheState = getCacheState(noteType);
       const cached = getCachedNotes(noteType);
       if (cached) {
         setCategories(cached.categories);
         setNotes(cached.notes);
         setIsLoading(false);
-        // หากข้อมูลในแคชยังสดใหม่ (< 60 วินาที) ไม่ต้องยิงเน็ตซ้ำ
-        if (isCacheFresh(noteType)) {
+
+        // หากแคชยังสดใหม่มาก (< 30s) ไม่ต้องยิงซ้ำ
+        if (cacheState === "fresh") {
+          return;
+        }
+        // หาก stale (30s - 5m) ให้ใช้ข้อมูลที่ render ไว้ทันที แล้ว silent refresh ใน background
+        if (cacheState === "stale") {
+          try {
+            const data = await getNotesPageData(noteType);
+            const newCats = data.categories || [];
+            const newNotes = data.notes || [];
+            setCategories(newCats);
+            setNotes(newNotes);
+            setCachedNotes(noteType, { categories: newCats, notes: newNotes });
+          } catch (e) {
+            console.warn("Background revalidate notes error:", e);
+          }
           return;
         }
       }

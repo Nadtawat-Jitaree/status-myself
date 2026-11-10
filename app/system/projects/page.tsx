@@ -1,9 +1,8 @@
 import { Suspense } from "react";
-import { getProjects } from "@/app/actions/projects";
+import { getProjectsPaginated } from "@/app/actions/projects";
 import { requirePremiumAccess } from "@/lib/subscription";
-import Link from "next/link";
-import { FolderKanban, Calendar, LoaderCircle } from "lucide-react";
 import Image from "next/image";
+import { LoaderCircle } from "lucide-react";
 import ProjectListClient from "@/components/ProjectListClient";
 import CreateProjectForm from "@/components/CreateProjectForm";
 
@@ -52,11 +51,25 @@ function ProjectsLoading() {
   );
 }
 
-async function ProjectList() {
-  await requirePremiumAccess();
-  const projects = await getProjects();
+interface ProjectsPageProps {
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+    status?: "all" | "in_progress" | "completed" | "empty";
+  }>;
+}
 
-  if (!projects || projects.length === 0) {
+async function ProjectList({ searchParams }: ProjectsPageProps) {
+  await requirePremiumAccess();
+
+  const resolved = await searchParams;
+  const page = Math.max(1, parseInt(resolved.page || "1", 10));
+  const search = (resolved.q || "").trim();
+  const status = resolved.status || "all";
+
+  const data = await getProjectsPaginated({ page, search, status });
+
+  if (!data.statusCounts.all) {
     return (
       <div className="text-center py-12 border-2 border-dashed rounded-xl text-muted-foreground">
         ยังไม่มีโปรเจกต์ เริ่มสร้างโปรเจกต์แรกของคุณได้เลย
@@ -64,10 +77,10 @@ async function ProjectList() {
     );
   }
 
-  return <ProjectListClient initialProjects={projects} />;
+  return <ProjectListClient initialData={data} />;
 }
 
-export default function ProjectsPage() {
+export default function ProjectsPage({ searchParams }: ProjectsPageProps) {
   return (
     <div className="container mx-auto px-8 py-9 max-w-5xl flex flex-col gap-8 border-2 rounded-3xl relative">
       <div>
@@ -79,7 +92,7 @@ export default function ProjectsPage() {
             height={45}
             className="mr-2"
             unoptimized
-          ></Image>
+          />
           Projects
         </h1>
         <p className="text-muted-foreground mt-2">
@@ -90,7 +103,7 @@ export default function ProjectsPage() {
       <CreateProjectForm />
 
       <Suspense fallback={<ProjectsLoading />}>
-        <ProjectList />
+        <ProjectList searchParams={searchParams} />
       </Suspense>
     </div>
   );

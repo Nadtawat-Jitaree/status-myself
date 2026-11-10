@@ -47,3 +47,13 @@ ON public.note_qualities (note_id);
 
 CREATE INDEX IF NOT EXISTS idx_quality_transactions_note_id
 ON public.quality_transactions (note_id, user_id);
+
+-- 6. Index สำหรับ Dashboard สถิติแบบรวดเร็ว (user_id + status + category_id)
+CREATE INDEX IF NOT EXISTS idx_notes_user_status_category
+ON public.notes (user_id, status, category_id);
+
+-- 7. Trigram/GIN Index สำหรับ Full-Text Search บน Title และ Content
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_notes_title_trgm
+ON public.notes USING gin (title gin_trgm_ops);
+

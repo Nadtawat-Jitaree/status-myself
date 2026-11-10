@@ -3,11 +3,141 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from 'next/navigation';
 import {
+  buildPaginationData,
+  type PaginationData,
+} from "@/lib/pagination";
+import {
   awardTaskQualities,
   revokeTaskQualities,
   syncTaskQualities,
   SelectedQualityInput,
 } from "./qualities";
+
+export interface ProjectSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  due_date?: string | null;
+  target_count?: number | null;
+  target_label?: string | null;
+  taskSummary: {
+    total: number;
+    done: number;
+    progress: number;
+  };
+}
+
+export interface ProjectsPagedResponse {
+  projects: ProjectSummary[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+  pagination: PaginationData;
+  statusCounts: {
+    all: number;
+    in_progress: number;
+    completed: number;
+    empty: number;
+  };
+}
+
+const PROJECTS_PAGE_SIZE = 9;
+
+/**
+ * ดึงรายการโปรเจกต์แบบแบ่งหน้า (Server-Side Pagination)
+ * - ดึงมาแค่ pageSize โปรเจกต์ต่อหน้า
+ * - คำนวณ task summary ที่ server ไม่ส่ง array ทั้งหมดมา client
+ * - COUNT ผ่าน Supabase ไม่ต้องดึง row ทั้งหมด
+ */
+export async function getProjectsPaginated(params: {
+  page?: number;
+  search?: string;
+  status?: 'all' | 'in_progress' | 'completed' | 'empty';
+}): Promise<ProjectsPagedResponse> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const page = Math.max(1, params.page || 1);
+  const pageSize = PROJECTS_PAGE_SIZE;
+  const offset = (page - 1) * pageSize;
+
+  // ─── 1. ดึง status counts สำหรับ Filter Tab Badges (ดึงเฉพาะ id + task summary) ───
+  const { data: allProjectsMeta } = await supabase
+    .from('projects')
+    .select('id, tasks(id, status)')
+    .eq('user_id', user.id);
+
+  // คำนวณ status counts สำหรับ Tab badges
+  const statusCounts = { all: 0, in_progress: 0, completed: 0, empty: 0 };
+  (allProjectsMeta || []).forEach((p: any) => {
+    statusCounts.all++;
+    const total = p.tasks?.length || 0;
+    const done = p.tasks?.filter((t: any) => t.status === 'done').length || 0;
+    if (total === 0) statusCounts.empty++;
+    else if (done === total) statusCounts.completed++;
+    else statusCounts.in_progress++;
+  });
+
+  // ─── 2. Build Query โปรเจกต์ตามหน้าและ filter ───
+  let query = supabase
+    .from('projects')
+    .select('id, name, description, created_at, due_date, target_count, target_label, tasks(id, status)', { count: 'exact' })
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  // Filter: Search
+  if (params.search?.trim()) {
+    const s = params.search.trim();
+    query = (query as any).or(`name.ilike.%${s}%,description.ilike.%${s}%`);
+  }
+
+  const { data, count, error } = await query.range(offset, offset + pageSize - 1);
+  if (error) throw error;
+
+  // ─── 3. แปลง tasks → taskSummary ที่ server (ไม่ส่ง tasks array ไป client) ───
+  let projects: ProjectSummary[] = (data || []).map((p: any) => {
+    const total = p.tasks?.length || 0;
+    const done = p.tasks?.filter((t: any) => t.status === 'done').length || 0;
+    const progress = total === 0 ? 0 : Math.round((done / total) * 100);
+    return {
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      created_at: p.created_at,
+      due_date: p.due_date,
+      target_count: p.target_count,
+      target_label: p.target_label,
+      taskSummary: { total, done, progress },
+    };
+  });
+
+  // ─── 4. Client-side Status filter (ทำหลัง fetch เพราะต้องคำนวณ progress ก่อน) ───
+  if (params.status && params.status !== 'all') {
+    projects = projects.filter((p) => {
+      const { total, done } = p.taskSummary;
+      if (params.status === 'completed') return total > 0 && done === total;
+      if (params.status === 'in_progress') return total === 0 || done < total;
+      if (params.status === 'empty') return total === 0;
+      return true;
+    });
+  }
+
+  const totalCount = count || 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  return {
+    projects,
+    totalCount,
+    totalPages,
+    currentPage: page,
+    pageSize,
+    pagination: buildPaginationData(page, totalCount, pageSize),
+    statusCounts,
+  };
+}
 
 export async function getProjects() {
   const supabase = await createClient()
@@ -23,6 +153,7 @@ export async function getProjects() {
   if (error) throw error
   return data
 }
+
 
 export async function createProject(formData: FormData) {
   const supabase = await createClient()
