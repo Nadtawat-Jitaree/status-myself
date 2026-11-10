@@ -13,29 +13,56 @@ export default function ProtectedLayout({
   return (
     <main className="min-h-screen flex flex-col items-center w-full bg-slate-50/30">
       <div className="flex-1 w-full flex flex-col items-center gap-10">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white sticky top-0 z-40">
-          <div className="w-full max-w-7xl flex justify-between items-center p-2 sm:p-3 sm:px-5 text-sm">
-            <div className="flex gap-2 sm:gap-5 items-center font-semibold">
-              <Suspense
-                fallback={
-                  <div className="w-10 h-10 animate-pulse bg-gray-200 rounded-xl"></div>
-                }
-              >
-                <NavbarLeft />
-              </Suspense>
+        {/* ─── Navbar ─── */}
+        <nav className="w-full border-b border-slate-200/70 bg-white/95 backdrop-blur-sm sticky top-0 z-40 shadow-sm">
+          <div className="mx-auto max-w-7xl text-sm">
+
+            {/* ── แถวหลัก: Logo + Nav (ทุก breakpoint) ── */}
+            <div className="flex items-center justify-between px-3 sm:px-5 h-14">
+              {/* ซ้าย/หลัก: Logo + เมนูนำทาง (บน mobile ขยายเต็ม w-full) */}
+              <div className="flex items-center gap-2 font-semibold min-w-0 w-full md:w-auto">
+                <Suspense
+                  fallback={
+                    <div className="w-full md:w-32 h-9 animate-pulse bg-slate-100 rounded-2xl" />
+                  }
+                >
+                  <NavbarLeft />
+                </Suspense>
+              </div>
+
+              {/* ขวา: User section — แสดงเฉพาะ Desktop (md+) */}
+              <div className="hidden md:flex items-center">
+                {!hasEnvVars ? (
+                  <EnvVarWarning />
+                ) : (
+                  <Suspense
+                    fallback={
+                      <div className="w-28 h-8 animate-pulse bg-slate-100 rounded-full" />
+                    }
+                  >
+                    <NavbarRight />
+                  </Suspense>
+                )}
+              </div>
             </div>
 
-            {!hasEnvVars ? (
-              <EnvVarWarning />
-            ) : (
-              <Suspense
-                fallback={
-                  <div className="w-20 h-8 animate-pulse bg-gray-200 rounded-md"></div>
-                }
-              >
-                <NavbarRight />
-              </Suspense>
-            )}
+            {/* ── แถวที่ 2: User section — Mobile เท่านั้น ── */}
+            <div className="md:hidden border-t border-slate-100">
+              <div className="flex items-center px-3 sm:px-5 py-2 bg-gradient-to-r from-slate-50 to-white">
+                {!hasEnvVars ? (
+                  <EnvVarWarning />
+                ) : (
+                  <Suspense
+                    fallback={
+                      <div className="w-full h-9 animate-pulse bg-slate-100 rounded-full" />
+                    }
+                  >
+                    <NavbarRight />
+                  </Suspense>
+                )}
+              </div>
+            </div>
+
           </div>
         </nav>
         <div className="w-full flex-1 px-4 sm:px-6 lg:px-10">{children}</div>

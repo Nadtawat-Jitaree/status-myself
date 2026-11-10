@@ -1258,7 +1258,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                 {filterCategory === "all" ? (
                   <div className="flex items-center gap-2 text-muted-foreground truncate">
                     <Folder className="w-3.5 h-3.5 shrink-0" />
-                    <span>ทุกหมวดหมู่ (All)</span>
+                    <span className="truncate text-xs font-bold">ทุกหมวดหมู่ (All)</span>
                   </div>
                 ) : (
                   (() => {
@@ -1274,7 +1274,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                         ) : (
                           <Folder className="w-3.5 h-3.5 text-primary shrink-0" />
                         )}
-                        <span className="truncate">{cat.name}</span>
+                        <span className="truncate text-xs font-bold">{cat.name}</span>
                       </div>
                     ) : (
                       "ทุกหมวดหมู่ (All)"

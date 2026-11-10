@@ -16,26 +16,39 @@ export async function NavbarRight() {
   const subscription = user ? await getSubscriptionInfo() : null;
 
   return user ? (
-    <div className="flex items-center gap-2 sm:gap-3">
-      {/* Role Badge พร้อม Hover Tooltip แสดงสิทธิ์การใช้งาน */}
-      {subscription && <RoleBadge subscription={subscription} />}
+    /* Mobile: w-full + justify-between → badge+ชื่อซ้าย / logout ขวา
+       Desktop (md+): w-auto + gap → เรียงเป็นแถวปกติ */
+    <div className="flex items-center justify-between w-full md:w-auto md:justify-normal gap-2 md:gap-2">
 
-      <Link
-        href="/system/profile"
-        className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-slate-100 transition border border-transparent hover:border-slate-200"
-        title="จัดการโปรไฟล์"
-      >
-        <AvatarDisplay
-          avatarType={profile?.avatar_type}
-          avatarIcon={profile?.avatar_icon}
-          avatarUrl={profile?.avatar_url}
-          name={profile?.display_name || profile?.username}
-          size="xs"
-        />
-        <span className="text-xs font-semibold text-slate-700 hidden sm:inline max-w-[120px] truncate">
-          {profile?.display_name || profile?.username || "โปรไฟล์"}
-        </span>
-      </Link>
+      {/* ── ซ้าย: Role Badge + Profile ── */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        {/* Role Badge */}
+        {subscription && <RoleBadge subscription={subscription} />}
+
+        {/* Divider (desktop เท่านั้น) */}
+        <div className="hidden md:block h-5 w-px bg-slate-200/80 mx-0.5" />
+
+        {/* Profile link */}
+        <Link
+          href="/system/profile"
+          className="group flex items-center gap-2 rounded-full border border-transparent py-1 pl-1 pr-2.5 transition-all duration-150 hover:border-slate-200 hover:bg-slate-100 active:scale-95 min-w-0"
+          title="จัดการโปรไฟล์"
+        >
+          <AvatarDisplay
+            avatarType={profile?.avatar_type}
+            avatarIcon={profile?.avatar_icon}
+            avatarUrl={profile?.avatar_url}
+            name={profile?.display_name || profile?.username}
+            size="xs"
+          />
+          {/* ชื่อแสดงเสมอทุก breakpoint */}
+          <span className="text-xs font-semibold text-slate-700 group-hover:text-slate-900 max-w-[110px] truncate leading-none">
+            {profile?.display_name || profile?.username || "โปรไฟล์"}
+          </span>
+        </Link>
+      </div>
+
+      {/* ── ขวา: Logout ── */}
       <LogoutButton />
     </div>
   ) : (
