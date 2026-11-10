@@ -3,9 +3,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { generateSecureToken, detectTokenVersion } from "@/lib/crypto-hash";
+import {
+  validateNoteForShare,
+  validateCategoryForShare,
+} from "@/lib/moderation/profanity-filter";
 
 /**
- * สลับสถานะเปิด/ปิดการแชร์ของโน้ตเดี่ยว (พร้อมสร้าง Secure Hashed Token)
+ * สลับสถานะเปิด/ปิดการแชร์ของโน้ตเดี่ยว (พร้อมสร้าง Secure Hashed Token และตรวจสอบคำหยาบก่อนแชร์)
  */
 export async function toggleShareNote(noteId: string) {
   const supabase = await createClient();
@@ -15,10 +19,10 @@ export async function toggleShareNote(noteId: string) {
 
   if (!user) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
 
-  // ตรวจสอบโน้ตและความเป็นเจ้าของ
+  // ตรวจสอบโน้ตและความเป็นเจ้าของ พร้อมดึง title และ content
   const { data: note, error: fetchError } = await supabase
     .from("notes")
-    .select("id, is_shared, share_token")
+    .select("id, title, content, is_shared, share_token")
     .eq("id", noteId)
     .eq("user_id", user.id)
     .single();
@@ -28,6 +32,15 @@ export async function toggleShareNote(noteId: string) {
   }
 
   const nextShared = !note.is_shared;
+
+  // หากกำลังจะเปิดแชร์ (nextShared = true) ให้ตรวจสอบคำหยาบและคำต้องห้ามก่อน
+  if (nextShared) {
+    const validation = validateNoteForShare(note.title, note.content);
+    if (!validation.isClean) {
+      throw new Error(validation.errorMessage || "ไม่สามารถเปิดแชร์ได้เนื่องจากพบบันทึกมีคำไม่เหมาะสม");
+    }
+  }
+
   // หากเปิดแชร์และยังไม่มี token ให้สร้าง Secure Token แบบ SHA-256
   const nextToken = nextShared ? (note.share_token || generateSecureToken("n")) : note.share_token;
 
@@ -59,7 +72,7 @@ export async function toggleShareNote(noteId: string) {
 }
 
 /**
- * Rehashing: สร้างและหมุนเวียน Share Token ใหม่ที่ปลอดภัยขึ้นสำหรับโน้ต (Revoke ลิงก์เดิม)
+ * Rehashing: สร้างและหมุนเวียน Share Token ใหม่ที่ปลอดภัยขึ้นสำหรับโน้ต (Revoke ลิงก์เดิม พร้อมตรวจคำหยาบ)
  */
 export async function regenerateNoteShareToken(noteId: string) {
   const supabase = await createClient();
@@ -68,6 +81,23 @@ export async function regenerateNoteShareToken(noteId: string) {
   } = await supabase.auth.getUser();
 
   if (!user) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
+
+  // ตรวจสอบเนื้อหาโน้ตก่อนสร้าง token ใหม่
+  const { data: note, error: fetchError } = await supabase
+    .from("notes")
+    .select("id, title, content")
+    .eq("id", noteId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !note) {
+    throw new Error("ไม่พบโน้ตหรือคุณไม่มีสิทธิ์ในการจัดการโน้ตนี้");
+  }
+
+  const validation = validateNoteForShare(note.title, note.content);
+  if (!validation.isClean) {
+    throw new Error(validation.errorMessage || "ไม่สามารถสร้างลิงก์แชร์ใหม่ได้เนื่องจากพบคำไม่เหมาะสม");
+  }
 
   // Rehashing สร้าง Token ใหม่ด้วย SHA-256 + CSPRNG
   const newToken = generateSecureToken("n");
@@ -93,7 +123,7 @@ export async function regenerateNoteShareToken(noteId: string) {
 }
 
 /**
- * สลับสถานะเปิด/ปิดการแชร์ของหมวดหมู่ (Category)
+ * สลับสถานะเปิด/ปิดการแชร์ของหมวดหมู่ (Category พร้อมตรวจคำหยาบในหมวดหมู่และโน้ตภายใน)
  */
 export async function toggleShareCategory(categoryId: string) {
   const supabase = await createClient();
@@ -105,7 +135,7 @@ export async function toggleShareCategory(categoryId: string) {
 
   const { data: category, error: fetchError } = await supabase
     .from("note_categories")
-    .select("id, is_shared, share_token")
+    .select("id, name, description, is_shared, share_token")
     .eq("id", categoryId)
     .eq("user_id", user.id)
     .single();
@@ -115,6 +145,26 @@ export async function toggleShareCategory(categoryId: string) {
   }
 
   const nextShared = !category.is_shared;
+
+  if (nextShared) {
+    // ดึงโน้ตทั้งหมดในหมวดหมู่นี้เพื่อตรวจคำหยาบ
+    const { data: childNotes } = await supabase
+      .from("notes")
+      .select("title, content")
+      .eq("category_id", categoryId)
+      .eq("user_id", user.id);
+
+    const validation = validateCategoryForShare(
+      category.name,
+      category.description,
+      childNotes || []
+    );
+
+    if (!validation.isClean) {
+      throw new Error(validation.errorMessage || "ไม่สามารถแชร์หมวดหมู่นี้ได้เนื่องจากพบคำไม่เหมาะสม");
+    }
+  }
+
   const nextToken = nextShared
     ? (category.share_token || generateSecureToken("c"))
     : category.share_token;
@@ -147,7 +197,7 @@ export async function toggleShareCategory(categoryId: string) {
 }
 
 /**
- * Rehashing: สร้างและหมุนเวียน Share Token ใหม่สำหรับหมวดหมู่
+ * Rehashing: สร้างและหมุนเวียน Share Token ใหม่สำหรับหมวดหมู่ (พร้อมตรวจคำหยาบ)
  */
 export async function regenerateCategoryShareToken(categoryId: string) {
   const supabase = await createClient();
@@ -156,6 +206,33 @@ export async function regenerateCategoryShareToken(categoryId: string) {
   } = await supabase.auth.getUser();
 
   if (!user) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
+
+  const { data: category, error: fetchError } = await supabase
+    .from("note_categories")
+    .select("id, name, description")
+    .eq("id", categoryId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !category) {
+    throw new Error("ไม่พบหมวดหมู่หรือคุณไม่มีสิทธิ์ในการจัดการหมวดหมู่นี้");
+  }
+
+  const { data: childNotes } = await supabase
+    .from("notes")
+    .select("title, content")
+    .eq("category_id", categoryId)
+    .eq("user_id", user.id);
+
+  const validation = validateCategoryForShare(
+    category.name,
+    category.description,
+    childNotes || []
+  );
+
+  if (!validation.isClean) {
+    throw new Error(validation.errorMessage || "ไม่สามารถสร้างลิงก์แชร์ใหม่ได้เนื่องจากพบคำไม่เหมาะสม");
+  }
 
   const newToken = generateSecureToken("c");
   const { error } = await supabase
