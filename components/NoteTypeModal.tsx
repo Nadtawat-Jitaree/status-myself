@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { X, Sparkles, Lock, Crown, ChevronRight } from "lucide-react";
+import { X, SquareKanban, Lock, Crown, ChevronRight } from "lucide-react";
 import Swal from "sweetalert2";
 import { getUserSubscriptionAction } from "@/app/actions/subscription";
 import type { SubscriptionInfo } from "@/lib/subscription-types";
@@ -172,7 +172,7 @@ export default function NoteTypeModal({
         {/* ส่วนหัว Modal */}
         <div className="mb-6 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-semibold mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
+            <SquareKanban className="w-3.5 h-3.5" />
             <span>Workspace</span>
           </div>
           <h2

@@ -31,7 +31,6 @@ import {
   Calendar,
   AlertCircle,
   Clock,
-  ArrowDown,
   Loader2,
   CalendarDays,
   SlidersHorizontal,
@@ -40,9 +39,6 @@ import {
   Target,
   Settings2,
   FileText,
-  AlignLeft,
-  ChevronRight,
-  Sparkles,
 } from "lucide-react";
 
 import {

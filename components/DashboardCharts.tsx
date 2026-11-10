@@ -14,7 +14,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PieChart as PieChartIcon, BarChart3, Sparkles, CheckCircle2 } from "lucide-react";
+import { PieChart as PieChartIcon, BarChart3, ChartColumnStacked, CheckCircle2 } from "lucide-react";
 
 interface StatusItem {
   name: string;
@@ -98,9 +98,9 @@ export default function DashboardCharts({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
       {/* Chart 1: Donut Chart - สถานะโน้ต & ภารกิจ */}
-      <Card className="group relative min-w-0 overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-b from-card to-card/60 shadow-sm transition-all duration-300 hover:shadow-md hover:border-border">
+      <Card className="group relative min-w-0 overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-b from-card to-card/60 shadow-sm ">
         {/* Decorative corner glow */}
-        <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-emerald-500/5 blur-3xl transition-all duration-500 group-hover:bg-emerald-500/10" />
+        <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-emerald-500/5 blur-3xl" />
 
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
@@ -222,9 +222,9 @@ export default function DashboardCharts({
       </Card>
 
       {/* Chart 2: Bar Chart - แยกตามหมวดหมู่ยอดนิยม */}
-      <Card className="group relative min-w-0 overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-b from-card to-card/60 shadow-sm transition-all duration-300 hover:shadow-md hover:border-border">
+      <Card className="group relative min-w-0 overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-b from-card to-card/60 shadow-sm">
         {/* Decorative corner glow */}
-        <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-blue-500/5 blur-3xl transition-all duration-500 group-hover:bg-blue-500/10" />
+        <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-blue-500/5 blur-3xl" />
 
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
@@ -240,7 +240,7 @@ export default function DashboardCharts({
               </CardDescription>
             </div>
             <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-1 text-[11px] font-semibold text-blue-600 border border-blue-500/20">
-              <Sparkles className="h-3 w-3" />
+              <ChartColumnStacked className="h-3 w-3" />
               Top Categories
             </span>
           </div>

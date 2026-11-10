@@ -15,7 +15,7 @@ export function Navbar({
 }: NavbarProps) {
   return (
     <nav
-      className={`w-full border-b border-slate-200/70 bg-white/95 backdrop-blur-sm sticky top-0 z-40 shadow-sm ${className}`}
+      className={`w-full border-b border-slate-200/70 bg-white/95 sticky top-0 z-40 shadow-sm ${className}`}
     >
       <div className={`mx-auto ${maxWidth} text-sm`}>
         {/* ── แถวหลัก: Logo + Nav (ทุก breakpoint) ── */}

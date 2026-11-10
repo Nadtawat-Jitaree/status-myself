@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, RefreshCw, ShieldAlert, Sparkles } from "lucide-react";
+import { ArrowLeft, RefreshCw, ShieldAlert } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 

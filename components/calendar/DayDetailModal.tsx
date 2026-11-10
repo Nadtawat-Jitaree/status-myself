@@ -17,7 +17,7 @@ import {
   Flame,
   ArrowRight,
   Clock,
-  Sparkles,
+  NotebookPen,
   Save,
   Check,
   Tag as TagIcon,
@@ -355,7 +355,7 @@ export default function DayDetailModal({
           <div className="rounded-2xl border bg-card/80 p-3 sm:p-4 shadow-sm space-y-2 sm:space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 truncate">
-                <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                <NotebookPen className="h-3.5 w-3.5 text-black shrink-0" />
                 <span className="truncate">บันทึกสรุปประจำวัน (Daily Notes)</span>
               </span>
               <button

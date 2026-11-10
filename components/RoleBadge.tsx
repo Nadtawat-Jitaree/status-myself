@@ -6,7 +6,6 @@ import {
   Crown,
   User,
   Clock,
-  Sparkles,
   CheckCircle2,
   XCircle,
   Calendar,

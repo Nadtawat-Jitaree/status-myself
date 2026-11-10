@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   CheckCircle2,
   Crown,
-  Sparkles,
+  CircleCheck,
   BarChart3,
   LayoutGrid,
   ArrowRight,
@@ -76,7 +76,7 @@ export default function SubscriptionSuccessPage({
           {/* Text */}
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
-              <Sparkles className="w-3.5 h-3.5" /> ชำระเงินสำเร็จ
+              <CircleCheck className="w-3.5 h-3.5" /> ชำระเงินสำเร็จ
             </div>
             <h1 className="text-2xl font-black text-slate-900 dark:text-white">
               ยินดีต้อนรับสู่ Premium!

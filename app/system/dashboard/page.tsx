@@ -21,15 +21,11 @@ import {
   FolderKanban,
   ArrowRight,
   Calendar,
-  Sparkles,
   Pin,
   Plus,
   Compass,
-  CheckCheck,
   ListTodo,
-  TrendingUp,
   AlertCircle,
-  ExternalLink,
 } from "lucide-react";
 
 // Helper สำหรับวันที่ภาษาไทย
@@ -347,12 +343,12 @@ async function DashboardData() {
       {/* 2. Top Metric Cards (4 Cards Grid with Color Theme) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {/* Card 1: โน้ตทั้งหมด */}
-        <div className="group relative overflow-hidden rounded-3xl border border-blue-200/50 dark:border-blue-900/30 bg-gradient-to-br from-blue-500/10 via-card to-card p-4 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:border-blue-400/60">
+        <div className="group relative overflow-hidden rounded-3xl border border-blue-200/50 dark:border-blue-900/30 bg-gradient-to-br from-blue-500/10 via-card to-card p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
               บันทึกทั้งหมด
             </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 group-hover:scale-110 transition-transform">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600">
               <FileText className="h-5 w-5" />
             </div>
           </div>
@@ -370,12 +366,12 @@ async function DashboardData() {
         </div>
 
         {/* Card 2: สำเร็จแล้ว */}
-        <div className="group relative overflow-hidden rounded-3xl border border-emerald-200/50 dark:border-emerald-900/30 bg-gradient-to-br from-emerald-500/10 via-card to-card p-4 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:border-emerald-400/60">
+        <div className="group relative overflow-hidden rounded-3xl border border-emerald-200/50 dark:border-emerald-900/30 bg-gradient-to-br from-emerald-500/10 via-card to-card p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               เสร็จสิ้นสมบูรณ์
             </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 group-hover:scale-110 transition-transform">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
               <CheckCircle2 className="h-5 w-5" />
             </div>
           </div>
@@ -399,12 +395,12 @@ async function DashboardData() {
         </div>
 
         {/* Card 3: งานค้าง */}
-        <div className="group relative overflow-hidden rounded-3xl border border-amber-200/50 dark:border-amber-900/30 bg-gradient-to-br from-amber-500/10 via-card to-card p-4 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:border-amber-400/60">
+        <div className="group relative overflow-hidden rounded-3xl border border-amber-200/50 dark:border-amber-900/30 bg-gradient-to-br from-amber-500/10 via-card to-card p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
               งานค้าง & รอดำเนินการ
             </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 group-hover:scale-110 transition-transform">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
               <Clock className="h-5 w-5" />
             </div>
           </div>
@@ -421,12 +417,12 @@ async function DashboardData() {
         </div>
 
         {/* Card 4: โน้ตสำคัญ */}
-        <div className="group relative overflow-hidden rounded-3xl border border-rose-200/50 dark:border-rose-900/30 bg-gradient-to-br from-rose-500/10 via-card to-card p-4 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:border-rose-400/60">
+        <div className="group relative overflow-hidden rounded-3xl border border-rose-200/50 dark:border-rose-900/30 bg-gradient-to-br from-rose-500/10 via-card to-card p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
               สำคัญ & เร่งด่วน
             </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 group-hover:scale-110 transition-transform">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600">
               <Star className="h-5 w-5" />
             </div>
           </div>
@@ -725,7 +721,7 @@ async function DashboardData() {
               <Compass className="h-3.5 w-3.5" />
             </span>
             <h3 className="text-sm font-bold text-foreground">
-              พื้นที่ทำงานหลัก (Workspace Shortcuts)
+              พื้นที่ทำงานหลัก
             </h3>
           </div>
           <span className="text-xs text-muted-foreground">
@@ -737,7 +733,7 @@ async function DashboardData() {
           {/* 1. โน้ตทั่วไป */}
           <Link
             href="/system/notes/normal"
-            className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-blue-200/60 dark:border-blue-900/40 bg-gradient-to-b from-card to-blue-500/5 p-4 transition-all duration-200 hover:-translate-y-1 hover:border-blue-400 hover:shadow-md"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-blue-200/60 dark:border-blue-900/40 bg-gradient-to-b from-card to-blue-500/5 p-4"
           >
             <div className="flex items-start justify-between">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100/80 p-2 text-blue-600">
@@ -750,7 +746,7 @@ async function DashboardData() {
                   unoptimized
                 />
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-blue-600" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:text-blue-600" />
             </div>
             <div className="mt-3">
               <h4 className="font-bold text-sm text-foreground group-hover:text-blue-600 transition-colors">
@@ -765,7 +761,7 @@ async function DashboardData() {
           {/* 2. โน้ตมหาวิทยาลัย */}
           <Link
             href="/system/notes/school"
-            className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-emerald-200/60 dark:border-emerald-900/40 bg-gradient-to-b from-card to-emerald-500/5 p-4 transition-all duration-200 hover:-translate-y-1 hover:border-emerald-400 hover:shadow-md"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-emerald-200/60 dark:border-emerald-900/40 bg-gradient-to-b from-card to-emerald-500/5 p-4"
           >
             <div className="flex items-start justify-between">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100/80 p-2 text-emerald-600">
@@ -778,7 +774,7 @@ async function DashboardData() {
                   unoptimized
                 />
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-emerald-600" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:text-emerald-600" />
             </div>
             <div className="mt-3">
               <h4 className="font-bold text-sm text-foreground group-hover:text-emerald-600 transition-colors">
@@ -793,7 +789,7 @@ async function DashboardData() {
           {/* 3. โปรเจกต์ & ภารกิจ */}
           <Link
             href="/system/projects"
-            className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-purple-200/60 dark:border-purple-900/40 bg-gradient-to-b from-card to-purple-500/5 p-4 transition-all duration-200 hover:-translate-y-1 hover:border-purple-400 hover:shadow-md"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-purple-200/60 dark:border-purple-900/40 bg-gradient-to-b from-card to-purple-500/5 p-4 "
           >
             <div className="flex items-start justify-between">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100/80 p-2 text-purple-600">
@@ -806,7 +802,7 @@ async function DashboardData() {
                   unoptimized
                 />
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-purple-600" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:text-purple-600" />
             </div>
             <div className="mt-3">
               <h4 className="font-bold text-sm text-foreground group-hover:text-purple-600 transition-colors">
@@ -821,7 +817,7 @@ async function DashboardData() {
           {/* 4. ปฏิทินรายวัน */}
           <Link
             href="/system/calendar"
-            className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-amber-200/60 dark:border-amber-900/40 bg-gradient-to-b from-card to-amber-500/5 p-4 transition-all duration-200 hover:-translate-y-1 hover:border-amber-400 hover:shadow-md"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-amber-200/60 dark:border-amber-900/40 bg-gradient-to-b from-card to-amber-500/5 p-4 "
           >
             <div className="flex items-start justify-between">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100/80 p-2 text-amber-600">
@@ -834,7 +830,7 @@ async function DashboardData() {
                   unoptimized
                 />
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-amber-600" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:text-amber-600" />
             </div>
             <div className="mt-3">
               <h4 className="font-bold text-sm text-foreground group-hover:text-amber-600 transition-colors">
@@ -849,7 +845,7 @@ async function DashboardData() {
           {/* 5. ทักษะ & แต้มสะสม */}
           <Link
             href="/system/qualities"
-            className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-indigo-200/60 dark:border-indigo-900/40 bg-gradient-to-b from-card to-indigo-500/5 p-4 transition-all duration-200 hover:-translate-y-1 hover:border-indigo-400 hover:shadow-md"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-indigo-200/60 dark:border-indigo-900/40 bg-gradient-to-b from-card to-indigo-500/5 p-4 "
           >
             <div className="flex items-start justify-between">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100/80 p-2 text-indigo-600">
@@ -862,7 +858,7 @@ async function DashboardData() {
                   unoptimized
                 />
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-indigo-600" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:text-indigo-600" />
             </div>
             <div className="mt-3">
               <h4 className="font-bold text-sm text-foreground group-hover:text-indigo-600 transition-colors">

@@ -3,7 +3,7 @@
 import React from "react";
 import { BoardNoteItem } from "@/app/actions/board";
 import { BoardNoteCard } from "./BoardNoteCard";
-import { Trophy, Flame, Sparkles } from "lucide-react";
+import { Trophy, Flame } from "lucide-react";
 
 interface TopBoardSectionProps {
   topNotes: BoardNoteItem[];

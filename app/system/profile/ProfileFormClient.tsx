@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import {
   User,
   Upload,
-  Sparkles,
+  SquareUser,
   Check,
   Save,
   ExternalLink,
@@ -289,7 +289,7 @@ export function ProfileFormClient({ initialProfile }: ProfileFormClientProps) {
               <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-foreground" />
+                    <SquareUser className="w-5 h-5 text-foreground" />
                     <CardTitle className="text-base font-bold">
                       รูปภาพโปรไฟล์ (Avatar)
                     </CardTitle>
