@@ -423,13 +423,17 @@ export default function NotesPage({ noteType, initialData }: Props) {
     } else {
       initData();
     }
+
     const supabase = createClient();
-    let realtimeChannel: any = null;
+    let isMounted = true;
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      realtimeChannel = supabase
-        .channel(`user-notes-channel-${user.id}`)
+      if (!user || !isMounted) return;
+
+      const channelName = `user-notes-channel-${user.id}-${Date.now()}`;
+      const channel = supabase
+        .channel(channelName)
         .on(
           "postgres_changes",
           {
@@ -451,9 +455,16 @@ export default function NotesPage({ noteType, initialData }: Props) {
           () => loadCategories(),
         )
         .subscribe();
+
+      if (!isMounted) {
+        supabase.removeChannel(channel);
+      } else {
+        realtimeChannel = channel;
+      }
     });
 
     return () => {
+      isMounted = false;
       if (realtimeChannel) {
         supabase.removeChannel(realtimeChannel);
       }

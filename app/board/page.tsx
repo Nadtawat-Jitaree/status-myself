@@ -12,11 +12,8 @@ import { getQualities } from "@/app/actions/qualities";
 import { TopBoardSection } from "@/components/TopBoardSection";
 import { BoardNoteCard } from "@/components/BoardNoteCard";
 import { BoardFilterBar } from "@/components/BoardFilterBar";
-import { NavbarLeft } from "@/components/navbar-left";
-import { NavbarRight } from "@/components/navbar-right";
-import { EnvVarWarning } from "@/components/env-var-warning";
+import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { hasEnvVars } from "@/lib/utils";
 import {
   MessagesSquare,
   ChevronLeft,
@@ -298,33 +295,9 @@ function BoardSkeleton() {
 
 export default function BoardPage({ searchParams }: BoardPageProps) {
   return (
-    <div className="min-h-screen bg-slate-50/70 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50/30 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* Top Navbar */}
-      <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white sticky top-0 z-40">
-        <div className="w-full max-w-7xl flex justify-between items-center p-2 sm:p-3 sm:px-5 text-sm">
-          <div className="flex gap-2 sm:gap-5 items-center font-semibold">
-            <Suspense
-              fallback={
-                <div className="w-10 h-10 animate-pulse bg-gray-200 rounded-xl"></div>
-              }
-            >
-              <NavbarLeft />
-            </Suspense>
-          </div>
-
-          {!hasEnvVars ? (
-            <EnvVarWarning />
-          ) : (
-            <Suspense
-              fallback={
-                <div className="w-20 h-8 animate-pulse bg-gray-200 rounded-md"></div>
-              }
-            >
-              <NavbarRight />
-            </Suspense>
-          )}
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Banner */}
       <section className="bg-white border-b border-slate-200 py-10 sm:py-14 px-4 sm:px-6">
@@ -359,13 +332,13 @@ export default function BoardPage({ searchParams }: BoardPageProps) {
       </section>
 
       {/* Main Board Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 md:p-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-8">
         <Suspense fallback={<BoardSkeleton />}>
           <BoardContent searchParams={searchParams} />
         </Suspense>
       </main>
 
-      <Footer variant="default" />
+      <Footer variant="system" />
     </div>
   );
 }
