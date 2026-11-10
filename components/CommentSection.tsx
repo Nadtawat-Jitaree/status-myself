@@ -68,7 +68,29 @@ export function CommentSection({
 
     startTransition(async () => {
       try {
-        await addNoteComment(noteId, contentToSend);
+        const res = await addNoteComment(noteId, contentToSend);
+        if (res?.comment) {
+          // อัปเดต UI ทันทีไม่ต้องรอ fetchComments() ข้าม Network
+          setComments((prev) => [
+            ...prev,
+            {
+              id: res.comment.id,
+              note_id: res.comment.note_id,
+              user_id: res.comment.user_id,
+              content: res.comment.content,
+              created_at: res.comment.created_at,
+              updated_at: res.comment.updated_at,
+              author: {
+                id: res.comment.user_id,
+                username: "ฉัน",
+                display_name: "ฉัน",
+                avatar_type: "icon",
+                avatar_icon: "User",
+              },
+              isOwner: true,
+            },
+          ]);
+        }
         await fetchComments();
       } catch (err: any) {
         Swal.fire("ข้อผิดพลาด", err?.message || "ไม่สามารถส่งความคิดเห็นได้", "error");

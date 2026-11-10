@@ -175,53 +175,48 @@ export async function getBoardNotes(params: {
   const noteIds = rawNotes.map((n) => n.id);
   const userIds = Array.from(new Set(rawNotes.map((n) => n.user_id)));
 
-  // 2. ดึงข้อมูล Authors (Profiles) ในคิวรีเดียว
-  let profilesMap = new Map<string, any>();
-  if (userIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("*")
-      .in("id", userIds);
+  // 2-4. ดึงข้อมูล Authors (Profiles), Reactions และ Comments แบบ Parallel เพื่อลด Network Roundtrips (~150-250ms)
+  const [profilesRes, reactionsRes, commentsRes] = await Promise.all([
+    userIds.length > 0
+      ? supabase.from("profiles").select("*").in("id", userIds)
+      : Promise.resolve({ data: [] }),
+    noteIds.length > 0
+      ? supabase
+          .from("note_reactions")
+          .select("note_id, user_id, type")
+          .in("note_id", noteIds)
+      : Promise.resolve({ data: [] }),
+    noteIds.length > 0
+      ? supabase
+          .from("note_comments")
+          .select("note_id")
+          .in("note_id", noteIds)
+      : Promise.resolve({ data: [] }),
+  ]);
 
-    (profiles || []).forEach((p) => profilesMap.set(p.id, p));
-  }
+  const profilesMap = new Map<string, any>();
+  (profilesRes.data || []).forEach((p: any) => profilesMap.set(p.id, p));
 
-  // 3. ดึง Reactions สำหรับโน้ตชุดนี้
-  let likesMap = new Map<string, number>();
-  let dislikesMap = new Map<string, number>();
-  let userReactionsMap = new Map<string, "like" | "dislike">();
+  const likesMap = new Map<string, number>();
+  const dislikesMap = new Map<string, number>();
+  const userReactionsMap = new Map<string, "like" | "dislike">();
 
-  if (noteIds.length > 0) {
-    const { data: reactions } = await supabase
-      .from("note_reactions")
-      .select("note_id, user_id, type")
-      .in("note_id", noteIds);
+  (reactionsRes.data || []).forEach((r: any) => {
+    if (r.type === "like") {
+      likesMap.set(r.note_id, (likesMap.get(r.note_id) || 0) + 1);
+    } else if (r.type === "dislike") {
+      dislikesMap.set(r.note_id, (dislikesMap.get(r.note_id) || 0) + 1);
+    }
 
-    (reactions || []).forEach((r) => {
-      if (r.type === "like") {
-        likesMap.set(r.note_id, (likesMap.get(r.note_id) || 0) + 1);
-      } else if (r.type === "dislike") {
-        dislikesMap.set(r.note_id, (dislikesMap.get(r.note_id) || 0) + 1);
-      }
+    if (currentUser && r.user_id === currentUser.id) {
+      userReactionsMap.set(r.note_id, r.type as "like" | "dislike");
+    }
+  });
 
-      if (currentUser && r.user_id === currentUser.id) {
-        userReactionsMap.set(r.note_id, r.type as "like" | "dislike");
-      }
-    });
-  }
-
-  // 4. ดึง Comment Counts
-  let commentsMap = new Map<string, number>();
-  if (noteIds.length > 0) {
-    const { data: comments } = await supabase
-      .from("note_comments")
-      .select("note_id")
-      .in("note_id", noteIds);
-
-    (comments || []).forEach((c) => {
-      commentsMap.set(c.note_id, (commentsMap.get(c.note_id) || 0) + 1);
-    });
-  }
+  const commentsMap = new Map<string, number>();
+  (commentsRes.data || []).forEach((c: any) => {
+    commentsMap.set(c.note_id, (commentsMap.get(c.note_id) || 0) + 1);
+  });
 
   // 5. รวมผลลัพธ์
   let notes: BoardNoteItem[] = rawNotes.map((n) => {
@@ -353,43 +348,38 @@ export async function getTopBoardNotes(): Promise<BoardNoteItem[]> {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
 
-  // ดึง likes ทั้งหมดของโน้ตที่แชร์
-  const { data: allLikes, error: likesError } = await supabase
+  // 1. ดึงโน้ตที่เปิดแชร์สาธารณะล่าสุดเป็นกลุ่มตัวเลือก Top Board (หลีกเลี่ยง Full Table Scan บน note_reactions ทั้งระบบ)
+  const { data: candidateSharedNotes } = await supabase
+    .from("notes")
+    .select("id")
+    .eq("is_shared", true)
+    .not("share_token", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (!candidateSharedNotes || candidateSharedNotes.length === 0) return [];
+  const candidateIds = candidateSharedNotes.map((n) => n.id);
+
+  // ดึง likes เฉพาะกลุ่มโน้ตที่เปิดแชร์
+  const { data: candidateLikes } = await supabase
     .from("note_reactions")
     .select("note_id")
-    .eq("type", "like");
+    .eq("type", "like")
+    .in("note_id", candidateIds);
 
   // นับจำนวน Like ต่อ Note ID
   const likeCounts: Record<string, number> = {};
-  (allLikes || []).forEach((item) => {
+  (candidateLikes || []).forEach((item) => {
     likeCounts[item.note_id] = (likeCounts[item.note_id] || 0) + 1;
   });
 
   // เรียงลำดับ note_id ตาม Like มากไปน้อย
-  const sortedLikedNoteIds = Object.keys(likeCounts).sort(
-    (a, b) => likeCounts[b] - likeCounts[a]
+  const sortedLikedNoteIds = [...candidateIds].sort(
+    (a, b) => (likeCounts[b] || 0) - (likeCounts[a] || 0)
   );
 
-  // ดึง Top notes
-  let targetNoteIds = sortedLikedNoteIds.slice(0, 3);
-
-  // หากมีโน้ตที่ถูก Like ไม่ถึง 3 รายการ ให้ดึงโน้ตที่แชร์ล่าสุดมาเติมให้ครบ 3
-  if (targetNoteIds.length < 3) {
-    const { data: recentNotes } = await supabase
-      .from("notes")
-      .select("id")
-      .eq("is_shared", true)
-      .not("share_token", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(3);
-
-    (recentNotes || []).forEach((rn) => {
-      if (!targetNoteIds.includes(rn.id) && targetNoteIds.length < 3) {
-        targetNoteIds.push(rn.id);
-      }
-    });
-  }
-
+  // ดึง Top 3 notes
+  const targetNoteIds = sortedLikedNoteIds.slice(0, 3);
   if (targetNoteIds.length === 0) return [];
 
   // ดึงข้อมูลเต็มของโน้ต Top 3
@@ -421,26 +411,30 @@ export async function getTopBoardNotes(): Promise<BoardNoteItem[]> {
   if (error || !rawNotes) return [];
 
   const userIds = Array.from(new Set(rawNotes.map((n) => n.user_id)));
-  const profilesMap = new Map<string, any>();
-  if (userIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("*")
-      .in("id", userIds);
-    (profiles || []).forEach((p) => profilesMap.set(p.id, p));
-  }
 
-  // ดึง reactions และ comments
-  const { data: reactions } = await supabase
-    .from("note_reactions")
-    .select("note_id, user_id, type")
-    .in("note_id", targetNoteIds);
+  // ดึง Profiles, Reactions และ Comments ของ Top 3 แบบ Parallel เพื่อความเร็วสูงสุด
+  const [profilesRes, reactionsRes, commentsRes] = await Promise.all([
+    userIds.length > 0
+      ? supabase.from("profiles").select("*").in("id", userIds)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("note_reactions")
+      .select("note_id, user_id, type")
+      .in("note_id", targetNoteIds),
+    supabase
+      .from("note_comments")
+      .select("note_id")
+      .in("note_id", targetNoteIds),
+  ]);
+
+  const profilesMap = new Map<string, any>();
+  (profilesRes.data || []).forEach((p: any) => profilesMap.set(p.id, p));
 
   const likesMap = new Map<string, number>();
   const dislikesMap = new Map<string, number>();
   const userReactionsMap = new Map<string, "like" | "dislike">();
 
-  (reactions || []).forEach((r) => {
+  (reactionsRes.data || []).forEach((r: any) => {
     if (r.type === "like") {
       likesMap.set(r.note_id, (likesMap.get(r.note_id) || 0) + 1);
     } else if (r.type === "dislike") {
@@ -451,13 +445,8 @@ export async function getTopBoardNotes(): Promise<BoardNoteItem[]> {
     }
   });
 
-  const { data: comments } = await supabase
-    .from("note_comments")
-    .select("note_id")
-    .in("note_id", targetNoteIds);
-
   const commentsMap = new Map<string, number>();
-  (comments || []).forEach((c) => {
+  (commentsRes.data || []).forEach((c: any) => {
     commentsMap.set(c.note_id, (commentsMap.get(c.note_id) || 0) + 1);
   });
 

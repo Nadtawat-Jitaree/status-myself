@@ -424,23 +424,39 @@ export default function NotesPage({ noteType, initialData }: Props) {
       initData();
     }
     const supabase = createClient();
+    let realtimeChannel: any = null;
 
-    const realtimeChannel = supabase
-      .channel("notes-realtime-channel")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notes" },
-        () => loadNotes(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "note_categories" },
-        () => loadCategories(),
-      )
-      .subscribe();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      realtimeChannel = supabase
+        .channel(`user-notes-channel-${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "notes",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => loadNotes(),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "note_categories",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => loadCategories(),
+        )
+        .subscribe();
+    });
 
     return () => {
-      supabase.removeChannel(realtimeChannel);
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
     };
   }, [noteType]);
 

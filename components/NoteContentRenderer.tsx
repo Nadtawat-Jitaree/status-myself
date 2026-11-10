@@ -163,7 +163,7 @@ function renderInline(text: string): React.ReactNode {
   });
 }
 
-export default function NoteContentRenderer({
+function NoteContentRendererComponent({
   content,
   className,
   isCompact = false,
@@ -417,3 +417,6 @@ export default function NoteContentRenderer({
     </div>
   );
 }
+
+const NoteContentRenderer = React.memo(NoteContentRendererComponent);
+export default NoteContentRenderer;

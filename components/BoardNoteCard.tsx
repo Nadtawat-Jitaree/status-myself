@@ -45,7 +45,7 @@ interface BoardNoteCardProps {
   isMyNotesView?: boolean;
 }
 
-export function BoardNoteCard({
+function BoardNoteCardComponent({
   note,
   rank,
   categories = [],
@@ -624,3 +624,5 @@ export function BoardNoteCard({
     </>
   );
 }
+
+export const BoardNoteCard = React.memo(BoardNoteCardComponent);

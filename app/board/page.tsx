@@ -68,7 +68,10 @@ async function BoardContent({ searchParams }: BoardPageProps) {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
 
-  // ดึงข้อมูลโน้ต, สถิติ, Top 3 Notes และหมวดหมู่ของผู้ใช้พร้อมกันแบบ Parallel
+  const isDefaultView =
+    currentPage === 1 && !searchQuery && sortParam === "latest" && filterParam === "all";
+
+  // ดึงข้อมูลโน้ต, สถิติ, Top 3 Notes (เฉพาะ Default View) และหมวดหมู่ของผู้ใช้พร้อมกันแบบ Parallel
   const [boardData, topNotes, stats, userCategories, userQualities] = await Promise.all([
     getBoardNotes({
       page: currentPage,
@@ -78,7 +81,7 @@ async function BoardContent({ searchParams }: BoardPageProps) {
       filter: filterParam,
       shareStatus: shareStatusParam,
     }),
-    getTopBoardNotes(),
+    isDefaultView ? getTopBoardNotes() : Promise.resolve([]),
     getBoardStats(),
     currentUser ? getAllUserCategories() : Promise.resolve([]),
     currentUser ? getQualities() : Promise.resolve([]),
@@ -97,9 +100,6 @@ async function BoardContent({ searchParams }: BoardPageProps) {
     const qs = params.toString();
     return qs ? `/board?${qs}` : "/board";
   };
-
-  const isDefaultView =
-    currentPage === 1 && !searchQuery && sortParam === "latest" && filterParam === "all";
 
   return (
     <>
