@@ -291,7 +291,7 @@ export default function CalendarNoteModal({
                     setEditingNote(null)
                   }
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-xl border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="flex h-8 w-8 items-center justify-center rounded-md border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
                 title="ย้อนกลับ"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -325,7 +325,7 @@ export default function CalendarNoteModal({
 
           <button
             onClick={onClose}
-            className="rounded-full p-1.5 sm:p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-md p-1.5 sm:p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <X className="h-5 w-5" />
           </button>
@@ -400,14 +400,14 @@ export default function CalendarNoteModal({
               <button
                 type="button"
                 onClick={() => setEditingNote(null)}
-                className="rounded-xl border bg-background px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                className="rounded-md border bg-background px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
               >
                 ยกเลิก
               </button>
               <button
                 type="submit"
                 disabled={isPending || !editTitle.trim()}
-                className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
               >
                 {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 บันทึกการแก้ไข
@@ -454,7 +454,7 @@ export default function CalendarNoteModal({
                 <button
                   type="button"
                   onClick={() => handleCopyContent(viewingNote.content || viewingNote.title)}
-                  className="flex items-center gap-1 rounded-lg border bg-background px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                  className="flex items-center gap-1 rounded-md border bg-background px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted"
                   title="คัดลอกข้อความ"
                 >
                   {isCopied ? (
@@ -473,7 +473,7 @@ export default function CalendarNoteModal({
                 <button
                   type="button"
                   onClick={() => setEditingNote(viewingNote)}
-                  className="flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20"
+                  className="flex items-center gap-1 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                   <span>แก้ไข</span>
@@ -482,7 +482,7 @@ export default function CalendarNoteModal({
                 <button
                   type="button"
                   onClick={() => handleDeleteNote(viewingNote)}
-                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
                   title="ลบบันทึก"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -548,7 +548,7 @@ export default function CalendarNoteModal({
               <div className="flex items-center rounded-xl border bg-muted/40 p-1">
                 <button
                   onClick={() => setActiveTab('all')}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition-colors ${
                     activeTab === 'all'
                       ? 'bg-background text-foreground shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -562,7 +562,7 @@ export default function CalendarNoteModal({
 
                 <button
                   onClick={() => setActiveTab('normal')}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition-colors ${
                     activeTab === 'normal'
                       ? 'bg-blue-500 text-white shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -577,7 +577,7 @@ export default function CalendarNoteModal({
 
                 <button
                   onClick={() => setActiveTab('school')}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition-colors ${
                     activeTab === 'school'
                       ? 'bg-purple-600 text-white shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -704,7 +704,7 @@ export default function CalendarNoteModal({
                         <button
                           type="button"
                           onClick={() => handleTogglePin(note)}
-                          className={`rounded-lg p-1.5 transition-colors ${
+                          className={`rounded-md p-1.5 transition-colors ${
                             note.is_pinned
                               ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/40'
                               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -717,7 +717,7 @@ export default function CalendarNoteModal({
                         <button
                           type="button"
                           onClick={() => setViewingNote(note)}
-                          className="flex items-center gap-1 rounded-lg border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                          className="flex items-center gap-1 rounded-md border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
                           title="ดูรายละเอียด"
                         >
                           <Eye className="h-3.5 w-3.5 text-primary" />
@@ -727,7 +727,7 @@ export default function CalendarNoteModal({
                         <button
                           type="button"
                           onClick={() => setEditingNote(note)}
-                          className="flex items-center gap-1 rounded-lg border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                          className="flex items-center gap-1 rounded-md border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
                           title="แก้ไขบันทึก"
                         >
                           <Edit2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
@@ -737,7 +737,7 @@ export default function CalendarNoteModal({
                         <button
                           type="button"
                           onClick={() => handleDeleteNote(note)}
-                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
                           title="ลบบันทึก"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -758,7 +758,7 @@ export default function CalendarNoteModal({
           </span>
           <button
             onClick={onClose}
-            className="w-full sm:w-auto rounded-xl border bg-background px-4 py-1.5 text-xs font-semibold text-foreground hover:bg-muted text-center"
+            className="w-full sm:w-auto rounded-md border bg-background px-4 py-1.5 text-xs font-semibold text-foreground hover:bg-muted text-center"
           >
             ปิดหน้าต่าง
           </button>

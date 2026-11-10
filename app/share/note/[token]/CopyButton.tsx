@@ -23,7 +23,7 @@ export default function CopyButton({ text }: { text: string }) {
       variant="outline"
       size="sm"
       onClick={handleCopy}
-      className="h-8 rounded-xl px-3 text-xs flex items-center gap-1.5 shrink-0"
+      className="h-8 rounded-md px-3 text-xs flex items-center gap-1.5 shrink-0"
     >
       {copied ? (
         <>

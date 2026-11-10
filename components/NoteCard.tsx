@@ -11,7 +11,7 @@ export default function NoteCard() {
     <>
       <button
         onClick={() => setOpenModal(true)}
-        className="group relative flex w-full max-w-sm flex-col items-center justify-center gap-5 overflow-hidden rounded-3xl border border-border bg-white p-10 shadow-sm"
+        className="group relative flex w-full max-w-sm flex-col items-center justify-center gap-5 overflow-hidden rounded-md border border-border bg-white p-10 shadow-sm"
       >
         <Image
           src="/note.webp"

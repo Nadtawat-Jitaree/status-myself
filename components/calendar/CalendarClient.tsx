@@ -275,15 +275,15 @@ export default function CalendarClient() {
         <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
           <button
             onClick={handleGoToday}
-            className="rounded-xl border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted shrink-0"
+            className="rounded-md border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted shrink-0"
           >
             วันนี้
           </button>
 
-          <div className="flex items-center rounded-xl border bg-card p-1 shadow-sm flex-1 sm:flex-initial justify-between sm:justify-start">
+          <div className="flex items-center rounded-md border bg-card p-1 shadow-sm flex-1 sm:flex-initial justify-between sm:justify-start">
             <button
               onClick={handlePrevMonth}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground shrink-0"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground shrink-0"
               title="เดือนก่อนหน้า"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -295,7 +295,7 @@ export default function CalendarClient() {
 
             <button
               onClick={handleNextMonth}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground shrink-0"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground shrink-0"
               title="เดือนถัดไป"
             >
               <ChevronRight className="h-4 w-4" />

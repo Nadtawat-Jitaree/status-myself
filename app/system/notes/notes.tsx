@@ -1152,7 +1152,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                             }
                           }
                         }}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
                           isActive
                             ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
                             : "bg-background text-muted-foreground border-border hover:bg-accent hover:text-foreground"
@@ -1207,7 +1207,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                           }
                         }
                       }}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
                         isActive
                           ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
                           : "bg-background text-muted-foreground border-border hover:bg-accent hover:text-foreground"
@@ -1237,7 +1237,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   setSelectedYear("all");
                   setSelectedSemester("all");
                 }}
-                className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline px-1.5 py-0.5 rounded cursor-pointer ml-auto"
+                className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline px-1.5 py-0.5 rounded-md cursor-pointer ml-auto"
               >
                 <span>รีเซ็ตปี/เทอม</span>
                 <span>×</span>
@@ -1276,7 +1276,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
               <Button
                 type="button"
                 variant="outline"
-                className="flex h-9 min-w-[130px] sm:min-w-[160px] max-w-[220px] justify-between px-3 text-xs sm:text-sm bg-background font-normal border-border hover:bg-accent rounded-xl"
+                className="flex h-9 min-w-[130px] sm:min-w-[160px] max-w-[220px] justify-between px-3 text-xs sm:text-sm bg-background font-normal border-border hover:bg-accent rounded-md"
                 onClick={() => {
                   setModalFilterYear(selectedYear);
                   setModalFilterSemester(selectedSemester);
@@ -1313,7 +1313,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
               </Button>
 
               {/* Total Filtered Count Badge */}
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-background border text-xs font-semibold text-muted-foreground shrink-0 shadow-2xs">
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-background border text-xs font-semibold text-muted-foreground shrink-0 shadow-2xs">
                 <span>พบ</span>
                 <span className="text-foreground font-bold">{filteredNotes.length}</span>
                 <span>โน้ต</span>
@@ -1392,7 +1392,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                     key={tab.id}
                     type="button"
                     onClick={() => setStatusFilter(tab.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer transition-all ${
                       isActive
                         ? tab.activeCls
                         : "bg-background/90 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
@@ -1420,7 +1420,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
               <button
                 type="button"
                 onClick={() => setShareFilter(shareFilter === "shared" ? "all" : "shared")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer transition-all ${
                   shareFilter === "shared"
                     ? "bg-indigo-600 text-white border-indigo-600 shadow-xs dark:bg-indigo-600 dark:text-white"
                     : "bg-background/90 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
@@ -1443,7 +1443,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
               <button
                 type="button"
                 onClick={() => setShareFilter(shareFilter === "private" ? "all" : "private")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap border shrink-0 cursor-pointer transition-all ${
                   shareFilter === "private"
                     ? "bg-slate-800 text-white border-slate-800 shadow-xs dark:bg-slate-700"
                     : "bg-background/90 text-muted-foreground border-border hover:bg-accent hover:text-foreground"
@@ -1476,7 +1476,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   setShareFilter("all");
                   setSearchQuery("");
                 }}
-                className="flex items-center gap-1 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:underline shrink-0 font-medium px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer ml-auto"
+                className="flex items-center gap-1 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:underline shrink-0 font-medium px-2 py-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer ml-auto"
                 title="ล้างตัวกรองทั้งหมด"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -1533,7 +1533,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   <button
                     type="button"
                     onClick={() => handleTogglePin(note.id, !note.is_pinned)}
-                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                       note.is_pinned
                         ? "text-amber-500 bg-amber-50 dark:bg-amber-950/50"
                         : "text-muted-foreground/60 hover:text-amber-500 hover:bg-muted"
@@ -1548,7 +1548,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                       setShareItem({ type: "note", item: note });
                       setIsShareModalOpen(true);
                     }}
-                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                       note.is_shared
                         ? "text-sky-600 bg-sky-50 dark:bg-sky-950/50"
                         : "text-muted-foreground/60 hover:text-sky-600 hover:bg-muted"
@@ -1560,7 +1560,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   <button
                     type="button"
                     onClick={() => handleCopyContent(note.content)}
-                    className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                    className="p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                     title="คัดลอกข้อความ"
                   >
                     <Copy className="w-3.5 h-3.5" />
@@ -1802,7 +1802,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-full shrink-0"
+                  className="h-9 w-9 rounded-md shrink-0"
                   onClick={() => setIsFilterModalOpen(false)}
                 >
                   <X className="w-5 h-5" />
@@ -1831,7 +1831,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                       key={String(yTab.id)}
                       type="button"
                       onClick={() => setModalFilterYear(yTab.id)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 transition-colors ${
+                      className={`px-3 py-1 rounded-md text-xs font-semibold border shrink-0 transition-colors ${
                         modalFilterYear === yTab.id
                           ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
                           : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -1859,7 +1859,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                       key={String(sTab.id)}
                       type="button"
                       onClick={() => setModalFilterSemester(sTab.id)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border shrink-0 transition-colors ${
+                      className={`px-2.5 py-0.5 rounded-md text-xs font-semibold border shrink-0 transition-colors ${
                         modalFilterSemester === sTab.id
                           ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
                           : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -1883,7 +1883,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                     setFilterCategory("all");
                     setIsFilterModalOpen(false);
                   }}
-                  className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border text-center ${
+                  className={`group relative flex flex-col items-center justify-center p-4 rounded-md border text-center ${
                     filterCategory === "all"
                       ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm"
                       : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
@@ -1941,7 +1941,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                         setFilterCategory(cat.id);
                         setIsFilterModalOpen(false);
                       }}
-                      className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border text-center ${
+                      className={`group relative flex flex-col items-center justify-center p-4 rounded-md border text-center ${
                         isSelected
                           ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm"
                           : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
@@ -1996,7 +1996,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   setIsFilterModalOpen(false);
                   setIsCategoryModalOpen(true);
                 }}
-                className="group flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-muted hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                className="group flex flex-col items-center justify-center p-4 rounded-md border-2 border-dashed border-muted hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-primary"
               >
                 <div className="w-14 h-14 rounded-2xl bg-muted/60 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary mb-3">
                   <FolderPlus className="w-6 h-6" />
@@ -2030,7 +2030,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                     setShareItem({ type: "note", item: readingNote });
                     setIsShareModalOpen(true);
                   }}
-                  className={`h-9 rounded-xl px-3 text-xs flex items-center gap-1.5 ${
+                  className={`h-9 rounded-md px-3 text-xs flex items-center gap-1.5 ${
                     readingNote.is_shared
                       ? "bg-sky-50 text-sky-700 border-sky-300 font-semibold"
                       : "text-slate-600 hover:text-sky-600"
@@ -2047,7 +2047,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   variant="ghost"
                   size="icon"
                   onClick={() => setReadingNote(null)}
-                  className="h-9 w-9 rounded-full hover:bg-slate-100"
+                  className="h-9 w-9 rounded-md hover:bg-slate-100"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -2265,7 +2265,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsCategoryModalOpen(false)}
-                  className="h-8 w-8 rounded-full"
+                  className="h-8 w-8 rounded-md"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -2347,7 +2347,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                               key={y}
                               type="button"
                               onClick={() => setNewCategoryYear(y)}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                              className={`px-2.5 py-1 rounded-md text-xs font-semibold border transition-all ${
                                 newCategoryYear === y
                                   ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
                                   : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -2359,7 +2359,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                           <button
                             type="button"
                             onClick={() => setNewCategoryYear(null)}
-                            className={`px-2 py-1 rounded-lg text-xs border transition-all ${
+                            className={`px-2 py-1 rounded-md text-xs border transition-all ${
                               newCategoryYear === null
                                 ? "bg-slate-700 text-white border-slate-700"
                                 : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -2384,7 +2384,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                               key={s.id}
                               type="button"
                               onClick={() => setNewCategorySemester(s.id)}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                              className={`px-2.5 py-1 rounded-md text-xs font-semibold border transition-all ${
                                 newCategorySemester === s.id
                                   ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
                                   : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -2396,7 +2396,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                           <button
                             type="button"
                             onClick={() => setNewCategorySemester(null)}
-                            className={`px-2 py-1 rounded-lg text-xs border transition-all ${
+                            className={`px-2 py-1 rounded-md text-xs border transition-all ${
                               newCategorySemester === null
                                 ? "bg-slate-700 text-white border-slate-700"
                                 : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -2518,7 +2518,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                                       key={y}
                                       type="button"
                                       onClick={() => setEditingCategoryYear(y)}
-                                      className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all ${
+                                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all ${
                                         editingCategoryYear === y
                                           ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
                                           : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -2530,7 +2530,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                                   <button
                                     type="button"
                                     onClick={() => setEditingCategoryYear(null)}
-                                    className={`px-1.5 py-0.5 rounded text-[11px] border transition-all ${
+                                    className={`px-1.5 py-0.5 rounded-md text-[11px] border transition-all ${
                                       editingCategoryYear === null
                                         ? "bg-slate-700 text-white border-slate-700"
                                         : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -2555,7 +2555,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                                       key={s.id}
                                       type="button"
                                       onClick={() => setEditingCategorySemester(s.id)}
-                                      className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all ${
+                                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all ${
                                         editingCategorySemester === s.id
                                           ? "bg-indigo-500 text-white border-indigo-500 shadow-xs"
                                           : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -2567,7 +2567,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                                   <button
                                     type="button"
                                     onClick={() => setEditingCategorySemester(null)}
-                                    className={`px-1.5 py-0.5 rounded text-[11px] border transition-all ${
+                                    className={`px-1.5 py-0.5 rounded-md text-[11px] border transition-all ${
                                       editingCategorySemester === null
                                         ? "bg-slate-700 text-white border-slate-700"
                                         : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -2704,7 +2704,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
               </a>
               <button
                 onClick={() => setPreviewImageUrl(null)}
-                className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30"
+                className="p-2 rounded-md bg-white/20 text-white hover:bg-white/30"
                 title="ปิด"
               >
                 <X className="w-5 h-5" />

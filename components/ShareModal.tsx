@@ -195,7 +195,7 @@ export default function ShareModal({
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full shrink-0"
+            className="h-9 w-9 rounded-md shrink-0"
             onClick={onClose}
           >
             <X className="w-5 h-5" />
@@ -244,7 +244,7 @@ export default function ShareModal({
               size="sm"
               disabled={isUpdating}
               onClick={handleToggleShare}
-              className="rounded-xl px-4 text-xs font-medium"
+              className="rounded-md px-4 text-xs font-medium"
             >
               {isUpdating
                 ? "กำลังโหลด..."
@@ -270,7 +270,7 @@ export default function ShareModal({
                 <Button
                   type="button"
                   onClick={handleCopyLink}
-                  className="h-10 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-1.5 text-xs font-medium shrink-0"
+                  className="h-10 px-4 rounded-md bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-1.5 text-xs font-medium shrink-0"
                 >
                   {isCopied ? (
                     <>
@@ -341,7 +341,7 @@ export default function ShareModal({
           <Button
             type="button"
             variant="outline"
-            className="rounded-xl px-5"
+            className="rounded-md px-5"
             onClick={onClose}
           >
             ปิด

@@ -239,7 +239,7 @@ export function QualityExportModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -410,7 +410,7 @@ export function QualityExportModal({
                 type="button"
                 onClick={handleDownload}
                 disabled={isExporting}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 {isExporting ? (
                   <>
@@ -435,7 +435,7 @@ export function QualityExportModal({
                 <button
                   type="button"
                   onClick={() => setOrientation("landscape")}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition-colors ${
+                  className={`flex items-center justify-center gap-2 p-2.5 rounded-md border text-xs font-semibold transition-colors ${
                     orientation === "landscape"
                       ? "bg-primary text-primary-foreground border-primary shadow-xs"
                       : "bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -447,7 +447,7 @@ export function QualityExportModal({
                 <button
                   type="button"
                   onClick={() => setOrientation("portrait")}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition-colors ${
+                  className={`flex items-center justify-center gap-2 p-2.5 rounded-md border text-xs font-semibold transition-colors ${
                     orientation === "portrait"
                       ? "bg-primary text-primary-foreground border-primary shadow-xs"
                       : "bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted"

@@ -77,7 +77,7 @@ function ProjectPagination({
             disabled={!hasPrevPage || isPending}
             aria-label="หน้าแรก"
             className={cn(
-              "p-2 rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150 hidden sm:flex items-center justify-center",
+              "p-2 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150 hidden sm:flex items-center justify-center",
               !hasPrevPage && "opacity-30 pointer-events-none"
             )}
           >
@@ -91,7 +91,7 @@ function ProjectPagination({
           disabled={!hasPrevPage || isPending}
           aria-label="หน้าก่อนหน้า"
           className={cn(
-            "p-2 rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150 flex items-center justify-center",
+            "p-2 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150 flex items-center justify-center",
             !hasPrevPage && "opacity-30 pointer-events-none"
           )}
         >
@@ -120,7 +120,7 @@ function ProjectPagination({
                 disabled={isActive || isPending}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "min-w-9 h-9 px-2 flex items-center justify-center rounded-xl text-xs font-semibold transition-all duration-150",
+                  "min-w-9 h-9 px-2 flex items-center justify-center rounded-md text-xs font-semibold transition-all duration-150",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm scale-105 pointer-events-none"
                     : "bg-background border border-border text-foreground hover:bg-muted/60 hover:border-primary/40 active:scale-95"
@@ -138,7 +138,7 @@ function ProjectPagination({
           disabled={!hasNextPage || isPending}
           aria-label="หน้าถัดไป"
           className={cn(
-            "p-2 rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150 flex items-center justify-center",
+            "p-2 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150 flex items-center justify-center",
             !hasNextPage && "opacity-30 pointer-events-none"
           )}
         >
@@ -152,7 +152,7 @@ function ProjectPagination({
             disabled={!hasNextPage || isPending}
             aria-label="หน้าสุดท้าย"
             className={cn(
-              "p-2 rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150 hidden sm:flex items-center justify-center",
+              "p-2 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150 hidden sm:flex items-center justify-center",
               !hasNextPage && "opacity-30 pointer-events-none"
             )}
           >
@@ -387,7 +387,7 @@ export default function ProjectListClient({ initialData }: { initialData: Projec
               onClick={() => handleFilterStatus(tab.id)}
               disabled={isPending}
               className={cn(
-                "px-3 py-1.5 rounded-lg transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                "px-3 py-1.5 rounded-md transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
                 filterStatus === tab.id
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"

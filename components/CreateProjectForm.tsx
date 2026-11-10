@@ -46,7 +46,7 @@ export default function CreateProjectForm() {
         <button
           type="button"
           onClick={() => setShowTargetInput(!showTargetInput)}
-          className={`text-xs inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors ${
+          className={`text-xs inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-colors ${
             showTargetInput
               ? "bg-primary/10 border-primary/30 text-primary font-medium"
               : "bg-muted/50 hover:bg-muted text-muted-foreground"

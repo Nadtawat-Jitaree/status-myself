@@ -95,7 +95,7 @@ export function UserProfileModal({
         <div className="h-28 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
           <button
             onClick={onClose}
-            className="absolute top-3.5 right-3.5 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition"
+            className="absolute top-3.5 right-3.5 p-2 rounded-md bg-black/20 hover:bg-black/40 text-white transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -220,7 +220,7 @@ export function UserProfileModal({
           {/* Action button */}
           <button
             onClick={onClose}
-            className="w-full mt-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition"
+            className="w-full mt-6 py-2.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition"
           >
             ปิดหน้าต่าง
           </button>

@@ -163,7 +163,7 @@ export default function NoteTypeModal({
         {/* ปุ่มปิดมุมขวาบน */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+          className="absolute right-4 top-4 rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
           aria-label="ปิดหน้าต่าง"
         >
           <X className="w-5 h-5" />
@@ -272,7 +272,7 @@ export default function NoteTypeModal({
                 onClose();
                 router.push("/subscription");
               }}
-              className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold shadow-xs active:scale-95 transition-all"
+              className="inline-flex items-center gap-1 px-4 py-2 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold shadow-xs active:scale-95 transition-all"
             >
               <span>อัปเกรดเลย</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -284,7 +284,7 @@ export default function NoteTypeModal({
         <div className="mt-6 text-center">
           <button
             onClick={onClose}
-            className="rounded-xl px-6 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="rounded-md px-6 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             ปิดหน้าต่าง
           </button>

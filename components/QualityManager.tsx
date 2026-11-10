@@ -254,7 +254,7 @@ export function QualityManager({
           {/* Tab 1: รายการทั่วไป */}
           <button
             onClick={() => setActiveTab("qualities")}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0 ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-semibold transition-colors shrink-0 ${
               activeTab === "qualities"
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -267,7 +267,7 @@ export function QualityManager({
           {/* Tab 2: Cyberpunk / Tech Cards (สไตล์ที่ 3) */}
           <button
             onClick={() => setActiveTab("tech_cards")}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0 ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-semibold transition-colors shrink-0 ${
               activeTab === "tech_cards"
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -280,7 +280,7 @@ export function QualityManager({
           {/* Tab 3: ประวัติแต้ม */}
           <button
             onClick={() => setActiveTab("transactions")}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0 ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-semibold transition-colors shrink-0 ${
               activeTab === "transactions"
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -295,7 +295,7 @@ export function QualityManager({
           {qualities.length > 0 && (
             <button
               onClick={() => setIsExportModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-muted hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs sm:text-sm font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-muted hover:bg-muted/80 text-foreground border border-border rounded-md text-xs sm:text-sm font-semibold transition-colors"
               title="ส่งออกรูปภาพสำหรับแชร์ (สัดส่วน 16:9)"
             >
               <Download className="w-4 h-4 text-primary" />
@@ -309,7 +309,7 @@ export function QualityManager({
                 setEditingQuality(null);
                 setIsModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-xs sm:text-sm font-semibold transition-colors shrink-0"
             >
               <Plus className="w-4 h-4" />
               สร้างทักษะใหม่
@@ -339,7 +339,7 @@ export function QualityManager({
                   setEditingQuality(null);
                   setIsModalOpen(true);
                 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl text-xs font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-xs font-medium transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 สร้างทักษะแรก
@@ -381,14 +381,14 @@ export function QualityManager({
                             setEditingQuality(item);
                             setIsModalOpen(true);
                           }}
-                          className="p-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                          className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                           title="แก้ไข"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(item)}
-                          className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                          className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                           title="ลบ"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

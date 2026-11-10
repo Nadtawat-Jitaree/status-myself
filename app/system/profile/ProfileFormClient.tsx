@@ -341,7 +341,7 @@ export function ProfileFormClient({ initialProfile }: ProfileFormClientProps) {
                             type="button"
                             onClick={() => setAvatarIcon(preset.name)}
                             className={cn(
-                              "p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all text-center relative group border cursor-pointer",
+                              "p-2 rounded-md flex flex-col items-center justify-center gap-1.5 transition-all text-center relative group border cursor-pointer",
                               isSelected
                                 ? "border-primary bg-background shadow-xs ring-1 ring-primary"
                                 : "border-transparent bg-background/50 hover:bg-background hover:border-border"

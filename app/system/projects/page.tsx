@@ -93,7 +93,7 @@ export default function ProjectsPage({ searchParams }: ProjectsPageProps) {
             className="mr-2"
             unoptimized
           />
-          Projects
+          โปรเจกต์
         </h1>
         <p className="text-muted-foreground mt-2">
           จัดการและติดตามความคืบหน้าของโปรเจกต์ทั้งหมด

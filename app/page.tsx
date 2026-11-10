@@ -160,7 +160,7 @@ export default function Home() {
                     className="
                       inline-flex items-center justify-center
                       text-sm px-5 py-3
-                      rounded-2xl
+                      rounded-md
                       border border-black/10
                       bg-white
                       text-black

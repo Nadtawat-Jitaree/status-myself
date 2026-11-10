@@ -70,7 +70,7 @@ export function IconPickerModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -98,7 +98,7 @@ export function IconPickerModal({
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-2.5 py-1 rounded-lg shrink-0 transition-colors font-medium ${
+                className={`px-2.5 py-1 rounded-md shrink-0 transition-colors font-medium ${
                   selectedCategory === cat
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-background border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -122,7 +122,7 @@ export function IconPickerModal({
                   onSelectIcon(item.name);
                   onClose();
                 }}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-colors ${
+                className={`flex flex-col items-center justify-center p-2 rounded-md border text-center transition-colors ${
                   isSelected
                     ? "border-primary bg-primary/10 text-primary font-semibold"
                     : "border-border hover:border-border hover:bg-muted/50 text-foreground"
@@ -152,7 +152,7 @@ export function IconPickerModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-sm font-medium rounded-xl border border-border hover:bg-muted transition-colors"
+            className="px-4 py-1.5 text-sm font-medium rounded-md border border-border hover:bg-muted transition-colors"
           >
             ยกเลิก
           </button>

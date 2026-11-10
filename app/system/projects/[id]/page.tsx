@@ -128,7 +128,7 @@ export default function ProjectDetailPage({
                       flex-1
                       justify-center
                       gap-2
-                      rounded-xl
+                      rounded-md
                       border
                       bg-background
                       px-3

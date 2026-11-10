@@ -316,7 +316,7 @@ export default function DayDetailModal({
 
           <button
             onClick={onClose}
-            className="rounded-full p-1.5 sm:p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-md p-1.5 sm:p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <X className="h-5 w-5" />
           </button>
@@ -337,7 +337,7 @@ export default function DayDetailModal({
                   <button
                     key={m.id}
                     onClick={() => handleMoodSelect(m.id)}
-                    className={`flex flex-col items-center justify-center gap-1 sm:gap-1.5 rounded-xl border p-1.5 sm:p-2.5 ${
+                    className={`flex flex-col items-center justify-center gap-1 sm:gap-1.5 rounded-md border p-1.5 sm:p-2.5 ${
                       isSelected
                         ? `${m.color} ring-2 ring-primary/40 font-bold shadow-sm`
                         : 'border-border/60 hover:border-border hover:bg-muted/50 text-muted-foreground'
@@ -361,7 +361,7 @@ export default function DayDetailModal({
               <button
                 onClick={handleSaveSummary}
                 disabled={isPending}
-                className="flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20 shrink-0"
+                className="flex items-center gap-1 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20 shrink-0"
               >
                 {isSavedSummary ? (
                   <>
@@ -401,7 +401,7 @@ export default function DayDetailModal({
                 <button
                   onClick={handleCarryOver}
                   disabled={isPending}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100 disabled:opacity-50 w-full sm:w-auto"
+                  className="flex items-center justify-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100 disabled:opacity-50 w-full sm:w-auto"
                 >
                   {isCarryingOver ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -436,7 +436,7 @@ export default function DayDetailModal({
                 <button
                   type="submit"
                   disabled={!newTitle.trim() || isPending}
-                  className="flex items-center justify-center gap-1 rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50 shrink-0"
+                  className="flex items-center justify-center gap-1 rounded-md bg-primary px-4 py-2 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50 shrink-0"
                 >
                   <Plus className="h-4 w-4" /> เพิ่ม
                 </button>
@@ -616,7 +616,7 @@ export default function DayDetailModal({
                                 type="button"
                                 onClick={() => handleSaveItem(item)}
                                 disabled={!editTitle.trim() || isPending}
-                                className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                                className="flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-50"
                               >
                                 {itemAction?.itemId === item.id && itemAction.action === 'edit' ? (
                                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -629,7 +629,7 @@ export default function DayDetailModal({
                                 type="button"
                                 onClick={() => setEditingItemId(null)}
                                 disabled={isPending}
-                                className="rounded-lg border px-2.5 py-1 text-xs font-semibold text-muted-foreground disabled:opacity-50"
+                                className="rounded-md border px-2.5 py-1 text-xs font-semibold text-muted-foreground disabled:opacity-50"
                               >
                                 ยกเลิก
                               </button>
@@ -685,7 +685,7 @@ export default function DayDetailModal({
                             type="button"
                             onClick={() => handleStartEdit(item)}
                             disabled={isPending}
-                            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-primary disabled:opacity-50"
+                            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-primary disabled:opacity-50"
                             title="แก้ไขรายการ"
                             aria-label={`แก้ไข ${item.title}`}
                           >
@@ -699,7 +699,7 @@ export default function DayDetailModal({
                             type="button"
                             onClick={() => handleDeleteItem(item.id)}
                             disabled={isPending}
-                            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive disabled:opacity-50"
+                            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive disabled:opacity-50"
                             title="ลบรายการ"
                             aria-label={`ลบ ${item.title}`}
                           >
@@ -726,7 +726,7 @@ export default function DayDetailModal({
           </span>
           <button
             onClick={onClose}
-            className="w-full sm:w-auto rounded-xl border bg-background px-4 py-1.5 text-xs font-semibold text-foreground hover:bg-muted text-center"
+            className="w-full sm:w-auto rounded-md border bg-background px-4 py-1.5 text-xs font-semibold text-foreground hover:bg-muted text-center"
           >
             ปิดหน้าต่าง
           </button>

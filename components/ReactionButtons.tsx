@@ -111,7 +111,7 @@ export function ReactionButtons({
         onClick={(e) => handleReaction("like", e)}
         title="กดชอบโน้ตนี้"
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-xl font-medium transition-colors",
+          "inline-flex items-center gap-1.5 rounded-md font-medium transition-colors",
           isSmall
             ? "px-2.5 py-1 text-xs"
             : "px-3 py-1.5 text-xs sm:text-sm",
@@ -136,7 +136,7 @@ export function ReactionButtons({
         onClick={(e) => handleReaction("dislike", e)}
         title="ไม่ชอบโน้ตนี้"
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-xl font-medium transition-colors",
+          "inline-flex items-center gap-1.5 rounded-md font-medium transition-colors",
           isSmall
             ? "px-2 py-1 text-xs"
             : "px-2.5 py-1.5 text-xs sm:text-sm",

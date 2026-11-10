@@ -1520,7 +1520,7 @@ export default function RichNoteEditor({
               type="button"
               onClick={handleDecreaseFontSize}
               disabled={disabled}
-              className="px-1.5 py-0.5 rounded hover:bg-background text-foreground font-semibold flex items-center justify-center h-7 min-w-[28px]"
+              className="px-1.5 py-0.5 rounded-md hover:bg-background text-foreground font-semibold flex items-center justify-center h-7 min-w-[28px]"
               title="ลดขนาดตัวอักษร (A-)"
             >
               A-
@@ -1553,7 +1553,7 @@ export default function RichNoteEditor({
               type="button"
               onClick={handleIncreaseFontSize}
               disabled={disabled}
-              className="px-1.5 py-0.5 rounded hover:bg-background text-foreground font-semibold flex items-center justify-center h-7 min-w-[28px]"
+              className="px-1.5 py-0.5 rounded-md hover:bg-background text-foreground font-semibold flex items-center justify-center h-7 min-w-[28px]"
               title="เพิ่มขนาดตัวอักษร (A+)"
             >
               A+
@@ -1567,7 +1567,7 @@ export default function RichNoteEditor({
               onClick={handleUndo}
               disabled={disabled || !canUndo}
               className={cn(
-                "p-1 rounded flex items-center justify-center h-7 w-7",
+                "p-1 rounded-md flex items-center justify-center h-7 w-7",
                 canUndo && !disabled
                   ? "hover:bg-background text-foreground"
                   : "text-muted-foreground/40 cursor-not-allowed",
@@ -1581,7 +1581,7 @@ export default function RichNoteEditor({
               onClick={handleRedo}
               disabled={disabled || !canRedo}
               className={cn(
-                "p-1 rounded flex items-center justify-center h-7 w-7",
+                "p-1 rounded-md flex items-center justify-center h-7 w-7",
                 canRedo && !disabled
                   ? "hover:bg-background text-foreground"
                   : "text-muted-foreground/40 cursor-not-allowed",
@@ -1599,7 +1599,7 @@ export default function RichNoteEditor({
               <button
                 type="button"
                 disabled={disabled}
-                className="px-1.5 py-1 rounded hover:bg-background flex items-center gap-0.5 text-foreground h-7"
+                className="px-1.5 py-1 rounded-md hover:bg-background flex items-center gap-0.5 text-foreground h-7"
                 title="เปลี่ยนสีข้อความ"
               >
                 <Palette className="w-3.5 h-3.5" />
@@ -1625,7 +1625,7 @@ export default function RichNoteEditor({
                       key={item.label}
                       type="button"
                       onClick={() => applyInlineStyle("color", item.color)}
-                      className="w-5 h-5 rounded-full border border-border/60 flex items-center justify-center text-[10px] shadow-xs"
+                      className="w-5 h-5 rounded-md border border-border/60 flex items-center justify-center text-[10px] shadow-xs"
                       style={{ backgroundColor: item.color || "transparent" }}
                       title={item.label}
                     >
@@ -1661,7 +1661,7 @@ export default function RichNoteEditor({
                   <button
                     type="button"
                     onClick={() => applyInlineStyle("color", textColorInput)}
-                    className="h-7 px-2 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
+                    className="h-7 px-2 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
                   >
                     ใช้
                   </button>
@@ -1674,7 +1674,7 @@ export default function RichNoteEditor({
               <button
                 type="button"
                 disabled={disabled}
-                className="px-1.5 py-1 rounded hover:bg-background flex items-center gap-0.5 text-foreground h-7"
+                className="px-1.5 py-1 rounded-md hover:bg-background flex items-center gap-0.5 text-foreground h-7"
                 title="ไฮไลท์สีพื้นหลัง"
               >
                 <Highlighter className="w-3.5 h-3.5 text-amber-500" />
@@ -1697,7 +1697,7 @@ export default function RichNoteEditor({
                       key={item.label}
                       type="button"
                       onClick={() => applyInlineStyle("backgroundColor", item.color)}
-                      className="w-5 h-5 rounded border border-border/60 flex items-center justify-center text-[10px] shadow-xs"
+                      className="w-5 h-5 rounded-md border border-border/60 flex items-center justify-center text-[10px] shadow-xs"
                       style={{ backgroundColor: item.color || "transparent" }}
                       title={item.label}
                     >
@@ -1733,7 +1733,7 @@ export default function RichNoteEditor({
                   <button
                     type="button"
                     onClick={() => applyInlineStyle("backgroundColor", bgColorInput)}
-                    className="h-7 px-2 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
+                    className="h-7 px-2 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
                   >
                     ใช้
                   </button>
@@ -1747,7 +1747,7 @@ export default function RichNoteEditor({
             onClick={handleToggleChecklist}
             disabled={disabled}
             className={cn(
-              "px-2 py-1 rounded flex items-center gap-1 h-7",
+              "px-2 py-1 rounded-md flex items-center gap-1 h-7",
               activeFormats.checklist
                 ? "bg-background text-primary shadow-xs border border-border/80 font-medium"
                 : "hover:bg-background text-foreground",
@@ -1762,7 +1762,7 @@ export default function RichNoteEditor({
             onClick={handleToggleBold}
             disabled={disabled}
             className={cn(
-              "px-2 py-1 rounded flex items-center gap-1 font-bold h-7",
+              "px-2 py-1 rounded-md flex items-center gap-1 font-bold h-7",
               activeFormats.bold
                 ? "bg-background text-primary shadow-xs border border-border/80"
                 : "hover:bg-background text-foreground",
@@ -1776,7 +1776,7 @@ export default function RichNoteEditor({
             onClick={handleToggleItalic}
             disabled={disabled}
             className={cn(
-              "px-2 py-1 rounded flex items-center gap-1 italic h-7",
+              "px-2 py-1 rounded-md flex items-center gap-1 italic h-7",
               activeFormats.italic
                 ? "bg-background text-primary shadow-xs border border-border/80"
                 : "hover:bg-background text-foreground",
@@ -1790,7 +1790,7 @@ export default function RichNoteEditor({
             onClick={handleToggleStrikethrough}
             disabled={disabled}
             className={cn(
-              "px-2 py-1 rounded flex items-center gap-1 line-through h-7",
+              "px-2 py-1 rounded-md flex items-center gap-1 line-through h-7",
               activeFormats.strikethrough
                 ? "bg-background text-primary shadow-xs border border-border/80"
                 : "hover:bg-background text-foreground",
@@ -1804,7 +1804,7 @@ export default function RichNoteEditor({
             onClick={handleToggleList}
             disabled={disabled}
             className={cn(
-              "px-2 py-1 rounded flex items-center gap-1 h-7",
+              "px-2 py-1 rounded-md flex items-center gap-1 h-7",
               activeFormats.list
                 ? "bg-background text-primary shadow-xs border border-border/80 font-medium"
                 : "hover:bg-background text-foreground",
@@ -1818,7 +1818,7 @@ export default function RichNoteEditor({
             onClick={handleToggleOrderedList}
             disabled={disabled}
             className={cn(
-              "px-2 py-1 rounded flex items-center gap-1 h-7",
+              "px-2 py-1 rounded-md flex items-center gap-1 h-7",
               activeFormats.orderedList
                 ? "bg-background text-primary shadow-xs border border-border/80 font-medium"
                 : "hover:bg-background text-foreground",
@@ -1832,7 +1832,7 @@ export default function RichNoteEditor({
             onClick={handleToggleHeading}
             disabled={disabled}
             className={cn(
-              "px-2 py-1 rounded flex items-center gap-1 h-7",
+              "px-2 py-1 rounded-md flex items-center gap-1 h-7",
               activeFormats.heading
                 ? "bg-background text-primary shadow-xs border border-border/80 font-medium"
                 : "hover:bg-background text-foreground",
@@ -1846,7 +1846,7 @@ export default function RichNoteEditor({
             onClick={handleToggleQuote}
             disabled={disabled}
             className={cn(
-              "px-2 py-1 rounded flex items-center gap-1 h-7",
+              "px-2 py-1 rounded-md flex items-center gap-1 h-7",
               activeFormats.quote
                 ? "bg-background text-primary shadow-xs border border-border/80 font-medium"
                 : "hover:bg-background text-foreground",
@@ -1859,7 +1859,7 @@ export default function RichNoteEditor({
             type="button"
             onClick={handleInsertDivider}
             disabled={disabled}
-            className="px-2 py-1 rounded hover:bg-background flex items-center gap-1 text-foreground h-7"
+            className="px-2 py-1 rounded-md hover:bg-background flex items-center gap-1 text-foreground h-7"
             title="แทรกเส้นคั่น (Divider)"
           >
             <Minus className="w-3.5 h-3.5" />
@@ -1868,7 +1868,7 @@ export default function RichNoteEditor({
             type="button"
             onClick={handleInsertImage}
             disabled={disabled}
-            className="px-2 py-1 rounded hover:bg-background flex items-center gap-1 text-foreground h-7"
+            className="px-2 py-1 rounded-md hover:bg-background flex items-center gap-1 text-foreground h-7"
             title="แทรกรูปภาพจาก URL (Image)"
           >
             <ImageIcon className="w-3.5 h-3.5 text-blue-500" />

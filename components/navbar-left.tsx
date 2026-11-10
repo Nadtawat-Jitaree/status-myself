@@ -84,7 +84,7 @@ export function NavbarLeft() {
             disabled
             aria-disabled="true"
             title="Dashboard — Premium เท่านั้น"
-            className="relative flex h-9 items-center justify-center rounded-xl px-2 sm:px-3 text-xs font-semibold border border-slate-200/70 bg-slate-100/60 cursor-not-allowed select-none overflow-hidden"
+            className="relative flex h-9 items-center justify-center rounded-md px-2 sm:px-3 text-xs font-semibold border border-slate-200/70 bg-slate-100/60 cursor-not-allowed select-none overflow-hidden"
           >
             <div className="flex items-center gap-1.5 opacity-20 grayscale pointer-events-none">
               <BarChart3 className="h-[15px] w-[15px] shrink-0" />
@@ -117,7 +117,7 @@ export function NavbarLeft() {
           <button
             type="button"
             onClick={() => setOpenModalNavbar(true)}
-            className={`group relative flex h-9 items-center gap-1.5 rounded-xl px-2 sm:px-3 text-xs font-semibold transition-all duration-150 active:scale-95 ${
+            className={`group relative flex h-9 items-center gap-1.5 rounded-md px-2 sm:px-3 text-xs font-semibold transition-all duration-150 active:scale-95 ${
               isWorkspaceActive
                 ? "bg-purple-600 text-white shadow-sm shadow-purple-500/30 border border-transparent"
                 : "text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/60"
@@ -139,7 +139,7 @@ export function NavbarLeft() {
             disabled
             aria-disabled="true"
             title="Menus — Premium เท่านั้น"
-            className="relative flex h-9 items-center justify-center rounded-xl px-2 sm:px-3 text-xs font-semibold border border-slate-200/70 bg-slate-100/60 cursor-not-allowed select-none overflow-hidden"
+            className="relative flex h-9 items-center justify-center rounded-md px-2 sm:px-3 text-xs font-semibold border border-slate-200/70 bg-slate-100/60 cursor-not-allowed select-none overflow-hidden"
           >
             <div className="flex items-center gap-1.5 opacity-20 grayscale pointer-events-none">
               <LayoutGrid className="h-[15px] w-[15px] shrink-0" />

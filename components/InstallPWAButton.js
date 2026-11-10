@@ -92,7 +92,7 @@ export default function InstallPWAButton() {
     bg-black
     text-white
     px-5 py-3
-    rounded-2xl
+    rounded-md
     font-medium
     border border-black
     hover:bg-white

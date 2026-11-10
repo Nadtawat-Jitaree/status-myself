@@ -393,7 +393,7 @@ export function NoteFormModal({
                 size="icon"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="h-8 w-8 rounded-full cursor-pointer hover:bg-muted"
+                className="h-8 w-8 rounded-md cursor-pointer hover:bg-muted"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -481,7 +481,7 @@ export function NoteFormModal({
                       type="button"
                       onClick={() => setIsCategoryModalOpen(true)}
                       disabled={isSubmitting}
-                      className={`group w-full flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary/60 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
+                      className={`group w-full flex items-center gap-3 rounded-md border px-3 py-2.5 text-left transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary/60 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
                         selectedCategoryObj
                           ? "border-primary/40 bg-primary/5"
                           : "border-dashed border-muted-foreground/40 hover:border-primary/40"
@@ -621,7 +621,7 @@ export function NoteFormModal({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-full shrink-0 cursor-pointer mt-1"
+                  className="h-8 w-8 rounded-md shrink-0 cursor-pointer mt-1"
                   onClick={() => setIsCategoryModalOpen(false)}
                 >
                   <X className="w-4 h-4" />
@@ -671,7 +671,7 @@ export function NoteFormModal({
                       key={String(yTab.id)}
                       type="button"
                       onClick={() => setModalSelectYear(yTab.id)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 transition-all cursor-pointer ${
+                      className={`px-3 py-1 rounded-md text-xs font-semibold border shrink-0 transition-all cursor-pointer ${
                         modalSelectYear === yTab.id
                           ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
                           : "bg-background text-muted-foreground border-border hover:bg-muted/60"
@@ -699,7 +699,7 @@ export function NoteFormModal({
                       key={String(sTab.id)}
                       type="button"
                       onClick={() => setModalSelectSemester(sTab.id)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 transition-all cursor-pointer ${
+                      className={`px-3 py-1 rounded-md text-xs font-semibold border shrink-0 transition-all cursor-pointer ${
                         modalSelectSemester === sTab.id
                           ? "bg-indigo-500 text-white border-indigo-500 shadow-sm"
                           : "bg-background text-muted-foreground border-border hover:bg-muted/60"
@@ -733,7 +733,7 @@ export function NoteFormModal({
                           setCategoryId(cat.id);
                           setIsCategoryModalOpen(false);
                         }}
-                        className={`group relative flex flex-col items-center gap-2.5 p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                        className={`group relative flex flex-col items-center gap-2.5 p-3.5 rounded-md border text-center transition-all cursor-pointer ${
                           isSelected
                             ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm"
                             : "border-border bg-card hover:border-primary/40 hover:bg-muted/30 hover:shadow-sm"

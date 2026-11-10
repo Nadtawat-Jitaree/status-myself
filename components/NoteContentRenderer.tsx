@@ -223,7 +223,7 @@ function NoteContentRendererComponent({
                   }
                 }}
                 className={cn(
-                  "rounded flex items-center justify-center shrink-0 border transition-all select-none",
+                  "rounded-md flex items-center justify-center shrink-0 border transition-all select-none",
                   isCompact ? "w-3.5 h-3.5 mt-0.5" : "w-4 h-4 mt-1",
                   isChecked
                     ? "bg-primary border-primary text-primary-foreground shadow-xs"

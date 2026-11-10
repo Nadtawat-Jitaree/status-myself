@@ -76,7 +76,7 @@ export default function CalendarFilters({
           <div className="flex items-center gap-1 rounded-xl border bg-muted/50 p-1 text-xs font-medium flex-1 sm:flex-initial justify-between sm:justify-start">
             <button
               onClick={() => onStatusChange('all')}
-              className={`flex-1 sm:flex-initial text-center rounded-lg px-2.5 py-1.5 ${
+              className={`flex-1 sm:flex-initial text-center rounded-md px-2.5 py-1.5 ${
                 status === 'all'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -86,7 +86,7 @@ export default function CalendarFilters({
             </button>
             <button
               onClick={() => onStatusChange('completed')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 ${
                 status === 'completed'
                   ? 'bg-emerald-500 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -97,7 +97,7 @@ export default function CalendarFilters({
             </button>
             <button
               onClick={() => onStatusChange('todo')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 ${
                 status === 'todo'
                   ? 'bg-amber-500 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -112,7 +112,7 @@ export default function CalendarFilters({
           {isFiltered && (
             <button
               onClick={onReset}
-              className="flex items-center gap-1 rounded-xl border border-destructive/20 bg-destructive/10 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 shrink-0"
+              className="flex items-center gap-1 rounded-md border border-destructive/20 bg-destructive/10 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 shrink-0"
               title="ล้างตัวกรอง"
             >
               <X className="h-3.5 w-3.5" />
@@ -129,7 +129,7 @@ export default function CalendarFilters({
         </span>
         <button
           onClick={() => onCategoryChange('all')}
-          className={`shrink-0 rounded-full px-2.5 sm:px-3 py-1 text-xs font-medium ${
+          className={`shrink-0 rounded-md px-2.5 sm:px-3 py-1 text-xs font-medium ${
             category === 'all'
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted/70 text-muted-foreground hover:bg-muted'
@@ -144,7 +144,7 @@ export default function CalendarFilters({
             <button
               key={cat}
               onClick={() => onCategoryChange(isSelected ? 'all' : cat)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-1 text-xs font-medium ${
+              className={`shrink-0 flex items-center gap-1.5 rounded-md border px-2.5 sm:px-3 py-1 text-xs font-medium ${
                 isSelected
                   ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                   : `${style.bg} ${style.text} ${style.border} hover:opacity-80`

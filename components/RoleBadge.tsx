@@ -125,7 +125,7 @@ export function RoleBadge({ subscription }: RoleBadgeProps) {
           type="button"
           onClick={() => setIsOpen(false)}
           aria-label="ปิดรายละเอียดสิทธิ์สมาชิก"
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+          className="flex h-6 w-6 items-center justify-center rounded-md bg-white/20 hover:bg-white/30 transition-colors"
         >
           <X className="w-3.5 h-3.5 text-white" />
         </button>
@@ -256,7 +256,7 @@ export function RoleBadge({ subscription }: RoleBadgeProps) {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-transform duration-150 active:scale-95 cursor-pointer select-none ${badgeClasses}`}
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-95 cursor-pointer select-none ${badgeClasses}`}
         aria-expanded={isOpen}
         aria-controls={isOpen ? "role-details-panel" : undefined}
         aria-label="ดูรายละเอียดสิทธิ์สมาชิก"

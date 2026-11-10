@@ -102,7 +102,7 @@ export function QualityFormModal({
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -124,7 +124,7 @@ export function QualityFormModal({
                 <button
                   type="button"
                   onClick={() => setIsIconPickerOpen(true)}
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl border border-dashed border-border hover:border-primary bg-muted/30 transition-colors"
+                  className="flex items-center gap-2.5 p-2.5 rounded-md border border-dashed border-border hover:border-primary bg-muted/30 transition-colors"
                   title="คลิกเพื่อเปลี่ยนไอคอน"
                 >
                   <div
@@ -149,7 +149,7 @@ export function QualityFormModal({
                         key={c}
                         type="button"
                         onClick={() => setColor(c)}
-                        className={`w-5 h-5 rounded-full border border-black/10 transition-transform ${
+                        className={`w-5 h-5 rounded-md border border-black/10 transition-transform ${
                           color.toLowerCase() === c.toLowerCase()
                             ? "ring-2 ring-offset-1 ring-primary scale-110"
                             : "hover:scale-105"
@@ -229,14 +229,14 @@ export function QualityFormModal({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium rounded-xl border border-border hover:bg-muted transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-50"
               >
                 ยกเลิก
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-5 py-2 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="px-5 py-2 text-sm font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
                 {loading ? "กำลังบันทึก..." : initialData ? "บันทึกการแก้ไข" : "สร้างคุณสมบัติ"}
               </button>

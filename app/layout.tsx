@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
   // ─── Title Template ──────────────────────────────────────────────
   title: {
-    default: "NJ Notes — จดบันทึก จัดระเบียบความคิด",
+    default: "NJ Notes | จดบันทึก จัดระเบียบความคิด",
     template: "%s | NJ Notes",
   },
 
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     url: baseUrl,
     siteName: "NJ Notes",
     locale: "th_TH",
-    title: "NJ Notes — จดบันทึก จัดระเบียบความคิด",
+    title: "NJ Notes | จดบันทึก จัดระเบียบความคิด",
     description:
       "แอปจดบันทึกส่วนตัวที่เรียบง่ายและทรงพลัง จัดระเบียบความคิด บันทึกงาน โปรเจกต์ และตารางเรียน",
     images: [
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
   // ─── Twitter / X Card ───────────────────────────────────────────
   twitter: {
     card: "summary_large_image",
-    title: "NJ Notes — จดบันทึก จัดระเบียบความคิด",
+    title: "NJ Notes | จดบันทึก จัดระเบียบความคิด",
     description:
       "แอปจดบันทึกส่วนตัวที่เรียบง่ายและทรงพลัง จัดระเบียบความคิด บันทึกงาน โปรเจกต์",
     images: ["/all.webp"],
