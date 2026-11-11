@@ -86,7 +86,7 @@ export default function ProjectsPage({ searchParams }: ProjectsPageProps) {
       <div>
         <h1 className="text-3xl font-bold tracking-tight flex items-center">
           <Image
-            src="/normal.webp"
+            src="/projects.webp"
             alt="Project"
             width={45}
             height={45}

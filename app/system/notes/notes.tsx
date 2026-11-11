@@ -1084,7 +1084,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
             {noteType == "school" && (
               <>
                 <Image
-                  src="/school.webp"
+                  src="/noteschool.webp"
                   alt="มหาลัย"
                   width={40}
                   height={40}

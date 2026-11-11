@@ -68,7 +68,7 @@ export default function NoteTypeModal({
     {
       title: "โน้ตมหาวิทยาลัย",
       href: "/system/notes/school",
-      image: "/school.webp",
+      image: "/noteschool.webp",
       hoverBorder: "hover:border-emerald-400 hover:shadow-emerald-500/15",
       hoverBg: "hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20",
       textColor: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
@@ -77,7 +77,7 @@ export default function NoteTypeModal({
     {
       title: "โปรเจกต์",
       href: "/system/projects",
-      image: "/normal.webp",
+      image: "/projects.webp",
       hoverBorder: "hover:border-purple-400 hover:shadow-purple-500/15",
       hoverBg: "hover:bg-purple-50/50 dark:hover:bg-purple-950/20",
       textColor: "group-hover:text-purple-600 dark:group-hover:text-purple-400",
@@ -86,7 +86,7 @@ export default function NoteTypeModal({
     {
       title: "ปฏิทิน",
       href: "/system/calendar",
-      image: "/all.webp",
+      image: "/calendar.webp",
       hoverBorder: "hover:border-amber-400 hover:shadow-amber-500/15",
       hoverBg: "hover:bg-amber-50/50 dark:hover:bg-amber-950/20",
       textColor: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
