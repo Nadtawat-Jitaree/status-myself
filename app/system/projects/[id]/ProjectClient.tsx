@@ -40,6 +40,8 @@ import {
   Target,
   Settings2,
   FileText,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 
 import {
@@ -96,6 +98,8 @@ export default function ProjectClient({
 
   // Selected Task for Detail Modal / Drawer
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [isTaskDetailModalExpanded, setIsTaskDetailModalExpanded] =
+    useState(false);
   const [modalStatus, setModalStatus] = useState<string>("todo");
   const [selectedQualities, setSelectedQualities] = useState<
     SelectedQualityInput[]
@@ -117,6 +121,7 @@ export default function ProjectClient({
 
   const openTaskDetail = (task: any) => {
     setSelectedTask(task);
+    setIsTaskDetailModalExpanded(false);
     setModalStatus(task.status || "todo");
     const initialQualities: SelectedQualityInput[] = (task.qualities || []).map(
       (q: any) => ({
@@ -1603,11 +1608,17 @@ export default function ProjectClient({
         isMounted &&
         createPortal(
           <div
-            className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] !m-0 flex items-center justify-center p-3 sm:p-6 bg-black/70 animate-in fade-in duration-150"
+            className={`fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] !m-0 flex items-center justify-center ${
+              isTaskDetailModalExpanded ? "p-0" : "p-3 sm:p-6"
+            } bg-black/70 animate-in fade-in duration-150`}
             onClick={() => setSelectedTask(null)}
           >
             <div
-              className="relative w-full max-w-lg sm:max-w-xl max-h-[90vh] rounded-2xl sm:rounded-3xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+              className={`relative flex flex-col overflow-hidden border border-border bg-card shadow-2xl animate-in zoom-in-95 duration-150 ${
+                isTaskDetailModalExpanded
+                  ? "h-[100dvh] w-screen max-h-none max-w-none rounded-none"
+                  : "w-full max-w-lg max-h-[90vh] rounded-2xl sm:max-w-xl sm:rounded-3xl"
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
@@ -1625,15 +1636,36 @@ export default function ProjectClient({
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTask(null)}
-                  disabled={isSavingTaskDetail}
-                  className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
-                  title="ปิด"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setIsTaskDetailModalExpanded((expanded) => !expanded)
+                    }
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    title={
+                      isTaskDetailModalExpanded ? "ย่อหน้าต่าง" : "ขยายเต็มจอ"
+                    }
+                    aria-label={
+                      isTaskDetailModalExpanded ? "ย่อหน้าต่าง" : "ขยายเต็มจอ"
+                    }
+                  >
+                    {isTaskDetailModalExpanded ? (
+                      <Minimize2 className="w-5 h-5" />
+                    ) : (
+                      <Maximize2 className="w-5 h-5" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTask(null)}
+                    disabled={isSavingTaskDetail}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
+                    title="ปิด"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {isSavingTaskDetail && (
@@ -1675,7 +1707,7 @@ export default function ProjectClient({
                       rows={4}
                       disabled={isSavingTaskDetail}
                       placeholder="เขียนสรุป ข้อมูลอ้างอิง ลิงก์ สิ่งที่ต้องระวัง หรือขั้นตอนย่อย..."
-                      className="w-full rounded-xl border bg-background p-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-primary/20 resize-none disabled:opacity-60"
+                      className="w-full rounded-xl border bg-background p-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
                     />
                   </div>
 
@@ -1708,7 +1740,7 @@ export default function ProjectClient({
                       >
                         <option value="low">ทั่วไป</option>
                         <option value="medium">ปานกลาง</option>
-                        <option value="high">ด่วนมาก 🔥</option>
+                        <option value="high">ด่วนมาก</option>
                       </select>
                     </div>
 

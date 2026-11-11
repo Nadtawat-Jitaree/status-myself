@@ -19,6 +19,8 @@ import {
   Check,
   Edit2,
   Plus,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import RichNoteEditor from "@/components/RichNoteEditor";
 import { QualityPicker } from "@/components/QualityPicker";
@@ -91,6 +93,7 @@ export function NoteFormModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeletingFile, setIsDeletingFile] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Modal สำหรับเลือกหมวดหมู่
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -108,6 +111,7 @@ export function NoteFormModal({
       activeFetchNoteIdRef.current = null;
       previousNoteIdRef.current = undefined;
       setIsLoadingQualities(false);
+      setIsExpanded(false);
       return;
     }
 
@@ -370,8 +374,18 @@ export function NoteFormModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-2 sm:p-4 animate-in fade-in duration-150">
-        <div className="my-auto flex max-h-[calc(100dvh-1rem)] w-full max-w-lg min-h-0 flex-col overflow-hidden rounded-xl bg-background sm:max-h-[calc(100dvh-2rem)] shadow-2xl border">
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-in fade-in duration-150 ${
+          isExpanded ? "overflow-hidden p-0" : "overflow-y-auto p-2 sm:p-4"
+        }`}
+      >
+        <div
+          className={`my-auto flex min-h-0 flex-col overflow-hidden bg-background shadow-2xl border ${
+            isExpanded
+              ? "h-[100dvh] w-screen max-h-none max-w-none rounded-none"
+              : "max-h-[calc(100dvh-1rem)] w-full max-w-lg rounded-xl sm:max-h-[calc(100dvh-2rem)]"
+          }`}
+        >
           <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-0 shadow-none">
             {/* Header */}
             <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b pb-4">
@@ -388,15 +402,34 @@ export function NoteFormModal({
                   </>
                 )}
               </CardTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="h-8 w-8 rounded-md cursor-pointer hover:bg-muted"
-              >
-                <X className="w-5 h-5" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsExpanded((expanded) => !expanded)}
+                  className="h-8 w-8 rounded-md cursor-pointer hover:bg-muted"
+                  title={isExpanded ? "ย่อหน้าต่าง" : "ขยายเต็มจอ"}
+                  aria-label={isExpanded ? "ย่อหน้าต่าง" : "ขยายเต็มจอ"}
+                >
+                  {isExpanded ? (
+                    <Minimize2 className="w-5 h-5" />
+                  ) : (
+                    <Maximize2 className="w-5 h-5" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="h-8 w-8 rounded-md cursor-pointer hover:bg-muted"
+                  title="ปิด"
+                  aria-label="ปิด"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
             </CardHeader>
 
             {/* Content & Form */}
