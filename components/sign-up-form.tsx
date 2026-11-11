@@ -96,15 +96,14 @@ export function SignUpForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+          <CardTitle className="text-2xl text-center">Sign up</CardTitle>
+          <CardDescription className="text-center">Create a new account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
               
-              {/* --- 3. ช่อง Input สำหรับ Username --- */}
-              <div className="grid gap-2">
+              {/* <div className="grid gap-2">
                 <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
@@ -116,7 +115,6 @@ export function SignUpForm({
                 />
               </div>
 
-              {/* --- 4. ช่อง Input สำหรับ First Name และ Last Name --- */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="fname">First Name</Label>
@@ -140,7 +138,6 @@ export function SignUpForm({
                 </div>
               </div>
 
-              {/* --- 5. ช่อง Input สำหรับ Phone และ Address --- */}
               <div className="grid gap-2">
                 <Label htmlFor="tel">Phone Number</Label>
                 <Input
@@ -162,7 +159,6 @@ export function SignUpForm({
                   onChange={(e) => setAddress(e.target.value)}
                 />
               </div>
-              {/* -------------------------------------------------- */}
 
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
@@ -201,8 +197,8 @@ export function SignUpForm({
                 />
               </div>
               </div>
-              <p className="text-red-500 text-sm text-center">สมัครผ่าน Google ได้เลยครับ</p>
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              <p className="text-red-500 text-sm text-center">สมัครผ่าน Google ได้เลยครับ</p> */}
+              {/* {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={true}>
                 {isLoading ? "Creating an account..." : "Sign up"}
               </Button>
@@ -216,7 +212,7 @@ export function SignUpForm({
                     Or continue with
                   </span>
                 </div>
-              </div>
+              </div> */}
 
               <Button
                 type="button"
