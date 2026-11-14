@@ -10,8 +10,10 @@ export default function DownloadAPKButton() {
 
   return (
     <a
-      href="/nj-notes-v3.0.apk"
+      href="https://github.com/Nadtawat-Jitaree/status-myself/releases/download/v3.0/NJ-Notes-v3.0.apk"
       download="NJ-Notes-v3.0.apk"
+      target="_blank"
+      rel="noopener noreferrer"
       className="
         lg:hidden
         group
