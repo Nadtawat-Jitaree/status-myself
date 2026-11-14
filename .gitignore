@@ -49,3 +49,6 @@ public/swe-worker-*.js*
 # Android APK files (too large for GitHub)
 public/*.apk
 android/app/build/
+
+# GitHub token (เก็บ local เท่านั้น)
+.github-token
