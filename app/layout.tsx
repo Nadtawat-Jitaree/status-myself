@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import CapacitorInit from "@/components/native/CapacitorInit";
 import "./globals.css";
 
 const baseUrl = "https://notes.puanj.com";
@@ -203,6 +204,7 @@ export default function RootLayout({
           forcedTheme="light"
           disableTransitionOnChange
         >
+          <CapacitorInit />
           {children}
         </ThemeProvider>
       </body>

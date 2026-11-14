@@ -12,8 +12,6 @@ import {
   Flame,
   FileText,
   GraduationCap,
-  CheckCircle2,
-  Circle,
   Plus,
   Loader2
 } from 'lucide-react'
@@ -25,7 +23,6 @@ import {
   DailyLog,
   LogItem,
   getCalendarMonthData,
-  CalendarMonthResponse,
 } from '@/app/actions/calendar'
 import {
   CalendarNote,

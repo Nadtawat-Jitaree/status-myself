@@ -20,7 +20,6 @@ import {
   Radio,
   Image as ImageIcon,
   Loader2,
-  Share2,
 } from "lucide-react";
 import Swal from "sweetalert2";
 

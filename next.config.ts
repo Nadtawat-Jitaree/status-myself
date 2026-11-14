@@ -9,7 +9,6 @@ const withPWA = withPWAInit({
   disable: false,
 });
 const nextConfig: NextConfig = {
-  cacheComponents: true,
   turbopack: {},
 };
 

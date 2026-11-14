@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { CheckCircle2, TrendingUp, Calendar as CalendarIcon, Flame } from 'lucide-react'
+import { CheckCircle2, TrendingUp, Calendar as CalendarIcon } from 'lucide-react'
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { LogItem, DailyLog } from '@/app/actions/calendar'
 

@@ -22,18 +22,20 @@ export function QualityPicker({
   sublabel = "ติ๊กเพื่อรับแต้มเมื่อทำสำเร็จ",
   isLoading = false,
 }: QualityPickerProps) {
-  if (!qualities || qualities.length === 0) {
-    return null;
-  }
-
-  // O(1) Lookup Map: quality_id -> level
+  // O(1) Lookup Map: quality_id -> level (วางไว้ก่อน early return ตามกฎของ React Hooks)
   const selectedMap = useMemo(() => {
     const map = new Map<string, 1 | 3 | 5>();
-    for (let i = 0; i < value.length; i++) {
-      map.set(value[i].quality_id, value[i].level);
+    if (value) {
+      for (let i = 0; i < value.length; i++) {
+        map.set(value[i].quality_id, value[i].level);
+      }
     }
     return map;
   }, [value]);
+
+  if (!qualities || qualities.length === 0) {
+    return null;
+  }
 
   const toggleQuality = (qualityId: string) => {
     if (isLoading) return;

@@ -21,15 +21,12 @@ import {
   Layers,
   Calendar,
   FileText,
-  FolderKanban,
   CheckCircle2,
   ChevronRight,
   Cpu,
-  Flame,
   Zap,
   Radio,
   BarChart2,
-  Share2,
   Download,
 } from "lucide-react";
 import Swal from "sweetalert2";
