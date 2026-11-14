@@ -13,6 +13,7 @@ export default function CapacitorInit() {
 
     let cleanupBackButton: (() => void) | undefined;
     let cleanupUrlOpen: (() => void) | undefined;
+    let cleanupStateChange: (() => void) | undefined;
 
     const setupNative = async () => {
       try {
@@ -59,6 +60,22 @@ export default function CapacitorInit() {
         });
         cleanupBackButton = () => {
           backListener.remove();
+        };
+
+        // รักษา Session ให้ active เมื่อผู้ใช้กลับเข้ามาในแอป
+        const stateListener = await App.addListener('appStateChange', async ({ isActive }) => {
+          if (isActive) {
+            try {
+              const { createClient } = await import('@/lib/supabase/client');
+              const supabase = createClient();
+              await supabase.auth.getSession();
+            } catch {
+              // ignore
+            }
+          }
+        });
+        cleanupStateChange = () => {
+          stateListener.remove();
         };
 
         // 2. จัดการ Deep Link สำหรับ OAuth Callback (Google Login)
@@ -136,6 +153,7 @@ export default function CapacitorInit() {
     return () => {
       if (cleanupBackButton) cleanupBackButton();
       if (cleanupUrlOpen) cleanupUrlOpen();
+      if (cleanupStateChange) cleanupStateChange();
     };
   }, [router, pathname]);
 

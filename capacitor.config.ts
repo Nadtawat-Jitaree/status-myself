@@ -15,6 +15,9 @@ const config: CapacitorConfig = {
     captureInput: true
   },
   plugins: {
+    CapacitorCookies: {
+      enabled: true,
+    },
     SplashScreen: {
       launchShowDuration: 1500,
       backgroundColor: '#09090b',
