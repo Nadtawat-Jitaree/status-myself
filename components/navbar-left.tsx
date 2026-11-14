@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -13,12 +13,16 @@ export function NavbarLeft() {
   const [openModalNavbar, setOpenModalNavbar] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const pathname = usePathname();
+  // ดึง subscription เพียงครั้งเดียวตอน mount — ไม่ต้องยิง Server Action ซ้ำทุกครั้งที่เปลี่ยน pathname
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
     getUserSubscriptionAction()
       .then((res) => setSubscription(res))
       .catch(() => setSubscription(null));
-  }, [pathname]);
+  }, []);
 
   const isPremium = subscription?.isPremium ?? false;
 

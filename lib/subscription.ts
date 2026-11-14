@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { UserRole, SubscriptionInfo } from "./subscription-types";
@@ -18,8 +19,9 @@ export async function requirePremiumAccess(): Promise<SubscriptionInfo> {
 
 /**
  * ดึงข้อมูลสถานะ Subscription และสิทธิ์การใช้งานของผู้ใช้ปัจจุบัน (Server Components เท่านั้น)
+ * ใช้ React cache() เพื่อ deduplicate — เรียกกี่ครั้งใน render pass เดียว ยิง DB แค่ครั้งเดียว
  */
-export async function getSubscriptionInfo(): Promise<SubscriptionInfo | null> {
+export const getSubscriptionInfo = cache(async (): Promise<SubscriptionInfo | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -81,4 +83,4 @@ export async function getSubscriptionInfo(): Promise<SubscriptionInfo | null> {
     isPremium,
     daysLeft,
   };
-}
+});

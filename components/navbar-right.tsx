@@ -2,18 +2,21 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
-import { getCurrentUserProfile } from "@/app/actions/profile";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { getSubscriptionInfo } from "@/lib/subscription";
 import { RoleBadge } from "./RoleBadge";
+import { getCachedCurrentUserProfile } from "@/lib/queries/profile";
 
 export async function NavbarRight() {
   const supabase = await createClient();
 
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
-  const profile = user ? await getCurrentUserProfile() : null;
-  const subscription = user ? await getSubscriptionInfo() : null;
+
+  // รัน parallel แทน sequential — ประหยัดเวลารวมได้ ~50%
+  const [profile, subscription] = user
+    ? await Promise.all([getCachedCurrentUserProfile(), getSubscriptionInfo()])
+    : [null, null];
 
   return user ? (
     /* Mobile: w-full + justify-between → badge+ชื่อซ้าย / logout ขวา
