@@ -17,13 +17,16 @@ export async function initGoogleAuth() {
   }
 
   try {
+    // ต้องใช้ mode: 'online' เพื่อให้ Google คืนค่า idToken (JWT) ออกมา
+    // หากใช้ 'offline' Google จะคืนมาแค่ serverAuthCode ทำให้ไม่มี idToken
     await SocialLogin.initialize({
       google: {
         webClientId,
-        mode: 'offline',
+        mode: 'online',
       },
     });
     isInitialized = true;
+    console.log('[SocialLogin] Initialized Google Auth with Web Client ID');
   } catch (err) {
     console.error('[SocialLogin] Failed to initialize Google Auth:', err);
   }
@@ -46,21 +49,34 @@ export async function nativeGoogleLogin() {
     },
   });
 
-  // ใน result ของ SocialLogin จะมี idToken จาก Google Play Services
-  const result = res.result as { idToken?: string } | undefined;
+  console.log('[SocialLogin] Google Login Response:', res);
+
+  const result = res.result as {
+    idToken?: string | null;
+    accessToken?: { token?: string } | null;
+    serverAuthCode?: string;
+  };
+
   const idToken = result?.idToken;
 
   if (!idToken) {
-    throw new Error('ไม่ได้รับ ID Token จาก Google');
+    console.error('[SocialLogin] Result missing idToken:', res);
+    throw new Error(
+      `ไม่ได้รับ ID Token จาก Google: ${JSON.stringify(res.result || {})}`
+    );
   }
 
-  // แลก session โดยตรงกับ Supabase ภายในแอป ไม่ต้องผ่าน Browser ใดๆ
+  // ส่ง idToken ไปแลก Session กับ Supabase โดยตรงในแอป
   const supabase = createClient();
   const { data, error } = await supabase.auth.signInWithIdToken({
     provider: 'google',
     token: idToken,
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error('[SocialLogin] Supabase signInWithIdToken error:', error.message);
+    throw error;
+  }
+
   return data;
 }
