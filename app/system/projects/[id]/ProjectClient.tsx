@@ -36,12 +36,14 @@ import {
   CalendarDays,
   SlidersHorizontal,
   ChevronDown,
+  ChevronUp,
   Check,
   Target,
   Settings2,
   FileText,
   Maximize2,
   Minimize2,
+  Sparkles,
 } from "lucide-react";
 
 import {
@@ -73,6 +75,10 @@ export default function ProjectClient({
   const [tasks, setTasks] = useState<any[]>(project.tasks || []);
   const [isMounted, setIsMounted] = useState(false);
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [isTaskFormExpanded, setIsTaskFormExpanded] = useState(true);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [newTaskStatus, setNewTaskStatus] = useState<"todo" | "in_progress" | "done">("todo");
+  const [newTaskQualities, setNewTaskQualities] = useState<SelectedQualityInput[]>([]);
   const [sortBy, setSortBy] = useState<
     "newest" | "oldest" | "priority" | "due_date" | "custom"
   >("newest");
@@ -219,8 +225,11 @@ export default function ProjectClient({
 
     setIsAddingTask(true);
     try {
-      await createTask(project.id, formData);
+      await createTask(project.id, formData, newTaskQualities);
       form.reset();
+      setNewTaskStatus("todo");
+      setNewTaskQualities([]);
+      setShowAdvancedOptions(false);
       Swal.fire({
         toast: true,
         position: "top-end",
@@ -1138,77 +1147,218 @@ export default function ProjectClient({
           </div>
         </div>
 
-        {/* Task Creation Form with Priority & Due Date */}
-        <form
-          onSubmit={handleCreateTask}
-          className="mb-8 p-4 rounded-2xl border bg-muted/20 space-y-3"
-        >
-          <div className="flex flex-col lg:flex-row gap-3">
-            <div className="relative flex-1">
-              <Plus className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                name="title"
-                required
-                disabled={isAddingTask}
-                placeholder="เพิ่มขั้นตอนใหม่ / รายการเป้าหมาย..."
-                className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-xs outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
-              />
+        {/* Task Creation Form — Minimal & Easy-use */}
+        <div className="mb-8 rounded-2xl border border-primary/20 bg-card shadow-sm overflow-hidden transition-all duration-200">
+          {/* Form Header with Collapse Toggle */}
+          <div
+            onClick={() => setIsTaskFormExpanded(!isTaskFormExpanded)}
+            className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary/[0.04] to-transparent cursor-pointer select-none hover:bg-muted/40 transition-colors"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Plus className="h-4 w-4" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">
+                เพิ่มงานใหม่
+              </span>
+              {!isTaskFormExpanded && (
+                <span className="text-xs text-muted-foreground ml-1">
+                  (คลิกเพื่อเปิดฟอร์ม)
+                </span>
+              )}
             </div>
 
-            <div className="flex flex-wrap sm:flex-nowrap gap-2">
-              <div className="flex-1 sm:flex-none">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground hidden sm:block">
+                {isTaskFormExpanded
+                  ? "กรอกชื่องาน แล้วกด Enter หรือคลิก \"เพิ่มงาน\""
+                  : "คลิกเพื่อเพิ่มงาน"}
+              </span>
+              <button
+                type="button"
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                aria-label={isTaskFormExpanded ? "ซ่อนฟอร์ม" : "เปิดฟอร์ม"}
+              >
+                {isTaskFormExpanded ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Collapsible Form Body */}
+          {isTaskFormExpanded && (
+            <form
+              onSubmit={handleCreateTask}
+              className="p-4 space-y-3.5 border-t border-border/50 animate-in fade-in slide-in-from-top-1 duration-150"
+            >
+              {/* Title Row */}
+              <div className="relative">
+                <input
+                  type="text"
+                  name="title"
+                  required
+                  disabled={isAddingTask}
+                  placeholder="ชื่องาน / ขั้นตอนใหม่..."
+                  className="h-11 w-full rounded-xl border border-input bg-background pl-4 pr-4 text-sm font-medium placeholder:text-muted-foreground/60 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 disabled:opacity-60 transition-all"
+                />
+              </div>
+
+              {/* Controls Row */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Status Selector */}
+                <div className="flex items-center gap-1 p-1 rounded-xl border bg-background/80 shadow-sm">
+                  <span className="text-[11px] text-muted-foreground font-medium pl-2 pr-1 shrink-0">
+                    สถานะ:
+                  </span>
+                  {(
+                    [
+                      {
+                        value: "todo",
+                        label: "รอทำ",
+                        icon: <Circle className="w-3 h-3" />,
+                      },
+                      {
+                        value: "in_progress",
+                        label: "กำลังทำ",
+                        icon: <Timer className="w-3 h-3" />,
+                      },
+                      {
+                        value: "done",
+                        label: "เสร็จแล้ว",
+                        icon: <CheckCircle2 className="w-3 h-3" />,
+                      },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      disabled={isAddingTask}
+                      onClick={() => setNewTaskStatus(opt.value)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-all select-none disabled:opacity-60 ${
+                        newTaskStatus === opt.value
+                          ? opt.value === "done"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : opt.value === "in_progress"
+                              ? "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                              : "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:bg-muted/60"
+                      }`}
+                    >
+                      {opt.icon}
+                      {opt.label}
+                    </button>
+                  ))}
+                  {/* Hidden input to carry value in form */}
+                  <input type="hidden" name="status" value={newTaskStatus} />
+                </div>
+
+                {/* Priority Selector */}
                 <select
                   name="priority"
                   defaultValue="medium"
                   disabled={isAddingTask}
-                  className="h-11 w-full rounded-xl border bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
+                  className="h-9 rounded-xl border bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60 text-muted-foreground"
                 >
-                  <option value="low">ความสำคัญ: ทั่วไป</option>
-                  <option value="medium">ความสำคัญ: ปานกลาง</option>
-                  <option value="high">ความสำคัญ: ด่วนมาก</option>
+                  <option value="low">🔵 ทั่วไป</option>
+                  <option value="medium">🟡 ปานกลาง</option>
+                  <option value="high">🔴 ด่วนมาก</option>
                 </select>
-              </div>
 
-              <div className="flex-1 sm:flex-none">
+                {/* Due Date */}
                 <input
                   type="date"
                   name="due_date"
                   disabled={isAddingTask}
-                  className="h-11 w-full rounded-xl border bg-background px-3 text-xs text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
+                  className="h-9 rounded-xl border bg-background px-3 text-xs text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
                 />
+
+                {/* Collapsible Toggle for Details & Qualities */}
+                <button
+                  type="button"
+                  disabled={isAddingTask}
+                  onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                  className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border text-xs font-semibold transition-all ${
+                    showAdvancedOptions || newTaskQualities.length > 0
+                      ? "bg-primary/10 border-primary/30 text-primary shadow-xs"
+                      : "bg-background border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  }`}
+                  title={
+                    showAdvancedOptions
+                      ? "ซ่อนคุณสมบัติและบันทึก"
+                      : "เปิดกำหนดคุณสมบัติและบันทึก"
+                  }
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>คุณสมบัติ & โน้ต</span>
+                  {newTaskQualities.length > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+                      +{newTaskQualities.length}
+                    </span>
+                  )}
+                  {showAdvancedOptions ? (
+                    <ChevronUp className="w-3.5 h-3.5 ml-0.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
+                  )}
+                </button>
+
+                {/* Submit */}
+                <Button
+                  type="submit"
+                  disabled={isAddingTask}
+                  className="text-white ml-auto"
+                >
+                  {isAddingTask ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>กำลังเพิ่ม...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      <span>เพิ่มงาน</span>
+                    </>
+                  )}
+                </Button>
               </div>
 
-              <Button
-                type="submit"
-                disabled={isAddingTask}
-                    className="text-white mt-0.5    "
-              >
-                {isAddingTask ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>กำลังเพิ่มงาน...</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />
-                    <span>เพิ่มงาน</span>
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+              {/* Advanced Options Section (Description + Quality Picker) */}
+              {showAdvancedOptions && (
+                <div className="space-y-3 pt-2 border-t border-border/50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* Description */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-muted-foreground/70" />
+                      รายละเอียดเพิ่มเติม / โน้ต (ไม่บังคับ)
+                    </label>
+                    <textarea
+                      name="description"
+                      disabled={isAddingTask}
+                      rows={2}
+                      placeholder="เขียนรายละเอียด ขั้นตอนย่อย ลิงก์อ้างอิง หรือบันทึกสำคัญ..."
+                      className="w-full rounded-xl border bg-background/70 p-3 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/15 focus:bg-background disabled:opacity-60 resize-none transition-all"
+                    />
+                  </div>
 
-          <div>
-            <textarea
-              name="description"
-              disabled={isAddingTask}
-              rows={2}
-              placeholder="เพิ่มรายละเอียด/โน้ตของงานนี้ (ไม่บังคับ - สามารถเปิดอ่านและแก้ไขได้ตลอดเวลา)..."
-              className="w-full rounded-xl border bg-background p-3 text-xs outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20 disabled:opacity-60 resize-none"
-            />
-          </div>
-        </form>
+                  {/* Quality Picker */}
+                  {availableQualities.length > 0 && (
+                    <QualityPicker
+                      qualities={availableQualities}
+                      value={newTaskQualities}
+                      onChange={setNewTaskQualities}
+                      label="คุณสมบัติที่จะได้รับจากงานนี้"
+                      sublabel="ติ๊กเพื่อรับแต้มเมื่อทำสถานะสำเร็จ"
+                      isLoading={isAddingTask}
+                    />
+                  )}
+                </div>
+              )}
+            </form>
+          )}
+        </div>
 
         {/* Tasks List with Drag & Drop */}
         {tasks.length === 0 ? (

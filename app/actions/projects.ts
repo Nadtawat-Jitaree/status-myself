@@ -223,7 +223,11 @@ export async function toggleTaskStatus(taskId: string, currentStatus: string, pr
   revalidatePath('/system/dashboard')
 }
 
-export async function createTask(projectId: string, formData: FormData) {
+export async function createTask(
+  projectId: string,
+  formData: FormData,
+  selectedQualities?: SelectedQualityInput[]
+) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
@@ -232,6 +236,8 @@ export async function createTask(projectId: string, formData: FormData) {
   const title = formData.get('title') as string
   const description = (formData.get('description') as string)?.trim() || null
   const priority = (formData.get('priority') as string) || 'medium'
+  const statusRaw = (formData.get('status') as string) || 'todo'
+  const status = ['todo', 'in_progress', 'done'].includes(statusRaw) ? statusRaw : 'todo'
   const dueDateStr = formData.get('due_date') as string
   const due_date = dueDateStr && dueDateStr.trim() !== '' ? new Date(dueDateStr).toISOString() : null
 
@@ -246,7 +252,7 @@ export async function createTask(projectId: string, formData: FormData) {
 
   const nextOrder = (lastTask?.order_index ?? 0) + 1
 
-  const { error } = await supabase
+  const { data: inserted, error } = await supabase
     .from('tasks')
     .insert([
       {
@@ -254,13 +260,31 @@ export async function createTask(projectId: string, formData: FormData) {
         title,
         description,
         priority,
+        status,
         due_date,
         order_index: nextOrder,
       },
     ])
+    .select('id')
+    .single()
 
   if (error) throw error
+
+  const newTaskId = inserted?.id
+
+  // Sync qualities หากมีการเลือก
+  if (newTaskId && selectedQualities && selectedQualities.length > 0) {
+    await syncTaskQualities(newTaskId, selectedQualities, projectId)
+  }
+
+  // หากสร้าง task ในสถานะ done และมี qualities ให้ award ทันที
+  if (newTaskId && status === 'done') {
+    await awardTaskQualities(newTaskId, projectId)
+  }
+
   revalidatePath(`/system/projects/${projectId}`)
+  revalidatePath('/system/qualities')
+  revalidatePath('/system/dashboard')
 }
 
 export async function updateTaskStatus(taskId: string, newStatus: string, projectId: string) {
