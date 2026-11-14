@@ -50,6 +50,7 @@ export async function updateSession(request: NextRequest) {
   if (
     request.nextUrl.pathname !== "/" &&
     !user &&
+    !request.nextUrl.pathname.endsWith(".apk") &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/manifest.json") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
