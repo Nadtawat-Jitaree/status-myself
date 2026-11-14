@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import InstallPWAButton from "@/components/InstallPWAButton.js";
+import DownloadAPKButton from "@/components/DownloadAPKButton";
 
 // ─── Page-level Metadata (overrides root layout's title template) ──
 export const metadata: Metadata = {
@@ -154,6 +155,7 @@ export default function Home() {
 
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <InstallPWAButton />
+                <DownloadAPKButton />
 
                 <a href="/system/dashboard">
                   <Button

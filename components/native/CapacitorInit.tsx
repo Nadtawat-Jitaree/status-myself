@@ -43,6 +43,11 @@ export default function CapacitorInit() {
           // ignore
         }
 
+        // เมื่อเปิดแอปบน Native เข้ามาหน้าแรก (/) ให้นำทางไปหน้า Dashboard โดยตรง
+        if (pathname === '/') {
+          router.replace('/system/dashboard');
+        }
+
         // 1. จัดการ Android Hardware Back Button
         const backListener = await App.addListener('backButton', ({ canGoBack }) => {
           const isRootPage = pathname === '/' || pathname === '/system/dashboard';
