@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 import { useState } from "react";
+import { isNativePlatform } from "@/lib/capacitor/platform";
 
 export function SignUpForm({
   className,
@@ -21,18 +22,24 @@ export function SignUpForm({
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleGoogleSignUp = async () => {
-    const supabase = createClient();
     setIsGoogleLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/`,
-        },
-      });
-      if (error) throw error;
+      if (isNativePlatform()) {
+        const { nativeGoogleLogin } = await import("@/lib/capacitor/google-auth");
+        await nativeGoogleLogin();
+        window.location.href = "/system/dashboard";
+      } else {
+        const supabase = createClient();
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback?next=/`,
+          },
+        });
+        if (error) throw error;
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการเชื่อมต่อ");
       setIsGoogleLoading(false);

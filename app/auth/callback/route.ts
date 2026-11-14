@@ -6,6 +6,15 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   // if "next" is in param, use it as the redirect URL
   const next = searchParams.get("next") ?? "/";
+  const isNative = searchParams.get("native") === "1";
+
+  // หากเป็นการเรียกมาจาก Mobile Native (Capacitor)
+  // ให้ Redirect ส่ง code กลับเข้า App Scheme ทันที เพื่อให้ Client ในแอปเป็นผู้ทำ exchangeCodeForSession เอง
+  if (isNative && code) {
+    return NextResponse.redirect(
+      `com.puanj.notes://auth/callback?code=${code}&next=${encodeURIComponent(next)}`
+    );
+  }
 
   if (code) {
     const supabase = await createClient();
@@ -22,6 +31,18 @@ export async function GET(request: Request) {
       }
     } else {
       console.error("OAuth code exchange error:", error.message);
+
+      // หากพบว่าเกิดจาก PKCE code verifier not found (กรณีเริ่มจาก Mobile/WebView แต่ Redirect เข้ามาใน Browser)
+      // ให้ Fallback ส่งกลับเข้า App ผ่าน Deep Link เพื่อให้ App ลอง exchange อีกครั้ง
+      if (
+        error.message.includes("PKCE") ||
+        error.message.includes("code verifier")
+      ) {
+        return NextResponse.redirect(
+          `com.puanj.notes://auth/callback?code=${code}&next=${encodeURIComponent(next)}`
+        );
+      }
+
       return NextResponse.redirect(
         `${origin}/auth/error?error=${encodeURIComponent(error.message)}`,
       );

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { isNativePlatform } from "@/lib/capacitor/platform";
 
 export function LoginForm({
   className,
@@ -28,19 +29,25 @@ export function LoginForm({
   const router = useRouter();
 
   const handleGoogleLogin = async () => {
-    const supabase = createClient();
     setIsGoogleLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/`,
-        },
-      });
+      if (isNativePlatform()) {
+        const { nativeGoogleLogin } = await import("@/lib/capacitor/google-auth");
+        await nativeGoogleLogin();
+        window.location.href = "/system/dashboard";
+      } else {
+        const supabase = createClient();
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback?next=/`,
+          },
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
       setIsGoogleLoading(false);

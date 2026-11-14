@@ -12,6 +12,7 @@ export default function CapacitorInit() {
     if (!isNativePlatform()) return;
 
     let cleanupBackButton: (() => void) | undefined;
+    let cleanupUrlOpen: (() => void) | undefined;
 
     const setupNative = async () => {
       try {
@@ -24,7 +25,7 @@ export default function CapacitorInit() {
           await StatusBar.setStyle({ style: Style.Dark });
           await StatusBar.setOverlaysWebView({ overlay: false });
         } catch {
-          // StatusBar might not be available or throw in dev webview
+          // ignore
         }
 
         // ซ่อน Splash Screen เมื่อ Next.js โหลดเสร็จ
@@ -34,21 +35,92 @@ export default function CapacitorInit() {
           // ignore
         }
 
-        // จัดการ Android Hardware Back Button
-        const backListener = await App.addListener('backButton', ({ canGoBack }) => {
-          // หากอยู่ในหน้าหลักแล้ว (เช่น หน้าแรก หรือ dashboard) ให้ย่อ/ปิดแอป
-          const isRootPage = pathname === '/' || pathname === '/system/dashboard';
+        // Initialize Native Google Auth ถ้ามี Client ID
+        try {
+          const { initGoogleAuth } = await import('@/lib/capacitor/google-auth');
+          await initGoogleAuth();
+        } catch {
+          // ignore
+        }
 
+        // 1. จัดการ Android Hardware Back Button
+        const backListener = await App.addListener('backButton', ({ canGoBack }) => {
+          const isRootPage = pathname === '/' || pathname === '/system/dashboard';
           if (isRootPage || !canGoBack) {
             App.minimizeApp();
           } else {
             router.back();
           }
         });
-
         cleanupBackButton = () => {
           backListener.remove();
         };
+
+        // 2. จัดการ Deep Link สำหรับ OAuth Callback (Google Login)
+        const urlListener = await App.addListener('appUrlOpen', async (event) => {
+          console.log('[Capacitor] App opened via Deep Link:', event.url);
+
+          // ปิด In-App Browser ทันทีเมื่อ deep link กลับมาที่แอป
+          try {
+            const { Browser } = await import('@capacitor/browser');
+            await Browser.close().catch(() => {});
+          } catch {
+            // ignore
+          }
+
+          if (
+            event.url.includes('auth/callback') ||
+            event.url.includes('code=') ||
+            event.url.includes('access_token=')
+          ) {
+            try {
+              const { createClient } = await import('@/lib/supabase/client');
+              const supabase = createClient();
+
+              // กรณีที่ 1: Token ส่งมาใน Hash fragment (#access_token=...)
+              if (event.url.includes('#')) {
+                const hash = event.url.split('#')[1];
+                const hashParams = new URLSearchParams(hash);
+                const accessToken = hashParams.get('access_token');
+                const refreshToken = hashParams.get('refresh_token');
+
+                if (accessToken && refreshToken) {
+                  const { error } = await supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken,
+                  });
+                  if (!error) {
+                    window.location.href = '/system/dashboard';
+                    return;
+                  }
+                }
+              }
+
+              // กรณีที่ 2: Code ส่งมาใน Query params (?code=...)
+              const urlObj = new URL(event.url);
+              const code = urlObj.searchParams.get('code');
+              const next = urlObj.searchParams.get('next') || '/system/dashboard';
+
+              if (code) {
+                // ทำ Code Exchange บน Client ที่มี PKCE Code Verifier อยู่ใน storage
+                const { error } = await supabase.auth.exchangeCodeForSession(code);
+                if (error) {
+                  console.error('[Capacitor] Auth exchange error on client:', error.message);
+                  window.location.href = `/auth/error?error=${encodeURIComponent(error.message)}`;
+                } else {
+                  // สำเร็จ! Redirect เข้าหน้า Dashboard
+                  window.location.href = next;
+                }
+              }
+            } catch (err) {
+              console.error('[Capacitor] Failed processing OAuth deep link:', err);
+            }
+          }
+        });
+        cleanupUrlOpen = () => {
+          urlListener.remove();
+        };
+
       } catch (err) {
         console.warn('[Capacitor] Initialization warning:', err);
       }
@@ -57,9 +129,8 @@ export default function CapacitorInit() {
     setupNative();
 
     return () => {
-      if (cleanupBackButton) {
-        cleanupBackButton();
-      }
+      if (cleanupBackButton) cleanupBackButton();
+      if (cleanupUrlOpen) cleanupUrlOpen();
     };
   }, [router, pathname]);
 
