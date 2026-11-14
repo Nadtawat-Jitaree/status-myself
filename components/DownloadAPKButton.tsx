@@ -13,6 +13,7 @@ export default function DownloadAPKButton() {
       href="/nj-notes-v3.0.apk"
       download="NJ-Notes-v3.0.apk"
       className="
+        lg:hidden
         group
         relative
         inline-flex items-center justify-center gap-2
