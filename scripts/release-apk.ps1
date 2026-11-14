@@ -114,6 +114,15 @@ try {
     Warn "Release $TAG มีอยู่แล้ว (ID: $($existingRelease.id)) — จะ upload asset เพิ่ม"
     $releaseId  = $existingRelease.id
     $uploadBase = "https://uploads.github.com/repos/$REPO/releases/$releaseId/assets"
+    
+    # ลบ asset เดิมที่มีชื่อเดียวกันทิ้งก่อน upload ใหม่
+    foreach ($oldAsset in $existingRelease.assets) {
+        if ($oldAsset.name -eq $APK_NAME) {
+            Info "ลบ asset เดิม ID: $($oldAsset.id) ออกก่อน..."
+            Invoke-RestMethod -Uri "https://api.github.com/repos/$REPO/releases/assets/$($oldAsset.id)" -Method DELETE -Headers $HEADERS
+            OK "ลบ asset เดิมเรียบร้อย"
+        }
+    }
 } catch {
     # สร้าง Release ใหม่
     Info "สร้าง Release $TAG ใหม่ ..."
