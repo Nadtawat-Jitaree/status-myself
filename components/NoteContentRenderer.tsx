@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check } from "lucide-react";
+import { Check, PenTool } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NoteContentRendererProps {
@@ -176,6 +176,16 @@ function NoteContentRendererComponent({
     .replace(/<span[^>]*>\s*<\/span>/gi, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+
+  // If this note is an annotated PDF notebook, render a friendly badge instead of raw JSON
+  if (cleanedContent.startsWith('{"type":"pdf_notes_annotation"')) {
+    return (
+      <div className={cn("inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400 py-0.5", className)}>
+        <PenTool className="w-3.5 h-3.5 shrink-0" />
+        <span className="text-xs font-medium">สมุดจด PDF (มีลายมือและภาพวาด)</span>
+      </div>
+    );
+  }
 
   if (!cleanedContent) {
     return (

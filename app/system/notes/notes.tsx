@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
   getNotesPageData,
   getNotes,
@@ -59,11 +59,19 @@ import {
   Eye,
   Copy,
   Calendar,
+  PenTool,
 } from "lucide-react";
 import ShareModal from "@/components/ShareModal";
 import { NoteFormModal } from "@/components/NoteFormModal";
 import NoteContentRenderer from "@/components/NoteContentRenderer";
 import RichNoteEditor from "@/components/RichNoteEditor";
+import dynamic from "next/dynamic";
+
+import { DocumentAnnotationState } from "@/lib/pdf-canvas/types";
+
+const PdfNoteStudio = dynamic(() => import("@/components/PdfNoteStudio"), {
+  ssr: false,
+});
 import {
   getQualities,
   Quality,
@@ -397,6 +405,188 @@ export default function NotesPage({ noteType, initialData }: Props) {
   const [readingNote, setReadingNote] = useState<Note | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
+  // PDF Note Studio state
+  const [isPdfStudioOpen, setIsPdfStudioOpen] = useState(false);
+  const [pdfStudioNote, setPdfStudioNote] = useState<Note | null>(null);
+  const [pdfStudioUrl, setPdfStudioUrl] = useState<string | null>(null);
+  const [pdfStudioAnnotation, setPdfStudioAnnotation] = useState<DocumentAnnotationState | null>(null);
+  // เก็บ URL ล่าสุดหลังบันทึก — apply ตอนปิด studio เพื่อป้องกัน reload กลางคัน
+  const pendingPdfStudioUrlRef = useRef<string | null>(null);
+
+  const openPdfStudio = async (note: Note | null) => {
+    if (note) {
+      setPdfStudioNote(note);
+
+      // โหลดข้อมูลลายเส้นจาก note.content ถ้ามีเก็บไว้เป็น JSON
+      let parsedAnno: DocumentAnnotationState | null = null;
+      if (note.content && note.content.startsWith('{"type":"pdf_notes_annotation"')) {
+        try {
+          parsedAnno = JSON.parse(note.content);
+        } catch (e) {
+          console.warn("Failed to parse note annotation JSON:", e);
+        }
+      }
+      setPdfStudioAnnotation(parsedAnno);
+
+      if (note.file_path && !isImageFile(note.file_path)) {
+        const supabase = createClient();
+        const { data } = await supabase.storage
+          .from("note_attachments")
+          .createSignedUrl(note.file_path, 3600);
+        const freshUrl = data?.signedUrl
+          ? `${data.signedUrl}&t=${Date.now()}`
+          : null;
+        setPdfStudioUrl(freshUrl);
+      } else {
+        setPdfStudioUrl(null);
+      }
+    } else {
+      setPdfStudioNote(null);
+      setPdfStudioAnnotation(null);
+      setPdfStudioUrl(null);
+    }
+    setIsPdfStudioOpen(true);
+  };
+
+  const handleSavePdfStudio = async (
+    annotation: DocumentAnnotationState,
+    pdfBlob?: Blob
+  ) => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("กรุณาเข้าสู่ระบบก่อนบันทึก");
+
+    let newFilePath = pdfStudioNote?.file_path || null;
+
+    // 1. ถ้ามี PDF blob ให้อัปโหลดเข้า storage ด้วยชื่อไฟล์แบบ flat unique
+    if (pdfBlob) {
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from("note_attachments")
+        .upload(fileName, pdfBlob, {
+          contentType: "application/pdf",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        throw new Error("อัปโหลดไฟล์บันทึกไม่สำเร็จ: " + uploadError.message);
+      }
+      newFilePath = fileName;
+    }
+
+    // 2. ดึง signed URL ใหม่สดพร้อม cache buster
+    let freshSignedUrl: string | null = null;
+    if (newFilePath) {
+      const { data: signedData } = await supabase.storage
+        .from("note_attachments")
+        .createSignedUrl(newFilePath, 3600);
+      freshSignedUrl = signedData?.signedUrl
+        ? `${signedData.signedUrl}&t=${Date.now()}`
+        : null;
+    }
+
+    // 3. แปลงข้อมูลเวกเตอร์ลายเส้นและรูปภาพทั้งหมดเป็น JSON เก็บใน note.content (Dual-Layer)
+    const annotationContent = JSON.stringify({
+      type: "pdf_notes_annotation",
+      version: 1,
+      savedAt: new Date().toISOString(),
+      pages: annotation.pages,
+      strokes: annotation.strokes,
+      images: annotation.images,
+    });
+
+    if (pdfStudioNote) {
+      const oldFilePath = pdfStudioNote.file_path;
+
+      await updateNote(pdfStudioNote.id, {
+        title: pdfStudioNote.title,
+        content: annotationContent,
+        category_id: pdfStudioNote.category_id || null,
+        status: pdfStudioNote.status,
+        file_path: newFilePath,
+        is_pinned: pdfStudioNote.is_pinned,
+      });
+
+      const updatedNote: Note = {
+        ...pdfStudioNote,
+        content: annotationContent,
+        file_path: newFilePath,
+      };
+
+      // อัปเดต local notes list ทันที
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === pdfStudioNote.id ? updatedNote : n
+        )
+      );
+
+      pendingPdfStudioUrlRef.current = freshSignedUrl;
+      setPdfStudioNote(updatedNote);
+      setPdfStudioAnnotation(annotation);
+
+      if (readingNote?.id === pdfStudioNote.id) {
+        setReadingNote(updatedNote);
+        if (freshSignedUrl) setPdfUrl(freshSignedUrl);
+      }
+
+      // ลบไฟล์เก่าออกเพื่อประหยัดพื้นที่
+      if (oldFilePath && newFilePath && oldFilePath !== newFilePath) {
+        supabase.storage
+          .from("note_attachments")
+          .remove([oldFilePath])
+          .catch(() => {});
+      }
+    } else {
+      // สร้างบันทึกใหม่สำหรับสมุดจดดิจิทัล
+      const noteTitle = `สมุดจดดิจิทัล (${new Date().toLocaleDateString("th-TH")})`;
+      let categoryId = categories[0]?.id || null;
+      if (!categoryId) {
+        try {
+          await createCategory(
+            noteType === "school" ? "วิชาทั่วไป" : "ทั่วไป",
+            noteType
+          );
+          const freshData = await getNotesPageData(noteType);
+          categoryId = freshData.categories?.[0]?.id || null;
+        } catch (e) {
+          console.warn("Auto create category warning:", e);
+        }
+      }
+
+      const createRes = await createNote({
+        title: noteTitle,
+        content: annotationContent,
+        category_id: categoryId,
+        status: "normal",
+        file_path: newFilePath,
+        is_pinned: false,
+      });
+
+      if (createRes?.id) {
+        const newNote: Note = {
+          id: createRes.id,
+          title: noteTitle,
+          content: annotationContent,
+          created_at: new Date().toISOString(),
+          category_id: categoryId,
+          status: "normal",
+          file_path: newFilePath,
+        };
+        // เพิ่ม note ใหม่เข้า local list ทันที
+        setNotes((prev) => [newNote, ...prev]);
+        pendingPdfStudioUrlRef.current = freshSignedUrl;
+        setPdfStudioNote(newNote);
+        setPdfStudioAnnotation(annotation);
+      }
+    }
+
+    invalidateNotesCache(noteType);
+    loadNotes().catch(() => {});
+  };
+
   useEffect(() => {
     const loadPdfUrl = async () => {
       if (readingNote && readingNote.file_path) {
@@ -406,7 +596,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
           .createSignedUrl(readingNote.file_path, 3600);
 
         if (data?.signedUrl) {
-          setPdfUrl(data.signedUrl);
+          setPdfUrl(`${data.signedUrl}&t=${Date.now()}`);
         }
       } else {
         setPdfUrl(null);
@@ -856,20 +1046,45 @@ export default function NotesPage({ noteType, initialData }: Props) {
   const handleDeleteNote = async (id: string) => {
     const result = await Swal.fire({
       title: "ลบโน้ตนี้?",
-      text: "คุณจะไม่สามารถกู้คืนข้อมูลนี้ได้!",
+      text: "คุณจะไม่สามารถกู้คืนข้อมูลนี้ได้ และไฟล์แนบในระบบจะถูกลบออกถาวร!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
       cancelButtonColor: "#6b7280",
       confirmButtonText: "ใช่, ลบเลย!",
+      cancelButtonText: "ยกเลิก",
     });
 
     if (result.isConfirmed) {
       try {
+        const targetNote = notes.find((n) => n.id === id);
+        // ลบไฟล์ PDF / รูปภาพแนบใน Storage ทันที
+        if (targetNote?.file_path) {
+          const supabase = createClient();
+          await supabase.storage
+            .from("note_attachments")
+            .remove([targetNote.file_path])
+            .catch((err) => console.error("Client storage remove error:", err));
+        }
+
         await deleteNote(id);
         invalidateNotesCache(noteType);
         invalidateNoteQualitiesCache(id);
         setNotes((prev) => prev.filter((note) => note.id !== id));
+        if (readingNote?.id === id) setReadingNote(null);
+        if (pdfStudioNote?.id === id) {
+          setPdfStudioNote(null);
+          setIsPdfStudioOpen(false);
+        }
+
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "ลบโน้ตและไฟล์แนบเรียบร้อยแล้ว",
+          showConfirmButton: false,
+          timer: 1500,
+        });
       } catch {
         Swal.fire("ข้อผิดพลาด!", "ไม่สามารถลบโน้ตได้", "error");
       }
@@ -1099,7 +1314,15 @@ export default function NotesPage({ noteType, initialData }: Props) {
             จัดการข้อความ หมวดหมู่ และสถานะของคุณในที่เดียว
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <Button
+            onClick={() => openPdfStudio(null)}
+            variant="outline"
+            className="border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 gap-1.5"
+          >
+            <PenTool className="w-4 h-4 text-blue-500" />
+            สมุดจด PDF (ลายมือ)
+          </Button>
           <Button
             onClick={() => setIsCategoryModalOpen(true)}
             variant="outline"
@@ -1661,16 +1884,26 @@ export default function NotesPage({ noteType, initialData }: Props) {
                           </div>
                         </div>
                       ) : (
-                        <a
-                          href={getAttachmentUrl(note.file_path)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs text-red-600 bg-red-50 dark:bg-red-950/40 px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900 hover:bg-red-100"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          <span>เอกสารแนบ (PDF)</span>
-                          <ExternalLink className="w-3 h-3 ml-0.5" />
-                        </a>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => openPdfStudio(note)}
+                            className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-900 hover:bg-blue-100 font-medium transition"
+                          >
+                            <PenTool className="w-3 h-3" />
+                            <span>เขียน PDF</span>
+                          </button>
+                          <a
+                            href={getAttachmentUrl(note.file_path)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-red-600 bg-red-50 dark:bg-red-950/40 px-2 py-1 rounded-lg border border-red-200 dark:border-red-900 hover:bg-red-100"
+                          >
+                            <FileText className="w-3 h-3" />
+                            <span>เอกสาร</span>
+                            <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
+                          </a>
+                        </div>
                       )}
                     </div>
                   )}
@@ -1691,6 +1924,19 @@ export default function NotesPage({ noteType, initialData }: Props) {
                       className="flex items-center gap-1 shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      {note.file_path && !isImageFile(note.file_path) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openPdfStudio(note)}
+                          className="h-7 px-2 text-xs text-blue-700 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40 gap-1 rounded-md"
+                          title="เปิดเขียน/วาดบน PDF"
+                        >
+                          <PenTool className="w-3.5 h-3.5" />
+                          <span>เขียน</span>
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="ghost"
@@ -2152,15 +2398,23 @@ export default function NotesPage({ noteType, initialData }: Props) {
                         </>
                       )}
                     </h3>
-                    <a
-                      href={getAttachmentUrl(readingNote.file_path)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg font-medium"
-                    >
-                      <Download className="w-3.5 h-3.5" /> ดาวน์โหลด / เปิดแท็บใหม่
-                    </a>
-                  </div>
+                      {!isImageFile(readingNote.file_path) && (
+                        <Button
+                          onClick={() => openPdfStudio(readingNote)}
+                          className="inline-flex items-center gap-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg font-medium shadow-sm transition"
+                        >
+                          <PenTool className="w-3.5 h-3.5" /> เขียน/วาดบน PDF
+                        </Button>
+                      )}
+                      <a
+                        href={getAttachmentUrl(readingNote.file_path)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg font-medium"
+                      >
+                        <Download className="w-3.5 h-3.5" /> ดาวน์โหลด / เปิดแท็บใหม่
+                      </a>
+                    </div>
 
                   {isImageFile(readingNote.file_path) ? (
                     <div
@@ -2181,11 +2435,19 @@ export default function NotesPage({ noteType, initialData }: Props) {
                       </div>
                     </div>
                   ) : pdfUrl ? (
-                    <iframe
-                      src={pdfUrl}
-                      className="w-full lg:h-[500px] rounded-xl border border-slate-200"
-                      title="PDF Viewer"
-                    />
+                    <div className="relative group rounded-xl overflow-hidden border border-slate-200">
+                      <iframe
+                        src={pdfUrl}
+                        className="w-full lg:h-[500px]"
+                        title="PDF Viewer"
+                      />
+                      <button
+                        onClick={() => openPdfStudio(readingNote)}
+                        className="absolute bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 text-xs font-semibold transition active:scale-95"
+                      >
+                        <PenTool className="w-4 h-4" /> เปิดกระดานเขียนด้วยปากกา
+                      </button>
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center w-full h-[300px] bg-slate-100/50 rounded-xl border border-slate-200 border-dashed animate-pulse">
                       <span className="text-slate-500 font-medium">
@@ -2726,6 +2988,23 @@ export default function NotesPage({ noteType, initialData }: Props) {
         type={shareItem?.type || "note"}
         item={shareItem?.item || null}
         onUpdate={handleShareUpdate}
+      />
+
+      {/* PDF Note Drawing & Annotation Studio */}
+      <PdfNoteStudio
+        isOpen={isPdfStudioOpen}
+        onClose={() => {
+          setIsPdfStudioOpen(false);
+          if (pendingPdfStudioUrlRef.current !== null) {
+            setPdfStudioUrl(pendingPdfStudioUrlRef.current);
+            pendingPdfStudioUrlRef.current = null;
+          }
+        }}
+        noteId={pdfStudioNote?.id}
+        noteTitle={pdfStudioNote ? pdfStudioNote.title : "สมุดจด PDF ดิจิทัล"}
+        pdfUrl={pdfStudioUrl}
+        initialAnnotation={pdfStudioAnnotation}
+        onSave={handleSavePdfStudio}
       />
     </div>
   );

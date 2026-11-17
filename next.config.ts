@@ -12,6 +12,14 @@ const withPWA = withPWAInit({
 });
 const nextConfig: NextConfig = {
   turbopack: {},
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      canvas: false,
+      encoding: false,
+    };
+    return config;
+  },
   async headers() {
     return [
       {
