@@ -20,6 +20,74 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 }
 
 /**
+ * แปลงพิกัดจากหน้าจอ (Canvas Screen Space) ไปยังพิกัดของ PDF (PDF Page Space)
+ * โดยคำนึงถึงการหมุนหน้ากระดาษ (Rotation: 0, 90, 180, 270 องศา)
+ */
+function transformPointToPdf(
+  sx: number,
+  sy: number,
+  pageWidth: number,
+  pageHeight: number,
+  rotation: number = 0
+): { x: number; y: number } {
+  const rot = ((rotation % 360) + 360) % 360;
+  if (rot === 90) {
+    return { x: sy, y: sx };
+  } else if (rot === 180) {
+    return { x: pageWidth - sx, y: sy };
+  } else if (rot === 270) {
+    return { x: pageWidth - sy, y: pageHeight - sx };
+  }
+  // rot === 0 (default)
+  return { x: sx, y: pageHeight - sy };
+}
+
+/**
+ * คำนวณตำแหน่งและมุมหมุนสำหรับวางรูปภาพลงใน PDF ตามการหมุนหน้ากระดาษ
+ */
+function getImagePdfParams(
+  img: { x: number; y: number; width: number; height: number },
+  pageWidth: number,
+  pageHeight: number,
+  rotation: number = 0
+): { x: number; y: number; width: number; height: number; rotate: number } {
+  const rot = ((rotation % 360) + 360) % 360;
+  if (rot === 90) {
+    return {
+      x: img.y + img.height,
+      y: img.x,
+      width: img.width,
+      height: img.height,
+      rotate: 90,
+    };
+  } else if (rot === 180) {
+    return {
+      x: pageWidth - img.x,
+      y: img.y + img.height,
+      width: img.width,
+      height: img.height,
+      rotate: 180,
+    };
+  } else if (rot === 270) {
+    return {
+      x: pageWidth - (img.y + img.height),
+      y: pageHeight - img.x,
+      width: img.width,
+      height: img.height,
+      rotate: 270,
+    };
+  }
+  // rot === 0
+  return {
+    x: img.x,
+    y: pageHeight - img.y - img.height,
+    width: img.width,
+    height: img.height,
+    rotate: 0,
+  };
+}
+
+/**
  * สร้างไฟล์ PDF ใหม่ หรือนำ PDF เดิมมาใส่เวกเตอร์เส้นวาด ลวดลายกระดาษ และปรับการหมุน/การวางแนว
  */
 export async function exportAnnotatedPdfBlob(
@@ -28,45 +96,126 @@ export async function exportAnnotatedPdfBlob(
   strokes: Stroke[],
   images: ImageElement[] = []
 ): Promise<Blob> {
+  const hasImportedPdfPages = pages.some((p) => !p.isCustomPage);
   let pdfDoc: PDFDocument;
 
-  if (originalPdfBytes && originalPdfBytes.byteLength > 0) {
+  if (hasImportedPdfPages && originalPdfBytes && originalPdfBytes.byteLength > 0) {
     try {
       const clonedBytes =
         originalPdfBytes instanceof Uint8Array
           ? originalPdfBytes.slice(0)
           : new Uint8Array(originalPdfBytes.slice(0));
-      pdfDoc = await PDFDocument.load(clonedBytes, {
+      const sourceDoc = await PDFDocument.load(clonedBytes, {
         ignoreEncryption: true,
       });
+      pdfDoc = await PDFDocument.create();
+
+      const sourcePages = sourceDoc.getPages();
+      let importedPdfPageIndex = 0;
+
+      for (let i = 0; i < pages.length; i++) {
+        const pageState = pages[i];
+        if (!pageState.isCustomPage && importedPdfPageIndex < sourcePages.length) {
+          const [copiedPage] = await pdfDoc.copyPages(sourceDoc, [importedPdfPageIndex]);
+          copiedPage.setSize(pageState.width, pageState.height);
+          copiedPage.setRotation(degrees(pageState.rotation || 0));
+          pdfDoc.addPage(copiedPage);
+          importedPdfPageIndex++;
+        } else {
+          // หน้ากระดาษสร้างเอง (Custom Page) ให้สร้างเป็นหน้าใหม่สะอาดเสมอ
+          const newPage = pdfDoc.addPage([pageState.width, pageState.height]);
+          newPage.setRotation(degrees(pageState.rotation || 0));
+        }
+      }
     } catch (e) {
       console.warn('PDF load warning, creating fresh PDF doc:', e);
       pdfDoc = await PDFDocument.create();
+      for (let i = 0; i < pages.length; i++) {
+        const pageState = pages[i];
+        const newPage = pdfDoc.addPage([pageState.width, pageState.height]);
+        newPage.setRotation(degrees(pageState.rotation || 0));
+      }
     }
   } else {
+    // ไม่มีหน้าจาก PDF ต้นฉบับ (เช่น สมุดจดดิจิทัล / หน้า custom ทั้งหมด)
+    // สร้าง PDF ใหม่เอี่ยม ปราศจากลายเส้นเก่าที่อาจค้างอยู่ใน buffer เดิม
     pdfDoc = await PDFDocument.create();
+    for (let i = 0; i < pages.length; i++) {
+      const pageState = pages[i];
+      const newPage = pdfDoc.addPage([pageState.width, pageState.height]);
+      newPage.setRotation(degrees(pageState.rotation || 0));
+    }
   }
 
   const existingPages = pdfDoc.getPages();
 
-  // สร้างหน้าใหม่ถ้ามีหน้าที่ผู้ใช้เพิ่มเอง (เช่น หน้าที่ 2, 3...)
   for (let i = 0; i < pages.length; i++) {
     const pageState = pages[i];
     let page = existingPages[i];
-
-    if (!page) {
-      // หน้าใหม่
-      page = pdfDoc.addPage([pageState.width, pageState.height]);
-    } else if (pageState.isCustomPage) {
-      page.setSize(pageState.width, pageState.height);
-    }
-
-    // ปรับการหมุนเฉพาะหน้า custom หรือเมื่อมีการหมุนเพิ่มเติม
-    if (pageState.isCustomPage && pageState.rotation !== undefined) {
-      page.setRotation(degrees(pageState.rotation));
-    }
+    if (!page) continue;
 
     const { width: pWidth, height: pHeight } = page.getSize();
+
+    // คำนวณขนาดการแสดงผลบนหน้าจอ (displayWidth x displayHeight) เพื่ออ้างอิงตำแหน่งเส้น/รูปภาพ
+    const isRot90or270 = pageState.rotation === 90 || pageState.rotation === 270;
+    const dispW = isRot90or270 ? pHeight : pWidth;
+    const dispH = isRot90or270 ? pWidth : pHeight;
+
+    // วาดลวดลายกระดาษ (ถ้าเป็นหน้ากระดาษแบบกำหนดเอง เช่น ruled, grid, dotted)
+    if (pageState.isCustomPage && pageState.template && pageState.template !== 'blank') {
+      if (pageState.template === 'ruled') {
+        const lineSpacing = 32;
+        const topMargin = 50;
+        const lineCol = rgb(0.886, 0.91, 0.941); // slate-200
+        for (let sy = topMargin; sy < dispH - 20; sy += lineSpacing) {
+          const p1 = transformPointToPdf(30, sy, pWidth, pHeight, pageState.rotation);
+          const p2 = transformPointToPdf(dispW - 30, sy, pWidth, pHeight, pageState.rotation);
+          page.drawLine({
+            start: { x: p1.x, y: p1.y },
+            end: { x: p2.x, y: p2.y },
+            thickness: 1,
+            color: lineCol,
+          });
+        }
+      } else if (pageState.template === 'grid') {
+        const gridSize = 25;
+        const lineCol = rgb(0.945, 0.961, 0.976); // slate-100
+        for (let sx = gridSize; sx < dispW; sx += gridSize) {
+          const p1 = transformPointToPdf(sx, 0, pWidth, pHeight, pageState.rotation);
+          const p2 = transformPointToPdf(sx, dispH, pWidth, pHeight, pageState.rotation);
+          page.drawLine({
+            start: { x: p1.x, y: p1.y },
+            end: { x: p2.x, y: p2.y },
+            thickness: 1,
+            color: lineCol,
+          });
+        }
+        for (let sy = gridSize; sy < dispH; sy += gridSize) {
+          const p1 = transformPointToPdf(0, sy, pWidth, pHeight, pageState.rotation);
+          const p2 = transformPointToPdf(dispW, sy, pWidth, pHeight, pageState.rotation);
+          page.drawLine({
+            start: { x: p1.x, y: p1.y },
+            end: { x: p2.x, y: p2.y },
+            thickness: 1,
+            color: lineCol,
+          });
+        }
+      } else if (pageState.template === 'dotted') {
+        const dotSpacing = 25;
+        const dotCol = rgb(0.796, 0.835, 0.882); // slate-300
+        for (let sx = dotSpacing; sx < dispW; sx += dotSpacing) {
+          for (let sy = dotSpacing; sy < dispH; sy += dotSpacing) {
+            const pt = transformPointToPdf(sx, sy, pWidth, pHeight, pageState.rotation);
+            page.drawCircle({
+              x: pt.x,
+              y: pt.y,
+              size: 1.2,
+              color: dotCol,
+            });
+          }
+        }
+      }
+    }
 
     // วาดรูปภาพ (Images) ของหน้านี้ก่อน เพื่อให้เส้นวาดอยู่เหนือรูป
     const pageImages = images.filter((img) => img.pageIndex === i);
@@ -78,11 +227,13 @@ export async function exportAnnotatedPdfBlob(
         } else {
           pdfImg = await pdfDoc.embedJpg(imgEl.dataUrl);
         }
+        const imgParams = getImagePdfParams(imgEl, pWidth, pHeight, pageState.rotation);
         page.drawImage(pdfImg, {
-          x: imgEl.x,
-          y: pHeight - imgEl.y - imgEl.height,
-          width: imgEl.width,
-          height: imgEl.height,
+          x: imgParams.x,
+          y: imgParams.y,
+          width: imgParams.width,
+          height: imgParams.height,
+          rotate: degrees(imgParams.rotate),
         });
       } catch (err) {
         console.warn('Embedding image in PDF skipped or failed:', err);
@@ -103,9 +254,10 @@ export async function exportAnnotatedPdfBlob(
 
       if (pts.length === 1) {
         // วาดจุดเดี่ยว (Circle)
+        const pt = transformPointToPdf(pts[0].x, pts[0].y, pWidth, pHeight, pageState.rotation);
         page.drawCircle({
-          x: pts[0].x,
-          y: pHeight - pts[0].y,
+          x: pt.x,
+          y: pt.y,
           size: stroke.width / 2,
           color: strokeColor,
           opacity: strokeOpacity,
@@ -114,18 +266,13 @@ export async function exportAnnotatedPdfBlob(
       }
 
       // วาดเส้นต่อเนื่องแบบเวกเตอร์คมชัดสูง
-      // เพื่อความลื่นไหล เรา interpolate จุดระหว่างจุดถ้าห่างกัน
       for (let j = 0; j < pts.length - 1; j++) {
-        const p1 = pts[j];
-        const p2 = pts[j + 1];
-
-        // ใน PDF แกน Y เริ่มต้นจากล่างขึ้นบน ต่างจาก Canvas ที่เริ่มจากบนลงล่าง
-        const y1 = pHeight - p1.y;
-        const y2 = pHeight - p2.y;
+        const p1 = transformPointToPdf(pts[j].x, pts[j].y, pWidth, pHeight, pageState.rotation);
+        const p2 = transformPointToPdf(pts[j + 1].x, pts[j + 1].y, pWidth, pHeight, pageState.rotation);
 
         page.drawLine({
-          start: { x: p1.x, y: y1 },
-          end: { x: p2.x, y: y2 },
+          start: { x: p1.x, y: p1.y },
+          end: { x: p2.x, y: p2.y },
           thickness: stroke.width,
           color: strokeColor,
           opacity: strokeOpacity,

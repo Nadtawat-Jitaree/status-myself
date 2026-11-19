@@ -4,7 +4,7 @@ import { getNotesPageData } from "@/app/actions/notes";
 import { requirePremiumAccess } from "@/lib/subscription";
 
 export const metadata = {
-  title: "School Notes | NJ Notes",
+  title: "School Notes",
   description: "ระบบบันทึกการเรียนมหาวิทยาลัย",
 };
 

@@ -450,7 +450,9 @@ export default function NotesPage({ noteType, initialData }: Props) {
 
   const handleSavePdfStudio = async (
     annotation: DocumentAnnotationState,
-    pdfBlob?: Blob
+    pdfBlob?: Blob,
+    customTitle?: string,
+    customCategoryId?: string | null
   ) => {
     const supabase = createClient();
     const {
@@ -540,17 +542,22 @@ export default function NotesPage({ noteType, initialData }: Props) {
           .catch(() => {});
       }
     } else {
-      // สร้างบันทึกใหม่สำหรับสมุดจดดิจิทัล
-      const noteTitle = `สมุดจดดิจิทัล (${new Date().toLocaleDateString("th-TH")})`;
-      let categoryId = categories[0]?.id || null;
-      if (!categoryId) {
+      // สมุดจดใหม่ — ใช้ชื่อและหมวดหมู่ที่ผู้ใช้เลือกจาก SaveDigitalNotebookModal (ส่งมาผ่าน customTitle / customCategoryId)
+      const noteTitle = customTitle || `สมุดจดดิจิทัล (${new Date().toLocaleDateString("th-TH")})`;
+      let selectedCategoryId: string | null = customCategoryId ?? null;
+
+      // ถ้ายังไม่มีหมวดหมู่ ให้ใช้หมวดแรกที่มีอยู่ หรือสร้างใหม่อัตโนมัติ
+      if (!selectedCategoryId && categories.length > 0) {
+        selectedCategoryId = categories[0].id;
+      }
+      if (!selectedCategoryId) {
         try {
-          await createCategory(
-            noteType === "school" ? "วิชาทั่วไป" : "ทั่วไป",
-            noteType
-          );
+          await createCategory(noteType === "school" ? "วิชาทั่วไป" : "ทั่วไป", noteType);
           const freshData = await getNotesPageData(noteType);
-          categoryId = freshData.categories?.[0]?.id || null;
+          if (freshData.categories) {
+            setCategories(freshData.categories);
+            selectedCategoryId = freshData.categories[0]?.id || null;
+          }
         } catch (e) {
           console.warn("Auto create category warning:", e);
         }
@@ -559,7 +566,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
       const createRes = await createNote({
         title: noteTitle,
         content: annotationContent,
-        category_id: categoryId,
+        category_id: selectedCategoryId || null,
         status: "normal",
         file_path: newFilePath,
         is_pinned: false,
@@ -571,7 +578,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
           title: noteTitle,
           content: annotationContent,
           created_at: new Date().toISOString(),
-          category_id: categoryId,
+          category_id: selectedCategoryId || null,
           status: "normal",
           file_path: newFilePath,
         };
@@ -3004,6 +3011,8 @@ export default function NotesPage({ noteType, initialData }: Props) {
         noteTitle={pdfStudioNote ? pdfStudioNote.title : "สมุดจด PDF ดิจิทัล"}
         pdfUrl={pdfStudioUrl}
         initialAnnotation={pdfStudioAnnotation}
+        categories={categories}
+        noteType={noteType}
         onSave={handleSavePdfStudio}
       />
     </div>

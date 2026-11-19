@@ -4,7 +4,7 @@ import { getNotesPageData } from "@/app/actions/notes";
 import { requirePremiumAccess } from "@/lib/subscription";
 
 export const metadata = {
-  title: "Notes | NJ Notes",
+  title: "Notes",
   description: "ระบบบันทึกข้อมูลใช้งานส่วนตัว",
   keywords: "Note บันทึกข้อมูล",
   openGraph: {

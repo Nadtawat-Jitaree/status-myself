@@ -15,7 +15,9 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   X,
+  AlertTriangle,
   ZoomIn,
   ZoomOut,
   Maximize2,
@@ -55,7 +57,13 @@ import {
   isImageInRect,
 } from "@/lib/pdf-canvas/algorithms";
 import { exportAnnotatedPdfBlob } from "@/lib/pdf-canvas/export";
+import {
+  exportCurrentPageAsImage,
+  exportAllPagesAsImages,
+} from "@/lib/pdf-canvas/export-images";
 import { PDFDocument } from "pdf-lib";
+import { SaveDigitalNotebookModal } from "./SaveDigitalNotebookModal";
+import { NoteCategoryItem } from "./NoteFormModal";
 
 // A4 Dimensions in PDF Points (72 dpi)
 const A4_PORTRAIT_WIDTH = 595.28;
@@ -88,7 +96,14 @@ interface PdfNoteStudioProps {
   initialAnnotation?: DocumentAnnotationState | null;
   initialStrokes?: Stroke[];
   initialImages?: ImageElement[];
-  onSave?: (annotation: DocumentAnnotationState, pdfBlob?: Blob) => Promise<void> | void;
+  categories?: NoteCategoryItem[];
+  noteType?: string;
+  onSave?: (
+    annotation: DocumentAnnotationState,
+    pdfBlob?: Blob,
+    customTitle?: string,
+    customCategoryId?: string | null
+  ) => Promise<boolean | void> | boolean | void;
 }
 
 export default function PdfNoteStudio({
@@ -100,6 +115,8 @@ export default function PdfNoteStudio({
   initialAnnotation = null,
   initialStrokes = [],
   initialImages = [],
+  categories = [],
+  noteType = "normal",
   onSave,
 }: PdfNoteStudioProps) {
   // --- Tool & Drawing States ---
@@ -149,10 +166,38 @@ export default function PdfNoteStudio({
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isLoadingPdf, setIsLoadingPdf] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [exportProgressText, setExportProgressText] = useState<string>("");
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState<boolean>(false);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  // Modal สำหรับบันทึกสมุดจดเล่มใหม่ (เลือกหมวดหมู่และชื่อ)
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false);
+  const [currentDisplayTitle, setCurrentDisplayTitle] = useState<string>(noteTitle);
+
+  // การตรวจจับการแก้ไข (Unsaved Changes) และ Modal ยืนยันก่อนปิดหน้าต่าง
+  const [isDirty, setIsDirty] = useState<boolean>(false);
+  const [isUnsavedModalOpen, setIsUnsavedModalOpen] = useState<boolean>(false);
+  const shouldCloseAfterSaveRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    setCurrentDisplayTitle(noteTitle);
+  }, [noteTitle]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsDirty(false);
+      setIsUnsavedModalOpen(false);
+      shouldCloseAfterSaveRef.current = false;
+    }
+  }, [isOpen]);
 
   // Raw original PDF buffer
   const [originalPdfBuffer, setOriginalPdfBuffer] = useState<ArrayBuffer | null>(null);
+
+  // Refs สำหรับเก็บ annotation/blob ชั่วคราวก่อนแสดง SaveDigitalNotebookModal (สมุดจดใหม่)
+  const pendingAnnotationRef = useRef<DocumentAnnotationState | null>(null);
+  const pendingBlobRef = useRef<Blob | null>(null);
 
   // References
   const containerRef = useRef<HTMLDivElement>(null);
@@ -183,6 +228,24 @@ export default function PdfNoteStudio({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Click outside to close export dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        exportDropdownRef.current &&
+        !exportDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsExportMenuOpen(false);
+      }
+    };
+    if (isExportMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isExportMenuOpen]);
 
   // Load initialAnnotation (strokes, images, pages) if passed from note
   useEffect(() => {
@@ -481,6 +544,7 @@ export default function PdfNoteStudio({
   const pushHistorySnapshot = () => {
     setUndoStack((prev) => [...prev.slice(-30), { strokes, images }]);
     setRedoStack([]);
+    setIsDirty(true);
   };
 
   const handleUndo = () => {
@@ -492,6 +556,7 @@ export default function PdfNoteStudio({
     setImages(prevSnapshot.images);
     setSelectedStrokeIds([]);
     setSelectedImageIds([]);
+    setIsDirty(true);
   };
 
   const handleRedo = () => {
@@ -503,6 +568,7 @@ export default function PdfNoteStudio({
     setImages(nextSnapshot.images);
     setSelectedStrokeIds([]);
     setSelectedImageIds([]);
+    setIsDirty(true);
   };
 
   // Keyboard Shortcuts
@@ -527,12 +593,22 @@ export default function PdfNoteStudio({
         setTool("select");
       } else if (e.key === "Delete" || e.key === "Backspace") {
         handleDeleteSelected();
+      } else if (e.key === "Escape") {
+        if (isUnsavedModalOpen) {
+          setIsUnsavedModalOpen(false);
+          shouldCloseAfterSaveRef.current = false;
+        } else if (isSaveModalOpen) {
+          setIsSaveModalOpen(false);
+          shouldCloseAfterSaveRef.current = false;
+        } else {
+          handleRequestClose();
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, strokes, images, selectedStrokeIds, selectedImageIds, undoStack, redoStack]);
+  }, [isOpen, strokes, images, selectedStrokeIds, selectedImageIds, undoStack, redoStack, isUnsavedModalOpen, isSaveModalOpen, isDirty]);
 
   const getCanvasCoordinates = (e: React.PointerEvent<HTMLCanvasElement>): Point => {
     const canvas = drawCanvasRef.current;
@@ -811,6 +887,7 @@ export default function PdfNoteStudio({
       };
       setStrokes((prev) => [...prev, finishedStroke]);
       currentStrokeRef.current = null;
+      setIsDirty(true);
       redrawStrokes();
     }
   };
@@ -1079,6 +1156,7 @@ export default function PdfNoteStudio({
 
   // Orientation & Page Operations
   const handleToggleOrientation = () => {
+    setIsDirty(true);
     setPages((prev) =>
       prev.map((p, idx) => {
         if (idx !== currentPageIndex) return p;
@@ -1095,6 +1173,7 @@ export default function PdfNoteStudio({
   };
 
   const handleRotatePage = () => {
+    setIsDirty(true);
     setPages((prev) =>
       prev.map((p, idx) => {
         if (idx !== currentPageIndex) return p;
@@ -1108,12 +1187,14 @@ export default function PdfNoteStudio({
   };
 
   const handleChangeTemplate = (template: PaperTemplate) => {
+    setIsDirty(true);
     setPages((prev) =>
       prev.map((p, idx) => (idx === currentPageIndex ? { ...p, template } : p))
     );
   };
 
   const handleAddPage = (orientation: PaperOrientation = "portrait") => {
+    setIsDirty(true);
     const isLandscape = orientation === "landscape";
     const newPage: PageState = {
       pageIndex: pages.length,
@@ -1279,18 +1360,27 @@ export default function PdfNoteStudio({
         images,
       };
 
-      // 2. Export annotated PDF blob for background storage / export preview
-      // Clone buffer to avoid detachment
+      // 2. Export annotated PDF blob
       const bufferCopy = originalPdfBuffer ? originalPdfBuffer.slice(0) : null;
       const blob = await exportAnnotatedPdfBlob(bufferCopy, pages, strokes, images);
 
-      // 3. Call onSave callback to sync with Cloud / Supabase storage
-      if (onSave) {
-        await onSave(annotation, blob);
+      // 3. ถ้าเป็นสมุดจดใหม่ (ยังไม่มี noteId) → แสดง modal ให้ตั้งชื่อและเลือกหมวดหมู่ก่อน
+      if (!noteId && onSave) {
+        pendingAnnotationRef.current = annotation;
+        pendingBlobRef.current = blob;
+        setIsSaving(false);
+        setIsSaveModalOpen(true);
+        return;
       }
 
-      // 4. IMPORTANT: Keep strokes and images intact in memory!
-      // In a digital notebook, strokes remain active and fully editable/erasable!
+      // 4. สมุดจดที่มีอยู่แล้ว → บันทึกโดยตรง
+      if (onSave) {
+        const saveRes = await onSave(annotation, blob);
+        if (saveRes === false) return;
+      }
+
+      // รีเซ็ตสถานะการแก้ไข (Dirty) เมื่อบันทึกสำเร็จ
+      setIsDirty(false);
 
       // 5. Backup to localStorage for safety
       if (noteId && typeof window !== "undefined") {
@@ -1307,8 +1397,15 @@ export default function PdfNoteStudio({
         timer: 1500,
         showConfirmButton: false,
       });
+
+      // หากเป็นการสั่ง "บันทึกและปิด" ให้ปิด Studio หลังบันทึกสำเร็จ
+      if (shouldCloseAfterSaveRef.current) {
+        shouldCloseAfterSaveRef.current = false;
+        onClose();
+      }
     } catch (err: any) {
       console.error("Save error:", err);
+      shouldCloseAfterSaveRef.current = false;
       Swal.fire({
         icon: "error",
         title: "เกิดข้อผิดพลาดในการบันทึก",
@@ -1319,15 +1416,90 @@ export default function PdfNoteStudio({
     }
   };
 
+  // เรียกเมื่อผู้ใช้กด "บันทึก" ใน SaveDigitalNotebookModal (สมุดจดใหม่เท่านั้น)
+  const handleSaveModalConfirm = async (title: string, categoryId: string | null) => {
+    if (!pendingAnnotationRef.current || !pendingBlobRef.current) return;
+    setIsSaving(true);
+    try {
+      const saveRes = await onSave?.(
+        pendingAnnotationRef.current,
+        pendingBlobRef.current,
+        title,
+        categoryId
+      );
+      if (saveRes === false) return;
+      setIsSaveModalOpen(false);
+      pendingAnnotationRef.current = null;
+      pendingBlobRef.current = null;
+      setIsDirty(false);
+      Swal.fire({
+        icon: "success",
+        title: "บันทึกเรียบร้อย",
+        text: "สร้างสมุดจดดิจิทัลสำเร็จแล้ว",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      // หากเป็นการสั่ง "บันทึกและปิด" ให้ปิด Studio หลังบันทึกสำเร็จ
+      if (shouldCloseAfterSaveRef.current) {
+        shouldCloseAfterSaveRef.current = false;
+        onClose();
+      }
+    } catch (err: any) {
+      console.error("Save modal confirm error:", err);
+      shouldCloseAfterSaveRef.current = false;
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาดในการบันทึก",
+        text: err.message || "ไม่สามารถบันทึกข้อมูลได้",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // --- Handlers สำหรับปิดหน้าต่างและตรวจสอบการบันทึก ---
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setIsUnsavedModalOpen(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmSaveAndClose = async () => {
+    setIsUnsavedModalOpen(false);
+    shouldCloseAfterSaveRef.current = true;
+    await handleSave();
+  };
+
+  const handleDiscardAndClose = () => {
+    setIsUnsavedModalOpen(false);
+    setIsDirty(false);
+    shouldCloseAfterSaveRef.current = false;
+    onClose();
+  };
+
+  const handleCancelClose = () => {
+    setIsUnsavedModalOpen(false);
+    shouldCloseAfterSaveRef.current = false;
+  };
+
+  const getSafeBaseFileName = () => {
+    return noteTitle.replace(/[^a-zA-Z0-9ก-๙_-]/g, "_") || "note";
+  };
+
   const handleExportPdf = async () => {
     setIsExporting(true);
+    setExportProgressText("กำลังสร้างเอกสาร PDF...");
+    setIsExportMenuOpen(false);
     try {
       const blob = await exportAnnotatedPdfBlob(originalPdfBuffer, pages, strokes, images);
 
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = downloadUrl;
-      a.download = `${noteTitle.replace(/[^a-zA-Z0-9ก-๙_-]/g, "_")}_annotated.pdf`;
+      a.download = `${getSafeBaseFileName()}_annotated.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1349,6 +1521,82 @@ export default function PdfNoteStudio({
       });
     } finally {
       setIsExporting(false);
+      setExportProgressText("");
+    }
+  };
+
+  const handleExportImageCurrent = async (format: "png" | "jpeg") => {
+    setIsExporting(true);
+    const label = format.toUpperCase();
+    setExportProgressText(`กำลังสร้างภาพ ${label} หน้า ${currentPageIndex + 1}...`);
+    setIsExportMenuOpen(false);
+    try {
+      await exportCurrentPageAsImage(
+        currentPageIndex,
+        pages,
+        strokes,
+        images,
+        pdfDocProxyRef.current,
+        format,
+        getSafeBaseFileName()
+      );
+      Swal.fire({
+        icon: "success",
+        title: `ส่งออก ${label} สำเร็จ`,
+        text: `ดาวน์โหลดภาพหน้า ${currentPageIndex + 1} เรียบร้อยแล้ว`,
+        timer: 1800,
+        showConfirmButton: false,
+      });
+    } catch (err: any) {
+      console.error(`Export ${label} current page error:`, err);
+      Swal.fire({
+        icon: "error",
+        title: `ส่งออก ${label} ไม่สำเร็จ`,
+        text: err.message || "เกิดข้อผิดพลาดในการแปลงรูปภาพ",
+      });
+    } finally {
+      setIsExporting(false);
+      setExportProgressText("");
+    }
+  };
+
+  const handleExportImageAll = async (format: "png" | "jpeg") => {
+    setIsExporting(true);
+    const label = format.toUpperCase();
+    setExportProgressText(`กำลังเตรียมส่งออก ${label} ทุกหน้า...`);
+    setIsExportMenuOpen(false);
+    try {
+      await exportAllPagesAsImages(
+        pages,
+        strokes,
+        images,
+        pdfDocProxyRef.current,
+        format,
+        getSafeBaseFileName(),
+        isMobile,
+        (current, total) => {
+          setExportProgressText(`กำลังเรนเดอร์ภาพ ${label} (${current}/${total})...`);
+        }
+      );
+      Swal.fire({
+        icon: "success",
+        title: `ส่งออก ${label} ทุกหน้าสำเร็จ`,
+        text: isMobile
+          ? `ดาวน์โหลดภาพครบทั้ง ${pages.length} หน้าแล้ว`
+          : `รวมไฟล์ทุกหน้าเป็น ZIP และดาวน์โหลดเรียบร้อยแล้ว`,
+        timer: 2500,
+        showConfirmButton: false,
+      });
+    } catch (err: any) {
+      console.error(`Export all ${label} error:`, err);
+      Swal.fire({
+        icon: "error",
+        title: `ส่งออก ${label} ทุกหน้าไม่สำเร็จ`,
+        text: err.message || "เกิดข้อผิดพลาดในการแปลงรูปภาพ",
+      });
+    } finally {
+      setIsExporting(false);
+      setExportProgressText("");
     }
   };
 
@@ -1381,7 +1629,7 @@ export default function PdfNoteStudio({
       />
 
       {/* --- TOP HEADER & ACTIONS --- */}
-      <header className="h-13 sm:h-14 border-b border-slate-700 bg-slate-900 px-3 sm:px-4 flex items-center justify-between shrink-0 gap-2 z-20">
+      <header className="h-13 sm:h-14 border-b border-slate-700 bg-slate-900 px-3 sm:px-4 flex items-center justify-between shrink-0 gap-2 z-50 relative">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="p-1 sm:p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 shrink-0">
             <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1471,18 +1719,95 @@ export default function PdfNoteStudio({
             <span className="hidden sm:inline">{isSaving ? "บันทึก..." : "บันทึก"}</span>
           </button>
 
-          <button
-            onClick={handleExportPdf}
-            disabled={isExporting}
-            className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium flex items-center gap-1 shadow-sm disabled:opacity-50"
-            title="ส่งออก PDF"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{isExporting ? "ส่งออก..." : "ส่งออก PDF"}</span>
-          </button>
+          {/* Export Dropdown Group */}
+          <div className="relative" ref={exportDropdownRef}>
+            <button
+              onClick={() => setIsExportMenuOpen((prev) => !prev)}
+              disabled={isExporting}
+              className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium flex items-center gap-1 shadow-sm disabled:opacity-50"
+              title="ส่งออกเอกสารและรูปภาพ"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">
+                {isExporting ? (exportProgressText || "ส่งออก...") : "ส่งออก"}
+              </span>
+              <ChevronDown
+                className={`w-3 h-3 transition-transform ${
+                  isExportMenuOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isExportMenuOpen && (
+              <div className="absolute right-0 mt-1.5 w-48 sm:w-52 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl py-1.5 z-[100] text-xs">
+                {/* PDF Option */}
+                <button
+                  onClick={handleExportPdf}
+                  className="w-full px-3 py-2 text-left hover:bg-slate-700 flex items-center gap-2 text-slate-200 hover:text-white"
+                >
+                  <FileText className="w-4 h-4 text-rose-400" />
+                  <div>
+                    <div className="font-medium">ส่งออก PDF</div>
+                    <div className="text-[10px] text-slate-400">
+                      รวมเอกสารทุกหน้าเป็นไฟล์เดียว
+                    </div>
+                  </div>
+                </button>
+
+                <div className="border-t border-slate-700/80 my-1" />
+
+                {/* PNG Options */}
+                <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <ImageIcon className="w-3 h-3 text-emerald-400" />
+                  <span>ภาพ PNG (ความคมชัดสูง)</span>
+                </div>
+                <button
+                  onClick={() => handleExportImageCurrent("png")}
+                  className="w-full px-3 py-1.5 text-left hover:bg-slate-700 flex items-center justify-between text-slate-200 hover:text-white pl-6"
+                >
+                  <span>หน้าปัจจุบัน (หน้า {currentPageIndex + 1})</span>
+                  <span className="text-[10px] text-slate-400">.png</span>
+                </button>
+                <button
+                  onClick={() => handleExportImageAll("png")}
+                  className="w-full px-3 py-1.5 text-left hover:bg-slate-700 flex items-center justify-between text-slate-200 hover:text-white pl-6"
+                >
+                  <span>ทุกหน้า ({pages.length} หน้า)</span>
+                  <span className="text-[10px] text-slate-400">
+                    {isMobile ? "ดาวน์โหลดทีละรูป" : ".zip"}
+                  </span>
+                </button>
+
+                <div className="border-t border-slate-700/80 my-1" />
+
+                {/* JPEG Options */}
+                <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <ImageIcon className="w-3 h-3 text-amber-400" />
+                  <span>ภาพ JPEG (ขนาดไฟล์กะทัดรัด)</span>
+                </div>
+                <button
+                  onClick={() => handleExportImageCurrent("jpeg")}
+                  className="w-full px-3 py-1.5 text-left hover:bg-slate-700 flex items-center justify-between text-slate-200 hover:text-white pl-6"
+                >
+                  <span>หน้าปัจจุบัน (หน้า {currentPageIndex + 1})</span>
+                  <span className="text-[10px] text-slate-400">.jpg</span>
+                </button>
+                <button
+                  onClick={() => handleExportImageAll("jpeg")}
+                  className="w-full px-3 py-1.5 text-left hover:bg-slate-700 flex items-center justify-between text-slate-200 hover:text-white pl-6"
+                >
+                  <span>ทุกหน้า ({pages.length} หน้า)</span>
+                  <span className="text-[10px] text-slate-400">
+                    {isMobile ? "ดาวน์โหลดทีละรูป" : ".zip"}
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
 
           <button
-            onClick={onClose}
+            onClick={handleRequestClose}
             className="p-1.5 sm:p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
             title="ปิดหน้าต่าง"
           >
@@ -1981,6 +2306,85 @@ export default function PdfNoteStudio({
           <span className="text-[10px]">ย้อนกลับ</span>
         </button>
       </div>
+
+      {/* Modal บันทึกสมุดจดดิจิทัลใหม่ — แสดงเฉพาะตอนสร้างสมุดจดครั้งแรก */}
+      <SaveDigitalNotebookModal
+        isOpen={isSaveModalOpen}
+        onClose={() => {
+          setIsSaveModalOpen(false);
+          shouldCloseAfterSaveRef.current = false;
+        }}
+        onConfirm={handleSaveModalConfirm}
+        initialTitle={currentDisplayTitle}
+        categories={categories}
+        noteType={noteType}
+        isSaving={isSaving}
+      />
+
+      {/* Modal ยืนยันเมื่อมีข้อมูลที่ยังไม่ได้บันทึกก่อนปิดหน้าต่าง */}
+      {isUnsavedModalOpen && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-150 select-none"
+          onClick={handleCancelClose}
+        >
+          <div
+            className="w-full max-w-md bg-slate-900 text-slate-100 rounded-2xl sm:rounded-3xl border border-slate-700 shadow-2xl p-5 sm:p-6 flex flex-col gap-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header / Icon */}
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-base sm:text-lg text-white leading-tight">
+                    ยังไม่ได้บันทึกการเปลี่ยนแปลง
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={handleCancelClose}
+                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                    title="ยกเลิก"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
+                  คุณมีการเขียนหรือแก้ไขเอกสารที่ยังไม่ได้บันทึก คุณต้องการบันทึกก่อนปิดหน้าต่างนี้หรือไม่?
+                </p>
+              </div>
+            </div>
+
+            {/* Actions Button Group */}
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 text-xs sm:text-sm">
+              <button
+                type="button"
+                onClick={handleCancelClose}
+                className="order-3 sm:order-1 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium transition cursor-pointer text-center"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleDiscardAndClose}
+                className="order-2 sm:order-2 px-4 py-2.5 rounded-xl border border-rose-500/30 bg-rose-600/15 hover:bg-rose-600/25 text-rose-400 hover:text-rose-300 font-medium transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>ไม่บันทึก (ปิดเลย)</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSaveAndClose}
+                className="order-1 sm:order-3 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Save className="w-4 h-4" />
+                <span>บันทึกและปิด</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
