@@ -404,6 +404,23 @@ export default function RichNoteEditor({
   const [textColorInput, setTextColorInput] = useState<string>("#ef4444");
   const [bgColorInput, setBgColorInput] = useState<string>("#fef08a");
 
+  // Color picker modal state
+  const [openPicker, setOpenPicker] = useState<"text" | "bg" | null>(null);
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    if (!openPicker) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const modal = document.getElementById("color-picker-modal");
+      if (modal && !modal.contains(target)) {
+        setOpenPicker(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openPicker]);
+
   const [activeFormats, setActiveFormats] = useState({
     bold: false,
     italic: false,
@@ -1594,153 +1611,211 @@ export default function RichNoteEditor({
 
           {/* Color & Highlight Pickers */}
           <div className="flex items-center gap-1 px-1 border-r border-border/60">
-            {/* Text Color Picker */}
-            <div className="relative group/color">
-              <button
-                type="button"
-                disabled={disabled}
-                className="px-1.5 py-1 rounded-md hover:bg-background flex items-center gap-0.5 text-foreground h-7"
-                title="เปลี่ยนสีข้อความ"
+            {/* Text Color Button */}
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => setOpenPicker(openPicker === "text" ? null : "text")}
+              className={cn(
+                "px-1.5 py-1 rounded-md flex items-center gap-0.5 text-foreground h-7",
+                openPicker === "text" ? "bg-background border border-border/80 shadow-xs" : "hover:bg-background"
+              )}
+              title="เปลี่ยนสีข้อความ"
+            >
+              <Palette className="w-3.5 h-3.5" />
+              <span className="text-[10px] opacity-70">▼</span>
+            </button>
+
+            {/* Highlight Background Color Button */}
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => setOpenPicker(openPicker === "bg" ? null : "bg")}
+              className={cn(
+                "px-1.5 py-1 rounded-md flex items-center gap-0.5 text-foreground h-7",
+                openPicker === "bg" ? "bg-background border border-border/80 shadow-xs" : "hover:bg-background"
+              )}
+              title="ไฮไลท์สีพื้นหลัง"
+            >
+              <Highlighter className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-[10px] opacity-70">▼</span>
+            </button>
+          </div>
+
+          {/* Color Picker Modal (fixed center) */}
+          {openPicker && (
+            <div
+              id="color-picker-modal"
+              className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none"
+            >
+              <div
+                className="pointer-events-auto bg-popover border border-border rounded-2xl shadow-2xl p-4 w-[min(92vw,280px)] flex flex-col gap-3"
+                onClick={(e) => e.stopPropagation()}
               >
-                <Palette className="w-3.5 h-3.5" />
-                <span className="text-[10px] opacity-70">▼</span>
-              </button>
-              <div className="hidden group-hover/color:flex group-focus-within/color:flex absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg p-2.5 gap-2 z-50 flex-col w-52">
-                <span className="text-[11px] font-medium text-foreground">สีตัวอักษร</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { label: "ปกติ", color: "" },
-                    { label: "ดำ", color: "#0f172a" },
-                    { label: "เทา", color: "#64748b" },
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-foreground">
+                    {openPicker === "text" ? "🎨 สีตัวอักษร" : "🖌️ สีไฮไลท์พื้นหลัง"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setOpenPicker(null)}
+                    className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Circle Color Wheel — 12 preset dots arranged like a clock */}
+                {(() => {
+                  const textColors = [
                     { label: "แดง", color: "#ef4444" },
-                    { label: "ส้ม", color: "#f97316" },
-                    { label: "เหลืองเข้ม", color: "#eab308" },
+                    { label: "ส้มแดง", color: "#f97316" },
+                    { label: "ส้ม", color: "#fb923c" },
+                    { label: "เหลือง", color: "#eab308" },
+                    { label: "เขียวอ่อน", color: "#84cc16" },
                     { label: "เขียว", color: "#10b981" },
-                    { label: "ฟ้า", color: "#06b6d4" },
+                    { label: "ฟ้าอ่อน", color: "#06b6d4" },
                     { label: "น้ำเงิน", color: "#3b82f6" },
+                    { label: "น้ำเงินเข้ม", color: "#6366f1" },
                     { label: "ม่วง", color: "#8b5cf6" },
                     { label: "ชมพู", color: "#ec4899" },
-                  ].map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => applyInlineStyle("color", item.color)}
-                      className="w-5 h-5 rounded-md border border-border/60 flex items-center justify-center text-[10px] shadow-xs"
-                      style={{ backgroundColor: item.color || "transparent" }}
-                      title={item.label}
-                    >
-                      {!item.color && "×"}
-                    </button>
-                  ))}
-                </div>
-                <div className="pt-1.5 border-t border-border/60 flex items-center gap-1.5">
-                  <input
-                    type="color"
-                    value={textColorInput}
-                    onChange={(e) => {
-                      setTextColorInput(e.target.value);
-                      applyInlineStyle("color", e.target.value);
-                    }}
-                    className="w-7 h-7 p-0 rounded border border-border cursor-pointer bg-transparent"
-                    title="เลือกแถบสี"
-                  />
-                  <input
-                    type="text"
-                    value={textColorInput}
-                    placeholder="#ff0000"
-                    onChange={(e) => setTextColorInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        applyInlineStyle("color", textColorInput);
-                      }
-                    }}
-                    className="h-7 px-1.5 flex-1 rounded bg-background border border-input text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                    title="ใส่รหัสสี เช่น #ef4444"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => applyInlineStyle("color", textColorInput)}
-                    className="h-7 px-2 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
-                  >
-                    ใช้
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Highlight Background Color Picker */}
-            <div className="relative group/highlight">
-              <button
-                type="button"
-                disabled={disabled}
-                className="px-1.5 py-1 rounded-md hover:bg-background flex items-center gap-0.5 text-foreground h-7"
-                title="ไฮไลท์สีพื้นหลัง"
-              >
-                <Highlighter className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-[10px] opacity-70">▼</span>
-              </button>
-              <div className="hidden group-hover/highlight:flex group-focus-within/highlight:flex absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg p-2.5 gap-2 z-50 flex-col w-52">
-                <span className="text-[11px] font-medium text-foreground">สีไฮไลท์พื้นหลัง</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { label: "ลบไฮไลท์", color: "" },
+                    { label: "ชมพูเข้ม", color: "#db2777" },
+                  ];
+                  const bgColors = [
                     { label: "เหลืองอ่อน", color: "#fef08a" },
+                    { label: "แดงอ่อน", color: "#fecaca" },
+                    { label: "ส้มอ่อน", color: "#fed7aa" },
+                    { label: "เหลืองทอง", color: "#fde68a" },
+                    { label: "เขียวมิ้นต์", color: "#d1fae5" },
                     { label: "เขียวอ่อน", color: "#bbf7d0" },
                     { label: "ฟ้าอ่อน", color: "#bae6fd" },
-                    { label: "ชมพูอ่อน", color: "#fbcfe8" },
-                    { label: "ส้มอ่อน", color: "#fed7aa" },
+                    { label: "น้ำเงินอ่อน", color: "#bfdbfe" },
+                    { label: "คราม", color: "#c7d2fe" },
                     { label: "ม่วงอ่อน", color: "#e9d5ff" },
+                    { label: "ชมพูอ่อน", color: "#fbcfe8" },
                     { label: "เทาอ่อน", color: "#e2e8f0" },
-                  ].map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => applyInlineStyle("backgroundColor", item.color)}
-                      className="w-5 h-5 rounded-md border border-border/60 flex items-center justify-center text-[10px] shadow-xs"
-                      style={{ backgroundColor: item.color || "transparent" }}
-                      title={item.label}
-                    >
-                      {!item.color && "×"}
-                    </button>
-                  ))}
-                </div>
-                <div className="pt-1.5 border-t border-border/60 flex items-center gap-1.5">
-                  <input
-                    type="color"
-                    value={bgColorInput}
-                    onChange={(e) => {
-                      setBgColorInput(e.target.value);
-                      applyInlineStyle("backgroundColor", e.target.value);
-                    }}
-                    className="w-7 h-7 p-0 rounded border border-border cursor-pointer bg-transparent"
-                    title="เลือกแถบสี"
-                  />
-                  <input
-                    type="text"
-                    value={bgColorInput}
-                    placeholder="#fef08a"
-                    onChange={(e) => setBgColorInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        applyInlineStyle("backgroundColor", bgColorInput);
-                      }
-                    }}
-                    className="h-7 px-1.5 flex-1 rounded bg-background border border-input text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                    title="ใส่รหัสสี เช่น #fef08a"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => applyInlineStyle("backgroundColor", bgColorInput)}
-                    className="h-7 px-2 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
-                  >
-                    ใช้
-                  </button>
-                </div>
+                  ];
+                  const colors = openPicker === "text" ? textColors : bgColors;
+                  const R = 80; // radius of circle in px
+                  const DOT = 24; // dot size in px
+                  const size = R * 2 + DOT + 8;
+                  const cx = size / 2;
+                  const cy = size / 2;
+                  return (
+                    <div className="flex flex-col items-center gap-2">
+                      {/* Circular arrangement */}
+                      <div className="relative" style={{ width: size, height: size }}>
+                        {/* Center: reset button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            openPicker === "text"
+                              ? applyInlineStyle("color", "")
+                              : applyInlineStyle("backgroundColor", "");
+                            setOpenPicker(null);
+                          }}
+                          className="absolute rounded-full border-2 border-dashed border-border/70 flex items-center justify-center text-muted-foreground hover:bg-muted text-xs font-bold transition-all hover:scale-110"
+                          style={{
+                            width: DOT + 8,
+                            height: DOT + 8,
+                            left: cx - (DOT + 8) / 2,
+                            top: cy - (DOT + 8) / 2,
+                          }}
+                          title="ลบสี / คืนค่าเดิม"
+                        >
+                          ×
+                        </button>
+                        {/* 12 color dots around the circle */}
+                        {colors.map((item, i) => {
+                          const angle = (i * 360) / colors.length - 90; // start from top (12 o'clock)
+                          const rad = (angle * Math.PI) / 180;
+                          const x = cx + R * Math.cos(rad) - DOT / 2;
+                          const y = cy + R * Math.sin(rad) - DOT / 2;
+                          return (
+                            <button
+                              key={item.label}
+                              type="button"
+                              onClick={() => {
+                                openPicker === "text"
+                                  ? applyInlineStyle("color", item.color)
+                                  : applyInlineStyle("backgroundColor", item.color);
+                                if (openPicker === "text") setTextColorInput(item.color);
+                                else setBgColorInput(item.color);
+                                setOpenPicker(null);
+                              }}
+                              className="absolute rounded-full border-2 border-white/80 shadow-md hover:scale-125 active:scale-95 transition-transform"
+                              style={{
+                                width: DOT,
+                                height: DOT,
+                                left: x,
+                                top: y,
+                                backgroundColor: item.color,
+                              }}
+                              title={item.label}
+                            />
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom hex input + color swatch */}
+                      <div className="flex items-center gap-1.5 w-full pt-1 border-t border-border/60">
+                        <input
+                          type="color"
+                          value={openPicker === "text" ? textColorInput : bgColorInput}
+                          onChange={(e) => {
+                            if (openPicker === "text") {
+                              setTextColorInput(e.target.value);
+                              applyInlineStyle("color", e.target.value);
+                            } else {
+                              setBgColorInput(e.target.value);
+                              applyInlineStyle("backgroundColor", e.target.value);
+                            }
+                          }}
+                          className="w-8 h-8 p-0.5 rounded-lg border border-border cursor-pointer bg-transparent shrink-0"
+                          title="เลือกสีแบบ picker"
+                        />
+                        <input
+                          type="text"
+                          value={openPicker === "text" ? textColorInput : bgColorInput}
+                          placeholder="#000000"
+                          onChange={(e) => {
+                            if (openPicker === "text") setTextColorInput(e.target.value);
+                            else setBgColorInput(e.target.value);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const val = openPicker === "text" ? textColorInput : bgColorInput;
+                              openPicker === "text"
+                                ? applyInlineStyle("color", val)
+                                : applyInlineStyle("backgroundColor", val);
+                              setOpenPicker(null);
+                            }
+                          }}
+                          className="h-8 px-2 flex-1 rounded-lg bg-background border border-input text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+                          title="ใส่รหัสสี เช่น #ef4444"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const val = openPicker === "text" ? textColorInput : bgColorInput;
+                            openPicker === "text"
+                              ? applyInlineStyle("color", val)
+                              : applyInlineStyle("backgroundColor", val);
+                            setOpenPicker(null);
+                          }}
+                          className="h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 shrink-0"
+                        >
+                          ใช้
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
-          </div>
+          )}
 
           <button
             type="button"
