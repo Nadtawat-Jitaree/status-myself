@@ -631,6 +631,55 @@ export default function ProjectClient({
     );
   };
 
+  const renderTaskDateBadges = (task: any) => {
+    if (!task) return null;
+    const isDone = task.status === "done";
+    const completedAtStr = task.completed_at || (isDone ? task.updated_at : null);
+
+    const formatShortDate = (dStr?: string) => {
+      if (!dStr) return "-";
+      const d = new Date(dStr);
+      return d.toLocaleDateString("th-TH", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    };
+
+    const formatShortTime = (dStr?: string) => {
+      if (!dStr) return "";
+      const d = new Date(dStr);
+      return d.toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    return (
+      <div className="inline-flex flex-wrap items-center gap-1.5">
+        {task.created_at && (
+          <span
+            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground px-2.5 py-0.5 rounded-full bg-muted/60"
+            title={`สร้างเมื่อ: ${new Date(task.created_at).toLocaleString("th-TH")}${task.creator?.full_name ? ` โดย ${task.creator.full_name}` : ""}`}
+          >
+            <CalendarDays className="w-3 h-3 text-muted-foreground/70" />
+            สร้าง: {formatShortDate(task.created_at)}
+          </span>
+        )}
+
+        {isDone && completedAtStr && (
+          <span
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full bg-emerald-100/80 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800"
+            title={`เสร็จสิ้นเมื่อ: ${new Date(completedAtStr).toLocaleString("th-TH")}`}
+          >
+            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+            เสร็จ: {formatShortDate(completedAtStr)}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   const renderCreatedDateBadge = (createdAtStr?: string) => {
     if (!createdAtStr) return null;
     const createdDate = new Date(createdAtStr);
@@ -1551,9 +1600,7 @@ export default function ProjectClient({
                                           task.due_date,
                                           task.status,
                                         )}
-                                        {renderCreatedDateBadge(
-                                          task.created_at,
-                                        )}
+                                        {renderTaskDateBadges(task)}
                                         <button
                                           type="button"
                                           onClick={() => openTaskDetail(task)}
@@ -1743,7 +1790,7 @@ export default function ProjectClient({
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       {renderPriorityBadge(task.priority)}
                       {renderDueDateBadge(task.due_date, task.status)}
-                      {renderCreatedDateBadge(task.created_at)}
+                      {renderTaskDateBadges(task)}
                     </div>
                   </div>
                 </div>
@@ -1929,17 +1976,81 @@ export default function ProjectClient({
                 </div>
 
                 {/* Modal Footer (Sticky at bottom) */}
-                <div className="flex items-center justify-between gap-3 border-t border-border p-4 sm:p-5 bg-card shrink-0">
-                  <span className="text-[11px] text-muted-foreground truncate">
-                    สร้างเมื่อ:{" "}
-                    {selectedTask.created_at
-                      ? new Date(selectedTask.created_at).toLocaleDateString(
-                          "th-TH",
-                        )
-                      : "-"}
-                  </span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border p-4 sm:p-5 bg-card shrink-0">
+                  <div className="flex flex-col gap-1 text-[11px] text-muted-foreground min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span>
+                        สร้างเมื่อ:{" "}
+                        <strong className="font-medium text-foreground">
+                          {selectedTask.created_at
+                            ? new Date(selectedTask.created_at).toLocaleString("th-TH", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }) + " น."
+                            : "-"}
+                        </strong>
+                        {selectedTask.creator?.full_name && (
+                          <span className="text-muted-foreground ml-1">
+                            โดย {selectedTask.creator.full_name}
+                          </span>
+                        )}
+                      </span>
 
-                  <div className="flex items-center gap-2">
+                      {/* แสดง updated_by และ updated_at ใน Modal ตาม Requirement */}
+                      {(selectedTask.updated_at || selectedTask.updater) && (
+                        <span className="inline-flex items-center gap-1.5 border-l border-border/70 pl-3">
+                          <Pencil className="w-3 h-3 text-muted-foreground/70" />
+                          แก้ไขล่าสุด:{" "}
+                          {selectedTask.updater?.avatar_url ? (
+                            <img
+                              src={selectedTask.updater.avatar_url}
+                              alt={selectedTask.updater.full_name || "User"}
+                              className="w-4 h-4 rounded-full object-cover inline border border-border"
+                            />
+                          ) : null}
+                          <strong className="font-medium text-foreground">
+                            {selectedTask.updater?.full_name || "ผู้ใช้งาน"}
+                          </strong>
+                          {selectedTask.updated_at && (
+                            <span>
+                              (
+                              {new Date(selectedTask.updated_at).toLocaleString("th-TH", {
+                                day: "numeric",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}{" "}
+                              น.)
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* แสดง completed_at เมื่อสถานะเป็น done */}
+                    {(selectedTask.status === "done" || modalStatus === "done") && (
+                      <div className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium pt-0.5">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>
+                          เสร็จสิ้นสมบูรณ์เมื่อ:{" "}
+                          {selectedTask.completed_at
+                            ? new Date(selectedTask.completed_at).toLocaleString("th-TH", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }) + " น."
+                            : "งานนี้อยู่ในสถานะเสร็จสิ้น"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                     <button
                       type="button"
                       onClick={() => setSelectedTask(null)}

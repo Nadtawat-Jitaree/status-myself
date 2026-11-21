@@ -202,10 +202,16 @@ export async function toggleTaskStatus(taskId: string, currentStatus: string, pr
   await verifyProjectOwnership(supabase, projectId, user.id)
 
   const newStatus = currentStatus === 'done' ? 'todo' : 'done'
+  const now = new Date().toISOString()
 
   const { error } = await supabase
     .from('tasks')
-    .update({ status: newStatus })
+    .update({ 
+      status: newStatus,
+      updated_by: user.id,
+      updated_at: now,
+      completed_at: newStatus === 'done' ? now : null,
+    })
     .eq('id', taskId)
     .eq('project_id', projectId)
 
@@ -251,6 +257,8 @@ export async function createTask(
     .single()
 
   const nextOrder = (lastTask?.order_index ?? 0) + 1
+  const now = new Date().toISOString()
+  const completedAt = status === 'done' ? now : null
 
   const { data: inserted, error } = await supabase
     .from('tasks')
@@ -263,6 +271,10 @@ export async function createTask(
         status,
         due_date,
         order_index: nextOrder,
+        created_by: user.id,
+        updated_by: user.id,
+        updated_at: now,
+        completed_at: completedAt,
       },
     ])
     .select('id')
@@ -293,9 +305,33 @@ export async function updateTaskStatus(taskId: string, newStatus: string, projec
   if (!user) throw new Error('Unauthorized')
   await verifyProjectOwnership(supabase, projectId, user.id)
 
+  const now = new Date().toISOString()
+
+  // ดึงค่า status และ completed_at เดิมเพื่อรักษาประวัติเวลาเมื่อสถานะเป็น done อยู่แล้ว
+  const { data: currentTask } = await supabase
+    .from('tasks')
+    .select('status, completed_at')
+    .eq('id', taskId)
+    .eq('project_id', projectId)
+    .single()
+
+  let completedAt = currentTask?.completed_at || null
+  if (newStatus === 'done') {
+    if (currentTask?.status !== 'done' || !completedAt) {
+      completedAt = now
+    }
+  } else {
+    completedAt = null
+  }
+
   const { error } = await supabase
     .from('tasks')
-    .update({ status: newStatus })
+    .update({ 
+      status: newStatus,
+      updated_by: user.id,
+      updated_at: now,
+      completed_at: completedAt,
+    })
     .eq('id', taskId)
     .eq('project_id', projectId)
 
@@ -386,9 +422,14 @@ export async function updateTaskTitle(taskId: string, newTitle: string, projectI
   if (!user) throw new Error('Unauthorized')
   await verifyProjectOwnership(supabase, projectId, user.id)
 
+  const now = new Date().toISOString()
   const { error } = await supabase
     .from('tasks')
-    .update({ title: newTitle })
+    .update({ 
+      title: newTitle,
+      updated_by: user.id,
+      updated_at: now,
+    })
     .eq('id', taskId)
     .eq('project_id', projectId)
 
@@ -412,7 +453,11 @@ export async function updateTaskDetails(
   if (!user) throw new Error('Unauthorized')
   await verifyProjectOwnership(supabase, projectId, user.id)
 
-  const updateFields: any = {}
+  const now = new Date().toISOString()
+  const updateFields: any = {
+    updated_by: user.id,
+    updated_at: now,
+  }
   if (payload.title !== undefined) updateFields.title = payload.title
   if (payload.description !== undefined) updateFields.description = payload.description
   if (payload.priority !== undefined) updateFields.priority = payload.priority

@@ -104,9 +104,39 @@ export async function getNotesPageData(noteType: string): Promise<NotesPageData>
     finalNotes = fallbackRes.data;
   }
 
+  // ดึง profiles สำหรับ created_by และ updated_by ของ notes เพื่อนำมาแสดง avatar/ชื่อ
+  const userIds = Array.from(
+    new Set(
+      [
+        user.id,
+        ...(finalNotes || []).flatMap((n: any) => [n.created_by || n.user_id, n.updated_by]),
+      ].filter(Boolean)
+    )
+  );
+  let profilesMap: Record<string, any> = {};
+  if (userIds.length > 0) {
+    try {
+      const { data: pData } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", userIds);
+      if (pData) {
+        profilesMap = Object.fromEntries(pData.map((p: any) => [p.id, p]));
+      }
+    } catch {
+      // profiles query fallback
+    }
+  }
+
+  const enrichedNotes = (finalNotes || []).map((n: any) => ({
+    ...n,
+    creator: profilesMap[n.created_by || n.user_id] || null,
+    updater: profilesMap[n.updated_by || n.created_by || n.user_id] || null,
+  }));
+
   return {
     categories: categoriesRes.data || [],
-    notes: (finalNotes || []) as any[],
+    notes: enrichedNotes as any[],
   };
 }
 
@@ -209,9 +239,22 @@ export async function createNote(payload: {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
+  const now = new Date().toISOString();
+  const completedAt = payload.status === "เสร็จสิ้น" ? now : null;
+
   const { data, error } = await supabase
     .from("notes")
-    .insert([{ user_id: user.id, ...payload }])
+    .insert([
+      {
+        user_id: user.id,
+        created_by: user.id,
+        updated_by: user.id,
+        created_at: now,
+        updated_at: now,
+        completed_at: completedAt,
+        ...payload,
+      },
+    ])
     .select("id")
     .single();
   if (error) throw new Error(error.message);
@@ -264,9 +307,37 @@ export async function updateNote(
     }
   }
 
+  const now = new Date().toISOString();
+
+  // ดึง status และ completed_at เดิมเพื่อรักษาเวลา completed_at เดิมไว้
+  const { data: currentNote } = await supabase
+    .from("notes")
+    .select("status, completed_at")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  let completedAt = currentNote?.completed_at || null;
+  if (payload.status !== undefined) {
+    if (payload.status === "เสร็จสิ้น") {
+      if (currentNote?.status !== "เสร็จสิ้น" || !completedAt) {
+        completedAt = now;
+      }
+    } else {
+      completedAt = null;
+    }
+  }
+
+  const updatePayload: any = {
+    ...payload,
+    updated_by: user.id,
+    updated_at: now,
+    completed_at: completedAt,
+  };
+
   const { error } = await supabase
     .from("notes")
-    .update(payload)
+    .update(updatePayload)
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);

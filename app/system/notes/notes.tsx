@@ -60,6 +60,8 @@ import {
   Copy,
   Calendar,
   PenTool,
+  CheckCircle2,
+  Pencil,
 } from "lucide-react";
 import ShareModal from "@/components/ShareModal";
 import { NoteFormModal } from "@/components/NoteFormModal";
@@ -91,6 +93,10 @@ type Note = {
   title: string;
   content: string;
   created_at: string;
+  updated_at?: string;
+  completed_at?: string | null;
+  created_by?: string | null;
+  updated_by?: string | null;
   category_id?: string | null;
   status: string;
   file_path?: string | null;
@@ -104,6 +110,16 @@ type Note = {
     semester?: number | null;
   };
   noteToEdit?: boolean;
+  creator?: {
+    id: string;
+    full_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+  updater?: {
+    id: string;
+    full_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
 };
 
 const formatSemester = (sem?: number | null) => {
@@ -120,6 +136,86 @@ const formatYearSemester = (year?: number | null, sem?: number | null) => {
   if (yStr) return yStr;
   if (sStr) return sStr;
   return "";
+};
+
+const renderNoteDateBadges = (note: Note) => {
+  const isDone = note.status === "เสร็จสิ้น";
+  const completedAtStr = note.completed_at || (isDone ? note.updated_at : null);
+
+  // ในหน้าปกติแสดงเฉพาะ format วัน เดือน ปี (ไม่แสดงเวลา)
+  const formatDateOnly = (dateStr?: string | null) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("th-TH", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const getDurationText = (startStr: string, endStr: string) => {
+    const start = new Date(startStr).getTime();
+    const end = new Date(endStr).getTime();
+    const diffMinutes = Math.floor((end - start) / 60000);
+    if (diffMinutes < 1) return "ไม่ถึง 1 นาที";
+    if (diffMinutes < 60) return `${diffMinutes} นาที`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    const remMinutes = diffMinutes % 60;
+    if (diffHours < 24) {
+      return remMinutes > 0 ? `${diffHours} ชม. ${remMinutes} น.` : `${diffHours} ชม.`;
+    }
+    const diffDays = Math.floor(diffHours / 24);
+    const remHours = diffHours % 24;
+    return remHours > 0 ? `${diffDays} วัน ${remHours} ชม.` : `${diffDays} วัน`;
+  };
+
+  if (!isDone || !completedAtStr) {
+    return (
+      <div 
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/50 text-[11px] text-muted-foreground w-full transition-colors hover:bg-muted/60"
+        title={`สร้างเมื่อ: ${new Date(note.created_at).toLocaleString("th-TH")}`}
+      >
+        <Calendar className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
+        <span className="truncate">
+          สร้าง: <strong className="font-semibold text-foreground/90">{formatDateOnly(note.created_at)}</strong>
+        </span>
+      </div>
+    );
+  }
+
+  const durationText = getDurationText(note.created_at, completedAtStr);
+
+  return (
+    <div
+      className="p-2 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 shadow-2xs flex flex-col gap-1 text-[11px] w-full"
+      title={`สร้างเมื่อ: ${new Date(note.created_at).toLocaleString("th-TH")}\nเสร็จสิ้นเมื่อ: ${new Date(completedAtStr).toLocaleString("th-TH")}\nระยะเวลาทำ: ${durationText}`}
+    >
+      <div className="flex items-center justify-between gap-1">
+        {/* เวลาสร้าง: แสดงเฉพาะ วัน เดือน ปี ในหน้าปกติ */}
+        <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+          <Calendar className="w-3 h-3 text-muted-foreground/70 shrink-0" />
+          <span className="truncate">
+            สร้าง: <strong className="font-medium text-foreground">{formatDateOnly(note.created_at)}</strong>
+          </span>
+        </div>
+
+        {/* ระยะเวลาที่ใช้ */}
+        <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-900/60 px-1.5 py-0.2 rounded shrink-0">
+          ใช้เวลา {durationText}
+        </span>
+      </div>
+
+      {/* เวลาเสร็จสิ้น: แสดงเฉพาะ วัน เดือน ปี ในหน้าปกติ */}
+      <div className="flex items-center justify-between gap-1 pt-1 border-t border-emerald-200/70 dark:border-emerald-800/50">
+        <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-200 font-semibold min-w-0">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="truncate">
+            เสร็จ: <span className="text-emerald-900 dark:text-emerald-100 font-bold">{formatDateOnly(completedAtStr)}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 };
 type Props = {
   noteType: "normal" | "school";
@@ -1915,20 +2011,14 @@ export default function NotesPage({ noteType, initialData }: Props) {
                     </div>
                   )}
 
-                  {/* Card Bottom: Date + Always-visible Action Buttons */}
-                  <div className="flex items-center justify-between pt-2.5 mt-auto border-t border-border/50 text-xs">
-                    <span className="text-[11px] text-muted-foreground flex items-center gap-1 truncate mr-2">
-                      <Calendar className="w-3 h-3 shrink-0" />
-                      {new Date(note.created_at).toLocaleDateString("th-TH", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </span>
+                  {/* Card Bottom: Date Timeline + Action Buttons */}
+                  <div className="mt-auto pt-2.5 border-t border-border/50 flex flex-col gap-2">
+                    {/* Date Timeline: เวลาสร้าง กับ เสร็จ สวยงามไม่เบียดปุ่ม */}
+                    {renderNoteDateBadges(note)}
 
                     {/* Action Buttons: Read, Edit, Delete */}
                     <div
-                      className="flex items-center gap-1 shrink-0"
+                      className="flex items-center justify-end gap-1 shrink-0 pt-0.5"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {note.file_path && !isImageFile(note.file_path) && (
@@ -2319,61 +2409,131 @@ export default function NotesPage({ noteType, initialData }: Props) {
               <div
                 className={`${readingNote.file_path ? "lg:col-span-6" : ""}`}
               >
-                <div className="flex flex-wrap gap-2 mb-6 items-center text-sm">
-                  {readingNote.note_categories?.name && (
-                    <span className="flex items-center gap-1.5 bg-slate-800 text-white px-3 py-1 rounded-md">
-                      {noteType === "school" &&
-                        (() => {
-                          const cat = categories.find(
-                            (c) => c.id === readingNote.category_id,
-                          );
-                          const yr =
-                            readingNote.note_categories?.year ?? cat?.year;
-                          const sem =
-                            readingNote.note_categories?.semester ?? cat?.semester;
-                          const badgeText = formatYearSemester(yr, sem);
-                          return badgeText ? (
-                            <span className="bg-indigo-500 text-white px-1.5 py-0.2 rounded text-xs font-bold mr-0.5">
-                              {badgeText}
-                            </span>
-                          ) : null;
-                        })()}
-                      {readingNote.note_categories.pic && (
-                        <img
-                          src={getPicUrl(readingNote.note_categories.pic)}
-                          className="w-4 h-4 rounded object-cover"
-                          alt="pic"
-                        />
+                <div className="mb-6 space-y-3">
+                  {/* Category & Status Row + Updated By */}
+                  <div className="flex flex-wrap items-center justify-between gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {readingNote.note_categories?.name && (
+                        <span className="flex items-center gap-1.5 bg-slate-800 text-white px-3 py-1 rounded-md text-xs font-medium">
+                          {noteType === "school" &&
+                            (() => {
+                              const cat = categories.find(
+                                (c) => c.id === readingNote.category_id,
+                              );
+                              const yr =
+                                readingNote.note_categories?.year ?? cat?.year;
+                              const sem =
+                                readingNote.note_categories?.semester ?? cat?.semester;
+                              const badgeText = formatYearSemester(yr, sem);
+                              return badgeText ? (
+                                <span className="bg-indigo-500 text-white px-1.5 py-0.2 rounded text-xs font-bold mr-0.5">
+                                  {badgeText}
+                                </span>
+                              ) : null;
+                            })()}
+                          {readingNote.note_categories.pic && (
+                            <img
+                              src={getPicUrl(readingNote.note_categories.pic)}
+                              className="w-4 h-4 rounded object-cover"
+                              alt="pic"
+                            />
+                          )}
+                          {readingNote.note_categories.name}
+                        </span>
                       )}
-                      {readingNote.note_categories.name}
-                    </span>
-                  )}
-                  <span
-                    className={`px-3 py-1 rounded-md border ${getStatusBadgeColor(readingNote.status)}`}
+
+                      <span
+                        className={`px-3 py-1 rounded-md border text-xs font-semibold ${getStatusBadgeColor(readingNote.status)}`}
+                      >
+                        {readingNote.status}
+                      </span>
+                    </div>
+
+                    {/* แสดง updated_by และ updated_at ใน Modal ตาม Requirement */}
+                    {(readingNote.updated_at || readingNote.updater) && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background px-2.5 py-1 rounded-lg border border-border/70 ml-auto sm:ml-0 shadow-2xs">
+                        <Pencil className="w-3 h-3 text-muted-foreground/70" />
+                        <span>แก้ไขโดย:</span>
+                        {readingNote.updater?.avatar_url && (
+                          <img
+                            src={readingNote.updater.avatar_url}
+                            alt={readingNote.updater.full_name || "User"}
+                            className="w-4 h-4 rounded-full object-cover inline border border-border"
+                          />
+                        )}
+                        <strong className="font-semibold text-foreground">
+                          {readingNote.updater?.full_name || "ผู้ใช้งาน"}
+                        </strong>
+                        {readingNote.updated_at && (
+                          <span className="text-[11px] text-muted-foreground/80">
+                            ({new Date(readingNote.updated_at).toLocaleString("th-TH", {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })} น.)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* กล่อง Timeline จัดวางเวลาสร้าง กับ เวลาเสร็จสิ้น ให้สวยงามลงตัว */}
+                  <div
+                    className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                      readingNote.status === "เสร็จสิ้น"
+                        ? "bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60"
+                        : "bg-background border-border/70"
+                    }`}
                   >
-                    {readingNote.status}
-                  </span>
-                  <span className="text-muted-foreground ml-auto flex items-center gap-1.5">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 16 16"
-                      fill="currentColor"
-                      className="w-4 h-4"
-                    >
-                      <path d="M4.75 2.25a.75.75 0 0 0-1.5 0v1.41l-.146.126a1.5 1.5 0 0 0-.604 1.196v6.268a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5V4.982a1.5 1.5 0 0 0-.604-1.196l-.146-.126V2.25a.75.75 0 0 0-1.5 0v1h-5v-1ZM4 5.5h8v5.75a.25.25 0 0 1-.25.25h-7.5a.25.25 0 0 1-.25-.25V5.5Z" />
-                    </svg>
-                    {new Date(readingNote.created_at).toLocaleDateString(
-                      "th-TH",
-                      {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      },
-                    )}{" "}
-                    น.
-                  </span>
+                    <div className="flex items-center gap-2.5 text-muted-foreground">
+                      <div className="w-8 h-8 rounded-lg bg-background border flex items-center justify-center shrink-0 shadow-2xs">
+                        <Calendar className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-muted-foreground block font-medium">วันที่สร้างบันทึก</span>
+                        <div className="flex items-center gap-1 font-semibold text-foreground">
+                          <span>
+                            {new Date(readingNote.created_at).toLocaleString("th-TH", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })} น.
+                          </span>
+                          {readingNote.creator?.full_name && (
+                            <span className="text-muted-foreground font-normal text-xs ml-1">
+                              (โดย {readingNote.creator.full_name})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* แสดง completed_at เมื่อเป็น เสร็จสิ้น */}
+                    {readingNote.status === "เสร็จสิ้น" && (readingNote.completed_at || readingNote.updated_at) && (
+                      <div className="flex items-center gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 sm:border-l border-emerald-200 dark:border-emerald-900 sm:pl-4">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <CheckCircle2 className="w-4.5 h-4.5 text-white" />
+                        </div>
+                        <div>
+                          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block font-semibold">
+                            เสร็จสิ้นสมบูรณ์เมื่อ
+                          </span>
+                          <span className="font-bold text-emerald-900 dark:text-emerald-100">
+                            {new Date(readingNote.completed_at || readingNote.updated_at!).toLocaleString("th-TH", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })} น.
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="max-w-none text-base md:text-lg leading-relaxed text-slate-800 dark:text-slate-200 lg:h-[500px] overflow-y-auto pr-2">
                   <NoteContentRenderer

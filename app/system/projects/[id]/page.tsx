@@ -45,10 +45,36 @@ async function getProjectDetails(id: string) {
     }
   }
 
+  // ดึงข้อมูล profiles สำหรับ created_by และ updated_by ของ tasks เพื่อนำมาแสดงชื่อและ Avatar
+  const userIds = Array.from(
+    new Set(
+      [
+        project?.user_id,
+        ...(project?.tasks || []).flatMap((t: any) => [t.created_by, t.updated_by]),
+      ].filter(Boolean)
+    )
+  );
+  let profilesMap: Record<string, any> = {};
+  if (userIds.length > 0) {
+    try {
+      const { data: pData } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", userIds);
+      if (pData) {
+        profilesMap = Object.fromEntries(pData.map((p: any) => [p.id, p]));
+      }
+    } catch {
+      // profiles table query fallback
+    }
+  }
+
   if (project?.tasks) {
     project.tasks = project.tasks.map((task: any) => ({
       ...task,
       qualities: taskQualitiesMap[task.id] || [],
+      creator: profilesMap[task.created_by || project.user_id] || null,
+      updater: profilesMap[task.updated_by || task.created_by || project.user_id] || null,
     }));
 
     project.tasks.sort(
