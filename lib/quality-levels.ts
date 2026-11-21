@@ -20,10 +20,10 @@ export const QUALITY_LEVELS: LevelInfo[] = [
   { level: 4,  name: "ผู้ชำนาญ",        emoji: "🎯", minPoints: 100,  maxPoints: 179,   color: "text-blue-700",    bgColor: "bg-blue-100 dark:bg-blue-950/50" },
   { level: 5,  name: "ผู้เชี่ยวชาญ",   emoji: "🏅", minPoints: 180,  maxPoints: 299,   color: "text-indigo-700",  bgColor: "bg-indigo-100 dark:bg-indigo-950/50" },
   { level: 6,  name: "ระดับสูง",        emoji: "🌟", minPoints: 300,  maxPoints: 449,   color: "text-purple-700",  bgColor: "bg-purple-100 dark:bg-purple-950/50" },
-  { level: 7,  name: "ระดับแชมป์",      emoji: "🏆", minPoints: 450,  maxPoints: 649,   color: "text-orange-700",  bgColor: "bg-orange-100 dark:bg-orange-950/50" },
-  { level: 8,  name: "ระดับมาสเตอร์",  emoji: "👑", minPoints: 650,  maxPoints: 899,   color: "text-red-700",     bgColor: "bg-red-100 dark:bg-red-950/50" },
-  { level: 9,  name: "แกรนด์มาสเตอร์", emoji: "💎", minPoints: 900,  maxPoints: 1199,  color: "text-rose-700",    bgColor: "bg-rose-100 dark:bg-rose-950/50" },
-  { level: 10, name: "ระดับตำนาน",      emoji: "🔥", minPoints: 1200, maxPoints: -1,    color: "text-amber-700",   bgColor: "bg-amber-100 dark:bg-amber-950/50" },
+  { level: 7,  name: "ระดับสูงสุด",      emoji: "🏆", minPoints: 450,  maxPoints: 649,   color: "text-orange-700",  bgColor: "bg-orange-100 dark:bg-orange-950/50" },
+  { level: 8,  name: "ระดับมาสเตอร์",  emoji: "👑", minPoints: 650,  maxPoints: 999,   color: "text-red-700",     bgColor: "bg-red-100 dark:bg-red-950/50" },
+  { level: 9,  name: "แกรนด์มาสเตอร์", emoji: "💎", minPoints: 1000,  maxPoints: 9999,  color: "text-rose-700",    bgColor: "bg-rose-100 dark:bg-rose-950/50" },
+  { level: 10, name: "ระดับตำนาน",      emoji: "🔥", minPoints: 10000, maxPoints: -1,    color: "text-amber-700",   bgColor: "bg-amber-100 dark:bg-amber-950/50" },
 ];
 
 /**
