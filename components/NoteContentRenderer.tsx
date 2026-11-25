@@ -196,236 +196,115 @@ function NoteContentRendererComponent({
   }
 
   const lines = cleanedContent.split("\n");
+  const renderedLines: React.ReactNode[] = [];
 
-  return (
-    <div className={cn("note-content space-y-1", className)}>
-      {lines.map((line, lineIndex) => {
-        // 1. Checklist item:
-        // Matches:
-        // - [ ] task
-        // - [x] task / - [X] task
-        // * [ ] task
-        // [ ] task / [x] task
-        const checklistMatch = line.match(
-          /^(\s*(?:[-*]\s*)?\[)([ xX])\]\s*(.*)$/,
-        );
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
+    const fenceMatch = line.match(/^```([^\s`]*)\s*$/);
 
-        if (checklistMatch) {
-          const isChecked = checklistMatch[2].toLowerCase() === "x";
-          const taskText = checklistMatch[3];
-          const canToggle = !readOnly && typeof onToggleChecklist === "function";
+    if (fenceMatch) {
+      const codeLines: string[] = [];
+      lineIndex++;
+      while (lineIndex < lines.length && !/^```\s*$/.test(lines[lineIndex])) {
+        codeLines.push(lines[lineIndex]);
+        lineIndex++;
+      }
 
-          return (
-            <div
-              key={lineIndex}
-              className={cn(
-                "flex items-start gap-2.5 transition-colors group/item",
-                isCompact ? "my-0.5" : "my-1.5",
-              )}
-            >
-              <button
-                type="button"
-                disabled={!canToggle}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (canToggle) {
-                    onToggleChecklist(lineIndex, !isChecked);
-                  }
-                }}
-                className={cn(
-                  "rounded-md flex items-center justify-center shrink-0 border transition-all select-none",
-                  isCompact ? "w-3.5 h-3.5 mt-0.5" : "w-4 h-4 mt-1",
-                  isChecked
-                    ? "bg-primary border-primary text-primary-foreground shadow-xs"
-                    : "border-slate-300 dark:border-slate-600 bg-background hover:border-primary",
-                  canToggle
-                    ? "cursor-pointer hover:scale-105 active:scale-95"
-                    : "cursor-default",
-                )}
-                aria-label={isChecked ? "ทำเสร็จแล้ว" : "ยังไม่เสร็จ"}
-              >
-                {isChecked && (
-                  <Check
-                    className={cn(
-                      "stroke-[3]",
-                      isCompact ? "w-2.5 h-2.5" : "w-3 h-3",
-                    )}
-                  />
-                )}
-              </button>
+      renderedLines.push(
+        <pre
+          key={`code-${lineIndex}`}
+          className={cn(
+            "note-code-block my-3 max-w-full overflow-x-auto rounded-lg border border-slate-700 bg-slate-950 p-3 font-mono text-sm leading-relaxed text-slate-100 whitespace-pre",
+            isCompact ? "text-xs p-2" : "",
+          )}
+        >
+          <code>{codeLines.join("\n")}</code>
+        </pre>,
+      );
+      continue;
+    }
 
-              <span
-                className={cn(
-                  "flex-1 leading-relaxed break-words select-text",
-                  isCompact ? "text-sm" : "text-base",
-                  isChecked &&
-                    "line-through text-muted-foreground/70 dark:text-muted-foreground/60",
-                )}
-              >
-                {renderInline(taskText)}
-              </span>
-            </div>
-          );
-        }
+    const checklistMatch = line.match(/^(\s*(?:[-*]\s*)?\[)([ xX])\]\s*(.*)$/);
+    if (checklistMatch) {
+      const isChecked = checklistMatch[2].toLowerCase() === "x";
+      const taskText = checklistMatch[3];
+      const canToggle = !readOnly && typeof onToggleChecklist === "function";
+      renderedLines.push(
+        <div key={lineIndex} className={cn("flex items-start gap-2.5 transition-colors group/item", isCompact ? "my-0.5" : "my-1.5")}>
+          <button type="button" disabled={!canToggle} onClick={(e) => { e.stopPropagation(); if (canToggle) onToggleChecklist(lineIndex, !isChecked); }} className={cn("rounded-md flex items-center justify-center shrink-0 border transition-all select-none", isCompact ? "w-3.5 h-3.5 mt-0.5" : "w-4 h-4 mt-1", isChecked ? "bg-primary border-primary text-primary-foreground shadow-xs" : "border-slate-300 dark:border-slate-600 bg-background hover:border-primary", canToggle ? "cursor-pointer hover:scale-105 active:scale-95" : "cursor-default")} aria-label={isChecked ? "ทำเสร็จแล้ว" : "ยังไม่เสร็จ"}>
+            {isChecked && <Check className={cn("stroke-[3]", isCompact ? "w-2.5 h-2.5" : "w-3 h-3")} />}
+          </button>
+          <span className={cn("flex-1 leading-relaxed break-words select-text", isCompact ? "text-sm" : "text-base", isChecked && "line-through text-muted-foreground/70 dark:text-muted-foreground/60")}>
+            {renderInline(taskText)}
+          </span>
+        </div>,
+      );
+      continue;
+    }
 
-        // 2. Heading 1: # Heading
-        const h1Match = line.match(/^#\s+(.*)$/);
-        if (h1Match) {
-          return (
-            <h1
-              key={lineIndex}
-              className={cn(
-                "font-bold text-foreground border-b border-border/40 pb-1",
-                isCompact ? "text-base mt-2 mb-1" : "text-xl md:text-2xl mt-4 mb-2",
-              )}
-            >
-              {renderInline(h1Match[1])}
-            </h1>
-          );
-        }
+    const h1Match = line.match(/^#\s+(.*)$/);
+    if (h1Match) {
+      renderedLines.push(<h1 key={lineIndex} className={cn("font-bold text-foreground border-b border-border/40 pb-1", isCompact ? "text-base mt-2 mb-1" : "text-xl md:text-2xl mt-4 mb-2")}>{renderInline(h1Match[1])}</h1>);
+      continue;
+    }
+    const h2Match = line.match(/^##\s+(.*)$/);
+    if (h2Match) {
+      renderedLines.push(<h2 key={lineIndex} className={cn("font-bold text-foreground", isCompact ? "text-sm mt-1.5 mb-0.5" : "text-lg md:text-xl mt-3 mb-1.5")}>{renderInline(h2Match[1])}</h2>);
+      continue;
+    }
+    const h3Match = line.match(/^###\s+(.*)$/);
+    if (h3Match) {
+      renderedLines.push(<h3 key={lineIndex} className={cn("font-semibold text-foreground", isCompact ? "text-sm mt-1 mb-0.5" : "text-base md:text-lg mt-2 mb-1")}>{renderInline(h3Match[1])}</h3>);
+      continue;
+    }
 
-        // 3. Heading 2: ## Heading
-        const h2Match = line.match(/^##\s+(.*)$/);
-        if (h2Match) {
-          return (
-            <h2
-              key={lineIndex}
-              className={cn(
-                "font-bold text-foreground",
-                isCompact ? "text-sm mt-1.5 mb-0.5" : "text-lg md:text-xl mt-3 mb-1.5",
-              )}
-            >
-              {renderInline(h2Match[1])}
-            </h2>
-          );
-        }
+    const bulletMatch = line.match(/^(\s*)(?:[-*•])\s+(.*)$/);
+    if (bulletMatch) {
+      renderedLines.push(
+        <div key={lineIndex} className={cn("flex items-start gap-2 pl-2", isCompact ? "my-0.5" : "my-1")}>
+          <span className={cn("rounded-full bg-primary/80 shrink-0", isCompact ? "w-1.5 h-1.5 mt-1.5" : "w-1.5 h-1.5 mt-2")} />
+          <span className={cn("flex-1 leading-relaxed break-words", isCompact ? "text-sm" : "text-base")}>{renderInline(bulletMatch[2])}</span>
+        </div>,
+      );
+      continue;
+    }
 
-        // 4. Heading 3: ### Heading
-        const h3Match = line.match(/^###\s+(.*)$/);
-        if (h3Match) {
-          return (
-            <h3
-              key={lineIndex}
-              className={cn(
-                "font-semibold text-foreground",
-                isCompact ? "text-sm mt-1 mb-0.5" : "text-base md:text-lg mt-2 mb-1",
-              )}
-            >
-              {renderInline(h3Match[1])}
-            </h3>
-          );
-        }
+    const numberedMatch = line.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
+    if (numberedMatch) {
+      renderedLines.push(
+        <div key={lineIndex} className={cn("flex items-start gap-2 pl-2", isCompact ? "my-0.5" : "my-1")}>
+          <span className={cn("font-semibold text-muted-foreground shrink-0 select-none", isCompact ? "text-xs mt-0.5 min-w-[1rem]" : "text-sm mt-0.5 min-w-[1.2rem]")}>{numberedMatch[2]}.</span>
+          <span className={cn("flex-1 leading-relaxed break-words", isCompact ? "text-sm" : "text-base")}>{renderInline(numberedMatch[3])}</span>
+        </div>,
+      );
+      continue;
+    }
 
-        // 5. Bullet list item: - item, * item, • item (excluding checklist which was matched above)
-        const bulletMatch = line.match(/^(\s*)(?:[-*•])\s+(.*)$/);
-        if (bulletMatch) {
-          return (
-            <div
-              key={lineIndex}
-              className={cn(
-                "flex items-start gap-2 pl-2",
-                isCompact ? "my-0.5" : "my-1",
-              )}
-            >
-              <span
-                className={cn(
-                  "rounded-full bg-primary/80 shrink-0",
-                  isCompact ? "w-1.5 h-1.5 mt-1.5" : "w-1.5 h-1.5 mt-2",
-                )}
-              />
-              <span
-                className={cn(
-                  "flex-1 leading-relaxed break-words",
-                  isCompact ? "text-sm" : "text-base",
-                )}
-              >
-                {renderInline(bulletMatch[2])}
-              </span>
-            </div>
-          );
-        }
+    const quoteMatch = line.match(/^>\s*(.*)$/);
+    if (quoteMatch) {
+      renderedLines.push(<blockquote key={lineIndex} className={cn("border-l-4 border-primary/60 bg-muted/30 pl-3 py-1 my-1.5 rounded-r text-muted-foreground italic", isCompact ? "text-xs my-1" : "text-sm my-2")}>{renderInline(quoteMatch[1])}</blockquote>);
+      continue;
+    }
 
-        // 6. Numbered list item: 1. item
-        const numberedMatch = line.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
-        if (numberedMatch) {
-          return (
-            <div
-              key={lineIndex}
-              className={cn(
-                "flex items-start gap-2 pl-2",
-                isCompact ? "my-0.5" : "my-1",
-              )}
-            >
-              <span
-                className={cn(
-                  "font-semibold text-muted-foreground shrink-0 select-none",
-                  isCompact ? "text-xs mt-0.5 min-w-[1rem]" : "text-sm mt-0.5 min-w-[1.2rem]",
-                )}
-              >
-                {numberedMatch[2]}.
-              </span>
-              <span
-                className={cn(
-                  "flex-1 leading-relaxed break-words",
-                  isCompact ? "text-sm" : "text-base",
-                )}
-              >
-                {renderInline(numberedMatch[3])}
-              </span>
-            </div>
-          );
-        }
+    if (/^(\s*[-*_]\s*){3,}$/.test(line)) {
+      renderedLines.push(<hr key={lineIndex} className={cn("border-t border-border/70 my-2", isCompact ? "my-1.5" : "my-3")} />);
+      continue;
+    }
 
-        // 7. Blockquote: > text
-        const quoteMatch = line.match(/^>\s*(.*)$/);
-        if (quoteMatch) {
-          return (
-            <blockquote
-              key={lineIndex}
-              className={cn(
-                "border-l-4 border-primary/60 bg-muted/30 pl-3 py-1 my-1.5 rounded-r text-muted-foreground italic",
-                isCompact ? "text-xs my-1" : "text-sm my-2",
-              )}
-            >
-              {renderInline(quoteMatch[1])}
-            </blockquote>
-          );
-        }
+    const lineVisibleText = line.replace(/<[^>]+>/g, "").trim();
+    if (!lineVisibleText && !/<img\b/i.test(line)) {
+      renderedLines.push(<div key={lineIndex} className={isCompact ? "h-1" : "h-2.5"} />);
+      continue;
+    }
 
-        // 8. Divider / Horizontal Rule: --- or *** or ___
-        if (/^(\s*[-*_]\s*){3,}$/.test(line)) {
-          return (
-            <hr
-              key={lineIndex}
-              className={cn(
-                "border-t border-border/70 my-2",
-                isCompact ? "my-1.5" : "my-3",
-              )}
-            />
-          );
-        }
+    renderedLines.push(
+      <p key={lineIndex} className={cn("leading-relaxed break-words text-foreground/90", isCompact ? "text-sm my-0.5" : "text-base my-1")}>
+        {renderInline(line)}
+      </p>,
+    );
+  }
 
-        // 9. Empty line (blank line or line containing only empty spans/tags)
-        const lineVisibleText = line.replace(/<[^>]+>/g, "").trim();
-        if (!lineVisibleText && !/<img\b/i.test(line)) {
-          return <div key={lineIndex} className={isCompact ? "h-1" : "h-2.5"} />;
-        }
-
-        // 10. Normal text paragraph line
-        return (
-          <p
-            key={lineIndex}
-            className={cn(
-              "leading-relaxed break-words text-foreground/90",
-              isCompact ? "text-sm my-0.5" : "text-base my-1",
-            )}
-          >
-            {renderInline(line)}
-          </p>
-        );
-      })}
-    </div>
-  );
+  return <div className={cn("note-content space-y-1", className)}>{renderedLines}</div>;
 }
 
 const NoteContentRenderer = React.memo(NoteContentRendererComponent);

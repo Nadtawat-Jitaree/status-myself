@@ -16,6 +16,7 @@ import {
   Highlighter,
   Undo2,
   Redo2,
+  Code2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,8 +35,66 @@ function markdownToHtml(md: string): string {
   if (!md) return "";
 
   // Strip empty spans from incoming content to prevent empty phantom tags
-  let sanitized = md.replace(/<span[^>]*>\s*<\/span>/gi, "").trim();
+  const sanitized = md.replace(/<span[^>]*>\s*<\/span>/gi, "").trim();
   if (!sanitized) return "";
+
+  // Convert fenced code blocks before normal Markdown line parsing.
+  if (/```/.test(sanitized)) {
+    const escapeHtml = (text: string) =>
+      text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    const parts: string[] = [];
+    const lines = sanitized.split("\n");
+
+    for (let i = 0; i < lines.length; i++) {
+      const fenceMatch = lines[i].match(/^```([^\s`]*)\s*$/);
+      if (fenceMatch) {
+        const codeLines: string[] = [];
+        i++;
+        while (i < lines.length && !/^```\s*$/.test(lines[i])) {
+          codeLines.push(lines[i]);
+          i++;
+        }
+        const language = fenceMatch[1] || "";
+        parts.push(
+          `<pre class="note-code-block" data-language="${escapeHtml(language)}"><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`,
+        );
+        continue;
+      }
+
+      const line = lines[i];
+      const checkMatch = line.match(/^(\s*(?:[-*]\s*)?\[)([ xX])\]\s*(.*)$/);
+      if (checkMatch) {
+        const isChecked = checkMatch[2].toLowerCase() === "x";
+        const text = parseInlineMdToHtml(checkMatch[3]);
+        parts.push(`<div class="note-check-item flex items-start gap-2 my-1" data-checked="${isChecked}"><input type="checkbox" ${isChecked ? "checked" : ""} class="note-checkbox mt-1 w-4 h-4 rounded accent-primary cursor-pointer shrink-0" /><span class="note-check-text flex-1 leading-relaxed ${isChecked ? "line-through opacity-70" : ""}">${text || "<br>"}</span></div>`);
+      } else if (/^###\s+/.test(line)) {
+        parts.push(`<h3 class="text-base font-bold my-1 text-foreground">${parseInlineMdToHtml(line.slice(4)) || "<br>"}</h3>`);
+      } else if (/^##\s+/.test(line)) {
+        parts.push(`<h2 class="text-lg font-bold my-1 text-foreground">${parseInlineMdToHtml(line.slice(3)) || "<br>"}</h2>`);
+      } else if (/^#\s+/.test(line)) {
+        parts.push(`<h1 class="text-xl font-bold my-1 text-foreground">${parseInlineMdToHtml(line.slice(2)) || "<br>"}</h1>`);
+      } else if (/^>\s*/.test(line)) {
+        parts.push(`<blockquote class="border-l-4 border-primary/60 bg-muted/30 pl-3 py-1 my-1.5 rounded-r text-muted-foreground italic">${parseInlineMdToHtml(line.replace(/^>\s*/, "")) || "<br>"}</blockquote>`);
+      } else if (/^(\s*[-*_]\s*){3,}$/.test(line)) {
+        parts.push(`<hr class="border-t border-border/70 my-2" />`);
+      } else if (/^(\s*)(\d+)[.)]\s+/.test(line)) {
+        const match = line.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
+        parts.push(`<ol class="list-decimal pl-5 my-0.5"><li>${parseInlineMdToHtml(match?.[3] || "") || "<br>"}</li></ol>`);
+      } else if (/^(\s*)[•\-*]\s+/.test(line)) {
+        const match = line.match(/^(\s*)[•\-*]\s+(.*)$/);
+        parts.push(`<ul class="list-disc pl-5 my-0.5"><li>${parseInlineMdToHtml(match?.[2] || "") || "<br>"}</li></ul>`);
+      } else if (line.trim()) {
+        parts.push(`<p class="my-0.5 leading-relaxed">${parseInlineMdToHtml(line)}</p>`);
+      } else {
+        parts.push(`<p class="my-0.5"><br></p>`);
+      }
+    }
+
+    return parts.join("");
+  }
 
   // If it already looks like full HTML document structure with our custom checklist or tags, return sanitized
   if (/<(div|p|h[1-6]|ul|ol|blockquote|hr)\b[^>]*>/i.test(sanitized)) {
@@ -217,6 +276,14 @@ function htmlToMarkdown(html: string): string {
       return `> ${processInline(el).trim()}`;
     }
 
+    // Fenced code block
+    if (tagName === "pre") {
+      const code = el.querySelector("code") || el;
+      const text = code.textContent || "";
+      if (!text.trim()) return "";
+      return `\`\`\`\n${text.replace(/\n$/, "")}\n\`\`\``;
+    }
+
     // Divider
     if (tagName === "hr") {
       return "---";
@@ -307,7 +374,10 @@ function htmlToMarkdown(html: string): string {
           return;
         }
 
-        if (tag === "strong" || tag === "b") {
+        if (tag === "code") {
+          const inner = processInline(childEl);
+          result += inner ? `\`${inner}\`` : "";
+        } else if (tag === "strong" || tag === "b") {
           const inner = processInline(childEl);
           result += inner && inner.trim() ? `**${inner}**` : inner;
         } else if (tag === "em" || tag === "i") {
@@ -1036,6 +1106,42 @@ export default function RichNoteEditor({
     triggerChange();
   };
 
+  // Insert a fenced code block in the rich editor.
+  const handleInsertCodeBlock = () => {
+    if (disabled) return;
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+
+    const pre = document.createElement("pre");
+    pre.className =
+      "note-code-block my-3 overflow-x-auto rounded-lg border border-slate-700 bg-slate-950 p-3 font-mono text-sm leading-relaxed text-slate-100";
+    pre.setAttribute("data-language", "");
+
+    const code = document.createElement("code");
+    code.textContent = "// วางโค้ดที่นี่";
+    pre.appendChild(code);
+
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      if (editor.contains(range.commonAncestorContainer)) {
+        range.deleteContents();
+        range.insertNode(pre);
+      } else {
+        editor.appendChild(pre);
+      }
+    } else {
+      editor.appendChild(pre);
+    }
+
+    const textRange = document.createRange();
+    textRange.selectNodeContents(code);
+    selection?.removeAllRanges();
+    selection?.addRange(textRange);
+    triggerChange();
+  };
+
   // Insert Inline Image via URL prompt
   const handleInsertImage = () => {
     if (disabled) return;
@@ -1710,9 +1816,11 @@ export default function RichNoteEditor({
                         <button
                           type="button"
                           onClick={() => {
-                            openPicker === "text"
-                              ? applyInlineStyle("color", "")
-                              : applyInlineStyle("backgroundColor", "");
+                            if (openPicker === "text") {
+                              applyInlineStyle("color", "");
+                            } else {
+                              applyInlineStyle("backgroundColor", "");
+                            }
                             setOpenPicker(null);
                           }}
                           className="absolute rounded-full border-2 border-dashed border-border/70 flex items-center justify-center text-muted-foreground hover:bg-muted text-xs font-bold transition-all hover:scale-110"
@@ -1737,9 +1845,11 @@ export default function RichNoteEditor({
                               key={item.label}
                               type="button"
                               onClick={() => {
-                                openPicker === "text"
-                                  ? applyInlineStyle("color", item.color)
-                                  : applyInlineStyle("backgroundColor", item.color);
+                                if (openPicker === "text") {
+                                  applyInlineStyle("color", item.color);
+                                } else {
+                                  applyInlineStyle("backgroundColor", item.color);
+                                }
                                 if (openPicker === "text") setTextColorInput(item.color);
                                 else setBgColorInput(item.color);
                                 setOpenPicker(null);
@@ -1787,9 +1897,11 @@ export default function RichNoteEditor({
                             if (e.key === "Enter") {
                               e.preventDefault();
                               const val = openPicker === "text" ? textColorInput : bgColorInput;
-                              openPicker === "text"
-                                ? applyInlineStyle("color", val)
-                                : applyInlineStyle("backgroundColor", val);
+                              if (openPicker === "text") {
+                                applyInlineStyle("color", val);
+                              } else {
+                                applyInlineStyle("backgroundColor", val);
+                              }
                               setOpenPicker(null);
                             }
                           }}
@@ -1800,9 +1912,11 @@ export default function RichNoteEditor({
                           type="button"
                           onClick={() => {
                             const val = openPicker === "text" ? textColorInput : bgColorInput;
-                            openPicker === "text"
-                              ? applyInlineStyle("color", val)
-                              : applyInlineStyle("backgroundColor", val);
+                            if (openPicker === "text") {
+                              applyInlineStyle("color", val);
+                            } else {
+                              applyInlineStyle("backgroundColor", val);
+                            }
                             setOpenPicker(null);
                           }}
                           className="h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 shrink-0"
@@ -1938,6 +2052,15 @@ export default function RichNoteEditor({
             title="แทรกเส้นคั่น (Divider)"
           >
             <Minus className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertCodeBlock}
+            disabled={disabled}
+            className="px-2 py-1 rounded-md hover:bg-background flex items-center gap-1 text-foreground h-7"
+            title="แทรกโค้ด (Code Block)"
+          >
+            <Code2 className="w-3.5 h-3.5 text-emerald-500" />
           </button>
           <button
             type="button"
