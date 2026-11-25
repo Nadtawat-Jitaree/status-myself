@@ -1382,10 +1382,10 @@ export default function NotesPage({ noteType, initialData }: Props) {
     );
 
   return (
-    <div className="container mx-auto px-8 py-9 max-w-5xl flex flex-col gap-8 border-2 rounded-3xl relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center">
+    <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-9 max-w-5xl flex flex-col gap-5 sm:gap-8 sm:border-2 sm:rounded-3xl relative min-w-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-1 sm:px-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight flex items-center">
             {noteType == "normal" && (
               <>
                 <Image
@@ -1393,7 +1393,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   alt="ทั่วไป"
                   width={40}
                   height={40}
-                  className="mr-2"
+                  className="mr-2 w-8 h-8 sm:w-10 sm:h-10"
                   unoptimized
                 />
                 โน๊ตทั่วไป
@@ -1407,21 +1407,21 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   width={40}
                   height={40}
                   unoptimized
-                  className="mr-2"
+                  className="mr-2 w-8 h-8 sm:w-10 sm:h-10"
                 />
                 โน๊ตมหาวิทยาลัย
               </>
             )}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             จัดการข้อความ หมวดหมู่ และสถานะของคุณในที่เดียว
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 sm:gap-3">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-3">
           <Button
             onClick={() => openPdfStudio(null)}
             variant="outline"
-            className="border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 gap-1.5"
+            className="col-span-2 sm:col-span-1 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 gap-1.5 px-2 sm:px-4"
           >
             <PenTool className="w-4 h-4 text-blue-500" />
             สมุดจด PDF (ลายมือ)
@@ -1429,29 +1429,30 @@ export default function NotesPage({ noteType, initialData }: Props) {
           <Button
             onClick={() => setIsCategoryModalOpen(true)}
             variant="outline"
+            className="w-full sm:w-auto px-2 sm:px-4"
           >
             จัดการหมวดหมู่
           </Button>
-          <Button onClick={openNewNoteModal} className="text-white">
+          <Button onClick={openNewNoteModal} className="w-full sm:w-auto text-white px-2 sm:px-4">
             + สร้าง Note ใหม่
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 border rounded-3xl px-5 py-6 bg-slate-50/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat">
+      <div className="flex flex-col gap-3 sm:gap-4 border rounded-2xl sm:rounded-3xl px-3 sm:px-5 py-4 sm:py-6 bg-slate-50/30 bg-[url('/all.webp')] bg-contain bg-center bg-no-repeat min-w-0">
         {/* Compact Year & Semester Bar for University Notes */}
         {noteType === "school" && (
-          <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:px-4 sm:py-2.5 bg-background/90 border border-indigo-100 dark:border-indigo-950/60 rounded-2xl shadow-xs">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-2.5 p-2.5 sm:px-4 sm:py-2.5 bg-background/90 border border-indigo-100 dark:border-indigo-950/60 rounded-2xl shadow-xs min-w-0">
+            <div className="flex min-w-0 flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3">
               {/* Year Selector */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto scrollbar-thin pb-0.5">
                 <span className="flex items-center justify-center w-6 h-6 rounded-md bg-indigo-600 text-white shrink-0">
                   <GraduationCap className="w-3.5 h-3.5" />
                 </span>
                 <span className="text-xs font-bold text-foreground mr-1 hidden sm:inline">
                   ชั้นปี:
                 </span>
-                <div className="flex items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1">
                   {[
                     { id: "all" as const, label: "ทุกปี", count: yearCounts.all },
                     { id: 1 as const, label: "ปี 1", count: yearCounts[1] },
@@ -1504,7 +1505,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
               <div className="hidden sm:block w-px h-5 bg-border/80 self-center" />
 
               {/* Semester Selector */}
-              <div className="flex items-center gap-1">
+              <div className="flex min-w-0 items-center gap-1 overflow-x-auto scrollbar-thin pb-0.5">
                 <span className="text-xs font-semibold text-muted-foreground mr-1 hidden sm:inline">
                   เทอม:
                 </span>
@@ -1598,11 +1599,11 @@ export default function NotesPage({ noteType, initialData }: Props) {
             </div>
 
             {/* Category Filter Button */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex w-full sm:w-auto items-center gap-2 shrink-0">
               <Button
                 type="button"
                 variant="outline"
-                className="flex h-9 min-w-[130px] sm:min-w-[160px] max-w-[220px] justify-between px-3 text-xs sm:text-sm bg-background font-normal border-border hover:bg-accent rounded-md"
+                className="flex h-9 w-full sm:w-auto sm:min-w-[160px] sm:max-w-[220px] justify-between px-3 text-xs sm:text-sm bg-background font-normal border-border hover:bg-accent rounded-md"
                 onClick={() => {
                   setModalFilterYear(selectedYear);
                   setModalFilterSemester(selectedSemester);
@@ -2076,15 +2077,16 @@ export default function NotesPage({ noteType, initialData }: Props) {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4 mt-6">
+          <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 mt-6">
             <Button
               variant="outline"
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
+              className="px-3 sm:px-4"
             >
               ก่อนหน้า
             </Button>
-            <span className="text-sm font-medium text-slate-600">
+            <span className="text-xs sm:text-sm font-medium text-slate-600 order-first w-full text-center sm:order-none sm:w-auto">
               หน้า {currentPage} จาก {totalPages}
             </span>
             <Button
@@ -2093,6 +2095,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                 setCurrentPage((prev) => Math.min(prev + 1, totalPages))
               }
               disabled={currentPage === totalPages}
+              className="px-3 sm:px-4"
             >
               ถัดไป
             </Button>
@@ -2102,17 +2105,17 @@ export default function NotesPage({ noteType, initialData }: Props) {
 
       {isFilterModalOpen && (
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-2 sm:p-4"
           onClick={() => setIsFilterModalOpen(false)}
         >
           <div
-            className="w-full max-w-3xl bg-background rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            className="w-full max-w-3xl bg-background rounded-2xl sm:rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[90dvh] sm:max-h-[85vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-5 md:p-6 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/20">
+            <div className="p-3 sm:p-5 md:p-6 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-muted/20">
               <div>
-                <h3 className="font-bold text-xl flex items-center gap-2 text-foreground">
+                <h3 className="font-bold text-base sm:text-xl flex items-center gap-2 text-foreground">
                   <Folder className="w-5 h-5 text-primary" />
                   เลือกหมวดหมู่ที่ต้องการดู
                 </h3>
@@ -2216,7 +2219,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
             )}
 
             {/* Card Grid */}
-            <div className="p-5 md:p-6 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="p-3 sm:p-5 md:p-6 overflow-y-auto flex-1 grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4">
               {/* Option: ทั้งหมด (All) */}
               {(!categoryFilterSearch ||
                 "ทั้งหมด all".includes(categoryFilterSearch.toLowerCase())) && (
@@ -2357,12 +2360,12 @@ export default function NotesPage({ noteType, initialData }: Props) {
       )}
 
       {readingNote && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 md:p-10">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-2 sm:p-4 md:p-10">
           <div
             className={`w-full h-full max-h-[90vh] bg-background rounded-2xl overflow-hidden flex flex-col relative ${!readingNote.file_path ? "max-w-4xl" : ""}`}
           >
-            <div className="flex items-start justify-between p-6 border-b">
-              <h2 className="text-2xl md:text-3xl font-bold pr-28 leading-tight">
+            <div className="flex items-start justify-between p-3 sm:p-5 md:p-6 border-b">
+              <h2 className="pt-10 sm:pt-0 text-lg sm:text-2xl md:text-3xl font-bold pr-24 sm:pr-28 leading-tight line-clamp-2">
                 {readingNote.title}
               </h2>
               <div className="flex items-center gap-2 absolute top-5 right-5">
@@ -2404,7 +2407,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
               </div>
             </div>
             <div
-              className={`flex-1 overflow-y-auto lg:overflow-auto p-6 md:p-8 bg-slate-50/50 ${readingNote.file_path ? "lg:grid lg:grid-cols-12" : ""}`}
+              className={`flex-1 overflow-y-auto lg:overflow-auto p-3 sm:p-6 md:p-8 bg-slate-50/50 ${readingNote.file_path ? "lg:grid lg:grid-cols-12" : ""}`}
             >
               <div
                 className={`${readingNote.file_path ? "lg:col-span-6" : ""}`}
@@ -2671,11 +2674,11 @@ export default function NotesPage({ noteType, initialData }: Props) {
       />
 
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md bg-background rounded-xl overflow-hidden">
-            <Card className="border-0 shadow-none">
-              <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-                <CardTitle className="flex items-center gap-2 text-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4">
+          <div className="w-full max-w-md max-h-[90dvh] bg-background rounded-xl overflow-hidden flex flex-col">
+            <Card className="border-0 shadow-none flex max-h-[90dvh] flex-col overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between border-b px-3 py-3 sm:px-6 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 16 16"
@@ -2706,7 +2709,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
                   </svg>
                 </Button>
               </CardHeader>
-              <CardContent className="flex flex-col gap-4 pt-6">
+              <CardContent className="flex flex-col gap-4 px-3 pt-4 pb-4 sm:px-6 sm:pt-6 overflow-y-auto">
                 <form
                   onSubmit={handleAddCategory}
                   className="flex flex-col gap-2.5"
