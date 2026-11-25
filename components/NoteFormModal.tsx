@@ -68,6 +68,7 @@ interface NoteFormModalProps {
   categories?: NoteCategoryItem[];
   availableQualities?: Quality[];
   noteType?: "normal" | "school";
+  defaultCategoryId?: string | null;
   onSuccess?: (savedData: any) => void | Promise<void>;
 }
 
@@ -78,6 +79,7 @@ export function NoteFormModal({
   categories = [],
   availableQualities = [],
   noteType,
+  defaultCategoryId,
   onSuccess,
 }: NoteFormModalProps) {
   const [title, setTitle] = useState("");
@@ -175,8 +177,7 @@ export function NoteFormModal({
       activeFetchNoteIdRef.current = null;
       setTitle(note?.title || "");
       setContent(note?.content || "");
-      // ไม่ auto-select หมวดหมู่ เพื่อให้ผู้ใช้เลือกเองอย่างชัดเจน
-      setCategoryId(note?.category_id || "");
+      setCategoryId(note?.category_id || defaultCategoryId || "");
       setStatus(note?.status || "ทั่วไป");
       setExistingFilePath(null);
       setFile(null);

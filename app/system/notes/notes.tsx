@@ -2667,6 +2667,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
         categories={categories}
         availableQualities={availableQualities}
         noteType={noteType}
+        defaultCategoryId={filterCategory === "all" ? null : filterCategory}
         onSuccess={async () => {
           invalidateNotesCache(noteType);
           await loadNotes();
