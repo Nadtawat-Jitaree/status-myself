@@ -70,6 +70,11 @@ import RichNoteEditor from "@/components/RichNoteEditor";
 import dynamic from "next/dynamic";
 
 import { DocumentAnnotationState } from "@/lib/pdf-canvas/types";
+import {
+  getCachedNoteAnnotation,
+  removeCachedNote,
+  cacheNoteAnnotation,
+} from "@/lib/pdf-cache-indexeddb";
 
 const PdfNoteStudio = dynamic(() => import("@/components/PdfNoteStudio"), {
   ssr: false,
@@ -513,7 +518,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
     if (note) {
       setPdfStudioNote(note);
 
-      // โหลดข้อมูลลายเส้นจาก note.content ถ้ามีเก็บไว้เป็น JSON
+      // โหลดข้อมูลลายเส้นจาก note.content ถ้ามีเก็บไว้เป็น JSON (หรือดึงจาก IndexedDB Cache)
       let parsedAnno: DocumentAnnotationState | null = null;
       if (note.content && note.content.startsWith('{"type":"pdf_notes_annotation"')) {
         try {
@@ -521,6 +526,11 @@ export default function NotesPage({ noteType, initialData }: Props) {
         } catch (e) {
           console.warn("Failed to parse note annotation JSON:", e);
         }
+      }
+      if (!parsedAnno && note.id) {
+        try {
+          parsedAnno = await getCachedNoteAnnotation(note.id);
+        } catch {}
       }
       setPdfStudioAnnotation(parsedAnno);
 
@@ -575,15 +585,19 @@ export default function NotesPage({ noteType, initialData }: Props) {
       newFilePath = fileName;
     }
 
-    // 2. ดึง signed URL ใหม่สดพร้อม cache buster
+    // 2. ดึง signed URL ใหม่สดพร้อม cache buster (เฉพาะเมื่อไฟล์มีการเปลี่ยนแปลง)
     let freshSignedUrl: string | null = null;
     if (newFilePath) {
-      const { data: signedData } = await supabase.storage
-        .from("note_attachments")
-        .createSignedUrl(newFilePath, 3600);
-      freshSignedUrl = signedData?.signedUrl
-        ? `${signedData.signedUrl}&t=${Date.now()}`
-        : null;
+      if (pdfBlob || !pdfStudioUrl) {
+        const { data: signedData } = await supabase.storage
+          .from("note_attachments")
+          .createSignedUrl(newFilePath, 3600);
+        freshSignedUrl = signedData?.signedUrl
+          ? `${signedData.signedUrl}&t=${Date.now()}`
+          : null;
+      } else {
+        freshSignedUrl = pdfStudioUrl;
+      }
     }
 
     // 3. แปลงข้อมูลเวกเตอร์ลายเส้นและรูปภาพทั้งหมดเป็น JSON เก็บใน note.content (Dual-Layer)
@@ -624,6 +638,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
       pendingPdfStudioUrlRef.current = freshSignedUrl;
       setPdfStudioNote(updatedNote);
       setPdfStudioAnnotation(annotation);
+      cacheNoteAnnotation(pdfStudioNote.id, annotation).catch(() => {});
 
       if (readingNote?.id === pdfStudioNote.id) {
         setReadingNote(updatedNote);
@@ -683,6 +698,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
         pendingPdfStudioUrlRef.current = freshSignedUrl;
         setPdfStudioNote(newNote);
         setPdfStudioAnnotation(annotation);
+        cacheNoteAnnotation(createRes.id, annotation).catch(() => {});
       }
     }
 
@@ -1171,6 +1187,7 @@ export default function NotesPage({ noteType, initialData }: Props) {
         }
 
         await deleteNote(id);
+        removeCachedNote(id, targetNote?.file_path).catch(() => {});
         invalidateNotesCache(noteType);
         invalidateNoteQualitiesCache(id);
         setNotes((prev) => prev.filter((note) => note.id !== id));

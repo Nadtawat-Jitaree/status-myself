@@ -64,6 +64,13 @@ import {
 import { PDFDocument } from "pdf-lib";
 import { SaveDigitalNotebookModal } from "./SaveDigitalNotebookModal";
 import { NoteCategoryItem } from "./NoteFormModal";
+import {
+  cachePdfBuffer,
+  getCachedPdfBuffer,
+  cacheNoteAnnotation,
+  getCachedNoteAnnotation,
+  removeCachedNote,
+} from "@/lib/pdf-cache-indexeddb";
 
 // A4 Dimensions in PDF Points (72 dpi)
 const A4_PORTRAIT_WIDTH = 595.28;
@@ -262,27 +269,42 @@ export default function PdfNoteStudio({
         setPages(initialAnnotation.pages);
       }
     } else if (noteId && typeof window !== "undefined") {
-      // Fallback: localStorage for offline resilience
-      const strokeKey = `pdf_studio_strokes_${noteId}`;
-      const imageKey = `pdf_studio_images_${noteId}`;
-      try {
-        const savedStrokes = localStorage.getItem(strokeKey);
-        if (savedStrokes) {
-          const parsed = JSON.parse(savedStrokes);
-          if (Array.isArray(parsed) && parsed.length > 0) setStrokes(parsed);
+      // 1. First check IndexedDB (large capacity, no 5MB quota errors)
+      let isCancelled = false;
+      getCachedNoteAnnotation(noteId).then((cached) => {
+        if (isCancelled || !cached) {
+          // Fallback: localStorage for backward compatibility
+          try {
+            const strokeKey = `pdf_studio_strokes_${noteId}`;
+            const imageKey = `pdf_studio_images_${noteId}`;
+            const savedStrokes = localStorage.getItem(strokeKey);
+            if (savedStrokes) {
+              const parsed = JSON.parse(savedStrokes);
+              if (Array.isArray(parsed) && parsed.length > 0) setStrokes(parsed);
+            }
+            const savedImages = localStorage.getItem(imageKey);
+            if (savedImages) {
+              const parsedImgs = JSON.parse(savedImages);
+              if (Array.isArray(parsedImgs) && parsedImgs.length > 0) setImages(parsedImgs);
+            }
+          } catch (err) {
+            console.error("Error reading saved data:", err);
+          }
+          return;
         }
-        const savedImages = localStorage.getItem(imageKey);
-        if (savedImages) {
-          const parsedImgs = JSON.parse(savedImages);
-          if (Array.isArray(parsedImgs) && parsedImgs.length > 0) setImages(parsedImgs);
-        }
-      } catch (err) {
-        console.error("Error reading saved data:", err);
-      }
+
+        if (Array.isArray(cached.strokes)) setStrokes(cached.strokes);
+        if (Array.isArray(cached.images)) setImages(cached.images);
+        if (Array.isArray(cached.pages) && cached.pages.length > 0) setPages(cached.pages);
+      });
+
+      return () => {
+        isCancelled = true;
+      };
     }
   }, [isOpen, noteId, initialAnnotation]);
 
-  // Load PDF when pdfUrl is provided (bypassing any browser cache)
+  // Load PDF when pdfUrl is provided (with IndexedDB Instant Cache)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -308,13 +330,26 @@ export default function PdfNoteStudio({
 
       setIsLoadingPdf(true);
       try {
-        const res = await fetch(pdfUrl, { cache: "no-store" });
-        const rawBuffer = await res.arrayBuffer();
-        if (!isMounted) return;
+        const cacheKey = noteId || pdfUrl;
 
-        // Clone buffer to prevent Web Worker detachment
-        const cleanBuffer = rawBuffer.slice(0);
-        setOriginalPdfBuffer(cleanBuffer);
+        // 1. Try loading from IndexedDB first for instant ~0ms response!
+        let cleanBuffer = await getCachedPdfBuffer(cacheKey);
+
+        if (!cleanBuffer) {
+          const res = await fetch(pdfUrl, { cache: "no-store" });
+          const rawBuffer = await res.arrayBuffer();
+          if (!isMounted) return;
+
+          // Clone buffer to prevent Web Worker detachment
+          cleanBuffer = rawBuffer.slice(0);
+
+          // Save to IndexedDB for next time
+          cachePdfBuffer(cacheKey, cleanBuffer.slice(0)).catch(() => {});
+        }
+
+        if (!isMounted || !cleanBuffer) return;
+
+        setOriginalPdfBuffer(cleanBuffer.slice(0));
 
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -1332,10 +1367,15 @@ export default function PdfNoteStudio({
     setOriginalPdfBuffer(null);
     pdfDocProxyRef.current = null;
 
-    // ล้าง localStorage
-    if (noteId && typeof window !== "undefined") {
-      localStorage.removeItem(`pdf_studio_strokes_${noteId}`);
-      localStorage.removeItem(`pdf_studio_images_${noteId}`);
+    // ล้าง IndexedDB และ localStorage
+    if (noteId) {
+      removeCachedNote(noteId, pdfUrl).catch(() => {});
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem(`pdf_studio_strokes_${noteId}`);
+          localStorage.removeItem(`pdf_studio_images_${noteId}`);
+        } catch {}
+      }
     }
 
     Swal.fire({
@@ -1360,34 +1400,47 @@ export default function PdfNoteStudio({
         images,
       };
 
-      // 2. Export annotated PDF blob
-      const bufferCopy = originalPdfBuffer ? originalPdfBuffer.slice(0) : null;
-      const blob = await exportAnnotatedPdfBlob(bufferCopy, pages, strokes, images);
-
-      // 3. ถ้าเป็นสมุดจดใหม่ (ยังไม่มี noteId) → แสดง modal ให้ตั้งชื่อและเลือกหมวดหมู่ก่อน
+      // 2. ถ้าเป็นสมุดจดใหม่ (ยังไม่มี noteId) → สร้าง Base PDF สะอาดครั้งแรกครั้งเดียว
       if (!noteId && onSave) {
+        let baseBlob: Blob;
+        if (originalPdfBuffer && originalPdfBuffer.byteLength > 0) {
+          // ใช้ PDF ต้นฉบับที่ผู้ใช้ Import เข้ามาเป็น Base Layer สะอาด
+          baseBlob = new Blob([originalPdfBuffer.slice(0)], { type: "application/pdf" });
+        } else {
+          // สมุดเปล่าจาก Template: สร้าง Base PDF หน้ากระดาษเปล่า/กริด/เส้น สะอาด 1 ชุด
+          baseBlob = await exportAnnotatedPdfBlob(null, pages, [], []);
+        }
+
         pendingAnnotationRef.current = annotation;
-        pendingBlobRef.current = blob;
+        pendingBlobRef.current = baseBlob;
         setIsSaving(false);
         setIsSaveModalOpen(true);
         return;
       }
 
-      // 4. สมุดจดที่มีอยู่แล้ว → บันทึกโดยตรง
+      // 3. สมุดจดที่มีอยู่แล้ว → บันทึกเฉพาะ Vector Annotation (ประหยัดพื้นที่ & อัปเดตทันที O(1))
+      // ไม่ต้อง flatten และไม่ต้อง re-upload ไฟล์ PDF ซ้ำทุกครั้งที่เขียน
       if (onSave) {
-        const saveRes = await onSave(annotation, blob);
+        const saveRes = await onSave(annotation, undefined);
         if (saveRes === false) return;
       }
 
       // รีเซ็ตสถานะการแก้ไข (Dirty) เมื่อบันทึกสำเร็จ
       setIsDirty(false);
 
-      // 5. Backup to localStorage for safety
-      if (noteId && typeof window !== "undefined") {
-        try {
-          localStorage.setItem(`pdf_studio_strokes_${noteId}`, JSON.stringify(strokes));
-          localStorage.setItem(`pdf_studio_images_${noteId}`, JSON.stringify(images));
-        } catch {}
+      // 4. บันทึกลง IndexedDB Cache ทันที (รองรับความจุหลัก GBs ปลอดภัย ไม่ชนโควตา 5MB)
+      if (noteId) {
+        cacheNoteAnnotation(noteId, annotation).catch(() => {});
+        if (originalPdfBuffer && originalPdfBuffer.byteLength > 0) {
+          cachePdfBuffer(noteId, originalPdfBuffer).catch(() => {});
+        }
+        // ล้าง localStorage เก่าทิ้งเพื่อคืนโควตาเบราว์เซอร์
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.removeItem(`pdf_studio_strokes_${noteId}`);
+            localStorage.removeItem(`pdf_studio_images_${noteId}`);
+          } catch {}
+        }
       }
 
       Swal.fire({
